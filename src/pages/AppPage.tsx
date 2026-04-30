@@ -297,9 +297,14 @@ const AppPage = () => {
     doc.setTextColor(20, 20, 20);
     doc.setFontSize(11);
     const dateStr = new Date(confirmedAt).toLocaleString("ru-RU");
+    const docName = profile?.full_name?.trim() || "Shifokor";
+    const hosp = profile?.hospital?.trim() || "";
     doc.text(`Bemor: ${pn}`, margin, y);
     doc.text(`Sana: ${dateStr}`, pageW - margin, y, { align: "right" });
-    y += 18;
+    y += 16;
+    doc.text(`Davolovchi shifokor: ${docName}`, margin, y);
+    if (hosp) doc.text(hosp, pageW - margin, y, { align: "right" });
+    y += 16;
     doc.setDrawColor(220);
     doc.line(margin, y, pageW - margin, y);
     y += 20;
@@ -363,7 +368,8 @@ const AppPage = () => {
     y += 10;
     doc.setTextColor(20);
     doc.setFontSize(11);
-    doc.text("Shifokor imzosi: ____________________", margin, y + 20);
+    doc.text(`Shifokor: ${docName}`, margin, y + 20);
+    doc.text("Imzo: ____________________", pageW - margin, y + 20, { align: "right" });
 
     const safe = pn.replace(/[^a-zA-Z0-9-_]/g, "_") || "bemor";
     doc.save(`Clinora_${safe}_${new Date().toISOString().slice(0, 10)}.pdf`);
