@@ -382,17 +382,31 @@ const AppPage = () => {
     <div className="min-h-screen" style={{ background: "var(--gradient-soft)" }}>
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
         <div className="container flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />
-            Орқага
-          </Link>
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg shadow-md" style={{ background: "var(--gradient-primary)" }}>
               <Stethoscope className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-foreground">Clinora AI</span>
+            <div className="leading-tight">
+              <div className="text-sm font-semibold text-foreground">Clinora AI</div>
+              {profile?.full_name && (
+                <div className="text-[11px] text-muted-foreground">
+                  Др. {profile.full_name}{profile.hospital ? ` · ${profile.hospital}` : ""}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="w-16" />
+          <div className="flex items-center gap-1">
+            <Link to="/analytics">
+              <Button variant="ghost" size="sm" className="rounded-full">
+                <BarChart3 className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Аналитика</span>
+              </Button>
+            </Link>
+            <Button variant="ghost" size="sm" onClick={signOut} className="rounded-full">
+              <LogOut className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Чиқиш</span>
+            </Button>
+          </div>
         </div>
       </header>
 
