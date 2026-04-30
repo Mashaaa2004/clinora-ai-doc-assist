@@ -45,7 +45,7 @@ const Index = () => {
                   Синаб кўриш
                 </Button>
               </Link>
-              <span className="text-xs text-muted-foreground">Бепул • Рўйхатдан ўтишсиз</span>
+              <span className="text-xs text-muted-foreground">Бепул • Шифокорлар учун</span>
             </div>
           </div>
         </div>
