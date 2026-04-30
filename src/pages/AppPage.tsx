@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowLeft,
+  BarChart3,
   Brain,
   CheckCircle2,
   Download,
   FileText,
   Loader2,
+  LogOut,
   Mic,
   MicOff,
   Pencil,
@@ -22,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import jsPDF from "jspdf";
 
 type Prescription = {
@@ -56,6 +58,7 @@ const emptyPrescription = (): Prescription => ({
 });
 
 const AppPage = () => {
+  const { profile, user, signOut } = useAuth();
   const [transcript, setTranscript] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -223,7 +226,7 @@ const AppPage = () => {
   const addPrescription = () =>
     updateResult((r) => ({ ...r, prescriptions: [...r.prescriptions, emptyPrescription()] }));
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!result) return;
     const cleaned: AnalysisResult = {
       ...result,
@@ -250,6 +253,17 @@ const AppPage = () => {
     setResult(cleaned);
     setConfirmed(conf);
     persist({ result: cleaned, patientName: conf.patientName, confirmed: conf });
+    if (user) {
+      const { error } = await supabase.from("prescriptions_log").insert({
+        user_id: user.id,
+        doctor_name: profile?.full_name || "",
+        hospital: profile?.hospital || "",
+        patient_name: conf.patientName,
+        symptoms_count: cleaned.symptoms.length,
+        prescriptions_count: cleaned.prescriptions.length,
+      });
+      if (error) console.error("log insert failed:", error);
+    }
     toast.success("Тасдиқланди — PDF юклаб олса бўлади");
   };
 
@@ -282,9 +296,14 @@ const AppPage = () => {
     doc.setTextColor(20, 20, 20);
     doc.setFontSize(11);
     const dateStr = new Date(confirmedAt).toLocaleString("ru-RU");
+    const docName = profile?.full_name?.trim() || "Shifokor";
+    const hosp = profile?.hospital?.trim() || "";
     doc.text(`Bemor: ${pn}`, margin, y);
     doc.text(`Sana: ${dateStr}`, pageW - margin, y, { align: "right" });
-    y += 18;
+    y += 16;
+    doc.text(`Davolovchi shifokor: ${docName}`, margin, y);
+    if (hosp) doc.text(hosp, pageW - margin, y, { align: "right" });
+    y += 16;
     doc.setDrawColor(220);
     doc.line(margin, y, pageW - margin, y);
     y += 20;
@@ -348,7 +367,8 @@ const AppPage = () => {
     y += 10;
     doc.setTextColor(20);
     doc.setFontSize(11);
-    doc.text("Shifokor imzosi: ____________________", margin, y + 20);
+    doc.text(`Shifokor: ${docName}`, margin, y + 20);
+    doc.text("Imzo: ____________________", pageW - margin, y + 20, { align: "right" });
 
     const safe = pn.replace(/[^a-zA-Z0-9-_]/g, "_") || "bemor";
     doc.save(`Clinora_${safe}_${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -361,17 +381,31 @@ const AppPage = () => {
     <div className="min-h-screen" style={{ background: "var(--gradient-soft)" }}>
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
         <div className="container flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />
-            Орқага
-          </Link>
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg shadow-md" style={{ background: "var(--gradient-primary)" }}>
               <Stethoscope className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-foreground">Clinora AI</span>
+            <div className="leading-tight">
+              <div className="text-sm font-semibold text-foreground">Clinora AI</div>
+              {profile?.full_name && (
+                <div className="text-[11px] text-muted-foreground">
+                  Др. {profile.full_name}{profile.hospital ? ` · ${profile.hospital}` : ""}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="w-16" />
+          <div className="flex items-center gap-1">
+            <Link to="/analytics">
+              <Button variant="ghost" size="sm" className="rounded-full">
+                <BarChart3 className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Аналитика</span>
+              </Button>
+            </Link>
+            <Button variant="ghost" size="sm" onClick={signOut} className="rounded-full">
+              <LogOut className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Чиқиш</span>
+            </Button>
+          </div>
         </div>
       </header>
 

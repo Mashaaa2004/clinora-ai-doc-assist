@@ -14,7 +14,7 @@ const Index = () => {
             </div>
             <span className="text-lg font-semibold tracking-tight text-foreground">Clinora AI</span>
           </div>
-          <Link to="/app">
+          <Link to="/auth">
             <Button size="sm" className="rounded-full">Кириш</Button>
           </Link>
         </div>
@@ -39,13 +39,13 @@ const Index = () => {
               30 сонияда бемор суҳбатидан симптомлар, ташхис ва тавсияларни автоматик тарзда олинг.
             </p>
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Link to="/app">
+              <Link to="/auth">
                 <Button size="lg" className="rounded-full px-8 shadow-lg" style={{ background: "var(--gradient-primary)" }}>
                   <Zap className="mr-2 h-5 w-5" />
                   Синаб кўриш
                 </Button>
               </Link>
-              <span className="text-xs text-muted-foreground">Бепул • Рўйхатдан ўтишсиз</span>
+              <span className="text-xs text-muted-foreground">Бепул • Шифокорлар учун</span>
             </div>
           </div>
         </div>
@@ -104,7 +104,7 @@ const Index = () => {
         <div className="mx-auto max-w-3xl rounded-3xl border border-border p-10 text-center shadow-md" style={{ background: "var(--gradient-soft)" }}>
           <h2 className="text-2xl font-bold text-foreground md:text-3xl">Ҳозироқ синаб кўринг</h2>
           <p className="mt-3 text-muted-foreground">Микрофонни ёқинг, бемор билан суҳбатлашинг — қолганини AI бажаради.</p>
-          <Link to="/app" className="mt-6 inline-block">
+          <Link to="/auth" className="mt-6 inline-block">
             <Button size="lg" className="rounded-full px-8" style={{ background: "var(--gradient-primary)" }}>
               Бошлаш
             </Button>
