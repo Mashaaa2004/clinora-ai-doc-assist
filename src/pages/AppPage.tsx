@@ -227,7 +227,7 @@ const AppPage = () => {
   const addPrescription = () =>
     updateResult((r) => ({ ...r, prescriptions: [...r.prescriptions, emptyPrescription()] }));
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!result) return;
     const cleaned: AnalysisResult = {
       ...result,
@@ -254,6 +254,17 @@ const AppPage = () => {
     setResult(cleaned);
     setConfirmed(conf);
     persist({ result: cleaned, patientName: conf.patientName, confirmed: conf });
+    if (user) {
+      const { error } = await supabase.from("prescriptions_log").insert({
+        user_id: user.id,
+        doctor_name: profile?.full_name || "",
+        hospital: profile?.hospital || "",
+        patient_name: conf.patientName,
+        symptoms_count: cleaned.symptoms.length,
+        prescriptions_count: cleaned.prescriptions.length,
+      });
+      if (error) console.error("log insert failed:", error);
+    }
     toast.success("Тасдиқланди — PDF юклаб олса бўлади");
   };
 
