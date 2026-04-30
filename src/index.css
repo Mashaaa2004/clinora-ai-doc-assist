@@ -8,35 +8,53 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 210 40% 99%;
+    --foreground: 215 30% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 30% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 30% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 212 90% 50%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 200 95% 60%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 215 30% 20%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 200 95% 95%;
+    --accent-foreground: 212 90% 30%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --success: 145 65% 42%;
+    --success-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    --warning: 35 95% 55%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 212 90% 50%;
+
+    --radius: 1rem;
+
+    --gradient-primary: linear-gradient(135deg, hsl(212 90% 50%), hsl(200 95% 60%));
+    --gradient-soft: linear-gradient(180deg, hsl(210 40% 99%), hsl(200 95% 97%));
+    --gradient-hero: linear-gradient(135deg, hsl(212 90% 50% / 0.08), hsl(200 95% 60% / 0.04));
+
+    --shadow-sm: 0 1px 2px hsl(212 50% 30% / 0.04);
+    --shadow-md: 0 4px 16px hsl(212 50% 30% / 0.08);
+    --shadow-lg: 0 12px 40px hsl(212 50% 30% / 0.12);
+    --shadow-glow: 0 0 40px hsl(212 90% 50% / 0.25);
+
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
 
