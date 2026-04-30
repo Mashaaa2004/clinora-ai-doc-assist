@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
+  BarChart3,
   Brain,
   CheckCircle2,
   Download,
   FileText,
   Loader2,
+  LogOut,
   Mic,
   MicOff,
   Pencil,
@@ -22,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import jsPDF from "jspdf";
 
 type Prescription = {
