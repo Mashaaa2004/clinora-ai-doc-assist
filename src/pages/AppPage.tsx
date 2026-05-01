@@ -4,8 +4,10 @@ import {
   BarChart3,
   Brain,
   CheckCircle2,
+  Crown,
   Download,
   FileText,
+  History as HistoryIcon,
   Loader2,
   LogOut,
   Mic,
@@ -25,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import SupportFooter from "@/components/SupportFooter";
 
 type Prescription = {
   name: string;
@@ -263,6 +266,18 @@ const AppPage = () => {
         prescriptions_count: cleaned.prescriptions.length,
       });
       if (error) console.error("log insert failed:", error);
+
+      // Save full consultation history for this doctor
+      const { error: cErr } = await supabase.from("consultations").insert({
+        user_id: user.id,
+        patient_name: conf.patientName,
+        transcript,
+        symptoms: cleaned.symptoms,
+        diagnosis: cleaned.diagnosis,
+        recommendation: cleaned.recommendation,
+        prescriptions: cleaned.prescriptions,
+      });
+      if (cErr) console.error("consultation insert failed:", cErr);
     }
     toast.success("Тасдиқланди — PDF юклаб олса бўлади");
   };
@@ -329,44 +344,49 @@ const AppPage = () => {
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: #f4f6fb; color: #111827; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .page { width: 210mm; min-height: 297mm; margin: 16px auto; padding: 18mm 16mm; background: #fff; box-shadow: 0 8px 30px rgba(0,0,0,.08); }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 3px solid #2176eb; }
+  html, body { margin: 0; padding: 0; background: #f4f6fb; color: #111827; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 12px; }
+  /* Strict single A4 page */
+  .page { width: 210mm; height: 297mm; margin: 16px auto; padding: 10mm 12mm; background: #fff; box-shadow: 0 8px 30px rgba(0,0,0,.08); display: flex; flex-direction: column; overflow: hidden; }
+  .content { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 8px; border-bottom: 2px solid #2176eb; }
   .brand { display: flex; align-items: center; gap: 12px; }
-  .logo { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #2176eb, #4f9bff); display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 20px; }
-  .brand h1 { font-family: 'Manrope', sans-serif; font-size: 22px; margin: 0; color: #111827; }
-  .brand p { margin: 2px 0 0; font-size: 12px; color: #6b7280; }
-  .clinic { text-align: right; font-size: 12px; color: #374151; line-height: 1.55; }
-  .clinic .clinic-name { font-weight: 700; color: #2176eb; font-size: 14px; }
+  .logo { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #2176eb, #4f9bff); display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 16px; }
+  .brand h1 { font-family: 'Manrope', sans-serif; font-size: 18px; margin: 0; color: #111827; line-height: 1.1; }
+  .brand p { margin: 2px 0 0; font-size: 10px; color: #6b7280; }
+  .clinic { text-align: right; font-size: 10.5px; color: #374151; line-height: 1.4; }
+  .clinic .clinic-name { font-weight: 700; color: #2176eb; font-size: 12px; }
 
-  .meta { display: flex; justify-content: space-between; gap: 20px; margin: 18px 0 6px; font-size: 13px; }
-  .meta .row { background: #f9fafb; border: 1px solid #eef0f4; border-radius: 12px; padding: 10px 14px; flex: 1; }
-  .meta .label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; margin-bottom: 2px; }
-  .meta .val { font-weight: 600; color: #111827; }
+  .meta { display: flex; justify-content: space-between; gap: 10px; margin: 8px 0 4px; font-size: 11px; }
+  .meta .row { background: #f9fafb; border: 1px solid #eef0f4; border-radius: 8px; padding: 6px 10px; flex: 1; }
+  .meta .label { font-size: 9px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; margin-bottom: 1px; }
+  .meta .val { font-weight: 600; color: #111827; font-size: 12px; }
 
-  h2.section { font-family: 'Manrope', sans-serif; font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: #2176eb; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 1px dashed #d1d5db; }
-  .bul { margin: 0; padding-left: 18px; }
-  .bul li { margin: 4px 0; font-size: 14px; line-height: 1.5; }
-  p.body { font-size: 14px; line-height: 1.6; margin: 4px 0; white-space: pre-wrap; }
-  .muted { color: #9ca3af; font-style: italic; font-size: 13px; }
+  h2.section { font-family: 'Manrope', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #2176eb; margin: 10px 0 4px; padding-bottom: 2px; border-bottom: 1px dashed #d1d5db; }
+  .bul { margin: 0; padding-left: 16px; }
+  .bul li { margin: 1px 0; font-size: 11.5px; line-height: 1.35; }
+  p.body { font-size: 11.5px; line-height: 1.4; margin: 2px 0; white-space: pre-wrap; }
+  .muted { color: #9ca3af; font-style: italic; font-size: 11px; }
 
-  table.rx { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
-  table.rx th { background: #eff5ff; color: #1e40af; text-align: left; padding: 9px 10px; font-weight: 600; border-bottom: 2px solid #c8dcfb; }
-  table.rx td { padding: 9px 10px; border-bottom: 1px solid #eef0f4; vertical-align: top; }
+  table.rx { width: 100%; border-collapse: collapse; font-size: 10.5px; margin-top: 4px; }
+  table.rx th { background: #eff5ff; color: #1e40af; text-align: left; padding: 5px 7px; font-weight: 600; border-bottom: 1.5px solid #c8dcfb; font-size: 10px; }
+  table.rx td { padding: 5px 7px; border-bottom: 1px solid #eef0f4; vertical-align: top; line-height: 1.3; }
   table.rx tr:last-child td { border-bottom: none; }
 
-  .signature { margin-top: 32px; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
-  .doctor-card { font-size: 13px; color: #111827; line-height: 1.6; }
-  .doctor-card .name { font-weight: 700; font-size: 15px; color: #111827; }
-  .doctor-card .spec { color: #2176eb; font-weight: 500; }
-  .doctor-card .contact { color: #6b7280; font-size: 12px; }
-  .sig-line { width: 220px; text-align: center; font-size: 12px; color: #6b7280; }
-  .sig-line .line { border-bottom: 1px solid #111827; height: 30px; margin-bottom: 4px; }
+  .bottom { flex-shrink: 0; margin-top: auto; }
+  .signature { margin-top: 10px; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+  .doctor-card { font-size: 11px; color: #111827; line-height: 1.4; }
+  .doctor-card .name { font-weight: 700; font-size: 12.5px; color: #111827; }
+  .doctor-card .spec { color: #2176eb; font-weight: 500; font-size: 11px; }
+  .doctor-card .contact { color: #6b7280; font-size: 10.5px; }
+  .sig-line { width: 170px; text-align: center; font-size: 10px; color: #6b7280; }
+  .sig-line .line { border-bottom: 1px solid #111827; height: 22px; margin-bottom: 3px; }
 
-  .footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; gap: 16px; font-size: 11px; color: #6b7280; }
-  .footer .ad { background: linear-gradient(135deg, #eff5ff, #f5f3ff); border: 1px solid #dbeafe; border-radius: 12px; padding: 10px 14px; flex: 1; }
+  .footer { margin-top: 8px; padding-top: 6px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; gap: 8px; font-size: 9.5px; color: #6b7280; }
+  .footer .ad { background: linear-gradient(135deg, #eff5ff, #f5f3ff); border: 1px solid #dbeafe; border-radius: 8px; padding: 6px 9px; flex: 1; line-height: 1.35; }
   .footer .ad strong { color: #2176eb; }
-  .disclaimer { margin-top: 10px; font-size: 11px; color: #9ca3af; text-align: center; font-style: italic; }
+  .support { margin-top: 4px; text-align: center; font-size: 9px; color: #6b7280; }
+  .support b { color: #2176eb; }
+  .disclaimer { margin-top: 4px; font-size: 9px; color: #9ca3af; text-align: center; font-style: italic; }
 
   .actions { position: fixed; top: 14px; right: 14px; display: flex; gap: 8px; z-index: 9999; }
   .actions button { background: #2176eb; color: #fff; border: none; padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(33,118,235,.35); font-family: inherit; }
@@ -374,9 +394,10 @@ const AppPage = () => {
 
   @media print {
     body { background: #fff; }
-    .page { box-shadow: none; margin: 0; width: auto; min-height: auto; padding: 14mm 14mm; }
+    .page { box-shadow: none; margin: 0; width: 210mm; height: 297mm; padding: 8mm 10mm; page-break-after: avoid; page-break-inside: avoid; }
     .actions { display: none; }
-    @page { size: A4; margin: 0; }
+    @page { size: A4 portrait; margin: 0; }
+    html, body { width: 210mm; height: 297mm; }
   }
 </style>
 </head>
@@ -387,6 +408,7 @@ const AppPage = () => {
 </div>
 
 <div class="page">
+  <div class="content">
   <div class="header">
     <div class="brand">
       <div class="logo">C</div>
@@ -424,7 +446,9 @@ const AppPage = () => {
 
   <h2 class="section">Рецепт (дорилар)</h2>
   ${rxHtml}
+  </div>
 
+  <div class="bottom">
   <div class="signature">
     <div class="doctor-card">
       <div class="name">Др. ${esc(docName)}</div>
@@ -449,14 +473,33 @@ const AppPage = () => {
     </div>
   </div>
 
+  <p class="support">
+    Clinora AI · <b>Telegram:</b> @clinora_support · <b>Instagram:</b> @clinora.ai
+  </p>
   <p class="disclaimer">
     ⚕ Ушбу ҳужжат Clinora AI ёрдамида тайёрланиб, шифокор томонидан тасдиқланди. AI фақат ёрдамчи воситадир — якуний қарор шифокорга тегишли.
   </p>
+  </div>
 </div>
 
 <script>
   window.addEventListener('load', function() {
-    setTimeout(function() { window.print(); }, 600);
+    // Force-fit content to 1 page by progressively shrinking the .content area
+    setTimeout(function() {
+      try {
+        var content = document.querySelector('.content');
+        var scale = 1;
+        // Shrink only if content scrollHeight exceeds clientHeight
+        while (content && content.scrollHeight > content.clientHeight && scale > 0.55) {
+          scale -= 0.04;
+          content.style.transformOrigin = 'top left';
+          content.style.transform = 'scale(' + scale + ')';
+          content.style.width = (100 / scale) + '%';
+          content.style.height = (100 / scale) + '%';
+        }
+      } catch(e) {}
+      setTimeout(function() { window.print(); }, 300);
+    }, 600);
   });
 </script>
 </body>
@@ -493,21 +536,33 @@ const AppPage = () => {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <Link to="/history">
+              <Button variant="ghost" size="sm" className="rounded-full">
+                <HistoryIcon className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Тарих</span>
+              </Button>
+            </Link>
             <Link to="/profile">
               <Button variant="ghost" size="sm" className="rounded-full">
                 <User className="h-4 w-4 sm:mr-1.5" />
-                <span className="hidden sm:inline">Профиль</span>
+                <span className="hidden md:inline">Профиль</span>
               </Button>
             </Link>
             <Link to="/analytics">
               <Button variant="ghost" size="sm" className="rounded-full">
                 <BarChart3 className="h-4 w-4 sm:mr-1.5" />
-                <span className="hidden sm:inline">Аналитика</span>
+                <span className="hidden md:inline">Аналитика</span>
+              </Button>
+            </Link>
+            <Link to="/pricing">
+              <Button variant="ghost" size="sm" className="rounded-full text-primary">
+                <Crown className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden md:inline">Pro</span>
               </Button>
             </Link>
             <Button variant="ghost" size="sm" onClick={signOut} className="rounded-full">
               <LogOut className="h-4 w-4 sm:mr-1.5" />
-              <span className="hidden sm:inline">Чиқиш</span>
+              <span className="hidden md:inline">Чиқиш</span>
             </Button>
           </div>
         </div>
@@ -803,6 +858,7 @@ const AppPage = () => {
           ⚕️ Бу AI фақат ёрдамчи, якуний қарор шифокорга тегишли
         </p>
       </main>
+      <SupportFooter />
     </div>
   );
 };

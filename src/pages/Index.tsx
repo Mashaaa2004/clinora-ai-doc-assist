@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Activity, Brain, Clock, Heart, ShieldCheck, Sparkles, Stethoscope, Zap } from "lucide-react";
+import { Activity, Brain, Clock, Heart, Instagram, Send, ShieldCheck, Sparkles, Stethoscope, Zap } from "lucide-react";
 
 const Index = () => {
   return (
@@ -113,10 +113,19 @@ const Index = () => {
       </section>
 
       <footer className="border-t border-border/60 py-8">
-        <div className="container flex flex-col items-center justify-between gap-3 text-xs text-muted-foreground md:flex-row">
+        <div className="container flex flex-col items-center justify-between gap-4 text-xs text-muted-foreground md:flex-row">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4" />
             <span>Бу AI фақат ёрдамчи, якуний қарор шифокорга тегишли</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline">Саппорт:</span>
+            <a href="https://t.me/clinora_support" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 hover:text-primary hover:border-primary/40 transition-colors">
+              <Send className="h-3.5 w-3.5" /> Telegram
+            </a>
+            <a href="https://instagram.com/clinora.ai" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 hover:text-primary hover:border-primary/40 transition-colors">
+              <Instagram className="h-3.5 w-3.5" /> Instagram
+            </a>
           </div>
           <span>© {new Date().getFullYear()} Clinora AI</span>
         </div>
