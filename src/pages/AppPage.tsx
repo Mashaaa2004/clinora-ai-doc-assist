@@ -4,8 +4,10 @@ import {
   BarChart3,
   Brain,
   CheckCircle2,
+  Crown,
   Download,
   FileText,
+  History as HistoryIcon,
   Loader2,
   LogOut,
   Mic,
@@ -25,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import SupportFooter from "@/components/SupportFooter";
 
 type Prescription = {
   name: string;
