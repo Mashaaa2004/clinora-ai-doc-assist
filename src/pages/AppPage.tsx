@@ -408,6 +408,7 @@ const AppPage = () => {
 </div>
 
 <div class="page">
+  <div class="content">
   <div class="header">
     <div class="brand">
       <div class="logo">C</div>
@@ -445,7 +446,9 @@ const AppPage = () => {
 
   <h2 class="section">Рецепт (дорилар)</h2>
   ${rxHtml}
+  </div>
 
+  <div class="bottom">
   <div class="signature">
     <div class="doctor-card">
       <div class="name">Др. ${esc(docName)}</div>
@@ -470,9 +473,13 @@ const AppPage = () => {
     </div>
   </div>
 
+  <p class="support">
+    Clinora AI · <b>Telegram:</b> @clinora_support · <b>Instagram:</b> @clinora.ai
+  </p>
   <p class="disclaimer">
     ⚕ Ушбу ҳужжат Clinora AI ёрдамида тайёрланиб, шифокор томонидан тасдиқланди. AI фақат ёрдамчи воситадир — якуний қарор шифокорга тегишли.
   </p>
+  </div>
 </div>
 
 <script>
