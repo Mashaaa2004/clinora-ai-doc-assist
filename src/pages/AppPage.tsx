@@ -536,21 +536,33 @@ const AppPage = () => {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <Link to="/history">
+              <Button variant="ghost" size="sm" className="rounded-full">
+                <HistoryIcon className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Тарих</span>
+              </Button>
+            </Link>
             <Link to="/profile">
               <Button variant="ghost" size="sm" className="rounded-full">
                 <User className="h-4 w-4 sm:mr-1.5" />
-                <span className="hidden sm:inline">Профиль</span>
+                <span className="hidden md:inline">Профиль</span>
               </Button>
             </Link>
             <Link to="/analytics">
               <Button variant="ghost" size="sm" className="rounded-full">
                 <BarChart3 className="h-4 w-4 sm:mr-1.5" />
-                <span className="hidden sm:inline">Аналитика</span>
+                <span className="hidden md:inline">Аналитика</span>
+              </Button>
+            </Link>
+            <Link to="/pricing">
+              <Button variant="ghost" size="sm" className="rounded-full text-primary">
+                <Crown className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden md:inline">Pro</span>
               </Button>
             </Link>
             <Button variant="ghost" size="sm" onClick={signOut} className="rounded-full">
               <LogOut className="h-4 w-4 sm:mr-1.5" />
-              <span className="hidden sm:inline">Чиқиш</span>
+              <span className="hidden md:inline">Чиқиш</span>
             </Button>
           </div>
         </div>
