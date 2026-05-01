@@ -2,7 +2,15 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-type Profile = { full_name: string; hospital: string };
+type Profile = {
+  full_name: string;
+  hospital: string;
+  phone: string;
+  work_hours: string;
+  hospital_phone: string;
+  hospital_address: string;
+  specialty: string;
+};
 
 type Ctx = {
   session: Session | null;
@@ -24,10 +32,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loadProfile = async (uid: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("full_name,hospital")
+      .select("full_name,hospital,phone,work_hours,hospital_phone,hospital_address,specialty")
       .eq("user_id", uid)
       .maybeSingle();
-    setProfile(data ?? { full_name: "", hospital: "" });
+    setProfile(
+      data ?? {
+        full_name: "",
+        hospital: "",
+        phone: "",
+        work_hours: "",
+        hospital_phone: "",
+        hospital_address: "",
+        specialty: "",
+      },
+    );
   };
 
   useEffect(() => {

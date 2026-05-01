@@ -16,6 +16,7 @@ import {
   Sparkles,
   Stethoscope,
   Trash2,
+  User,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import jsPDF from "jspdf";
 
 type Prescription = {
   name: string;
@@ -272,106 +272,204 @@ const AppPage = () => {
     persist({ confirmed: null });
   };
 
-  // ---- PDF ----
+  // ---- PDF (open print window with full Cyrillic support) ----
   const generatePdf = () => {
     if (!confirmed) return;
     const { result: r, patientName: pn, confirmedAt } = confirmed;
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
-    const pageW = doc.internal.pageSize.getWidth();
-    const margin = 48;
-    let y = margin;
-
-    // Header band
-    doc.setFillColor(33, 118, 235);
-    doc.rect(0, 0, pageW, 70, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.text("Clinora AI", margin, 32);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text("Tibbiy xulosa va retsept", margin, 52);
-
-    y = 100;
-    doc.setTextColor(20, 20, 20);
-    doc.setFontSize(11);
     const dateStr = new Date(confirmedAt).toLocaleString("ru-RU");
-    const docName = profile?.full_name?.trim() || "Shifokor";
+    const docName = profile?.full_name?.trim() || "Шифокор";
+    const specialty = profile?.specialty?.trim() || "";
+    const docPhone = profile?.phone?.trim() || "";
+    const workHours = profile?.work_hours?.trim() || "";
     const hosp = profile?.hospital?.trim() || "";
-    doc.text(`Bemor: ${pn}`, margin, y);
-    doc.text(`Sana: ${dateStr}`, pageW - margin, y, { align: "right" });
-    y += 16;
-    doc.text(`Davolovchi shifokor: ${docName}`, margin, y);
-    if (hosp) doc.text(hosp, pageW - margin, y, { align: "right" });
-    y += 16;
-    doc.setDrawColor(220);
-    doc.line(margin, y, pageW - margin, y);
-    y += 20;
+    const hospPhone = profile?.hospital_phone?.trim() || "";
+    const hospAddr = profile?.hospital_address?.trim() || "";
 
-    const section = (title: string) => {
-      if (y > 760) { doc.addPage(); y = margin; }
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(33, 118, 235);
-      doc.text(title, margin, y);
-      y += 16;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-      doc.setTextColor(20, 20, 20);
-    };
+    const esc = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-    const writeWrapped = (text: string, x = margin, maxW = pageW - margin * 2) => {
-      const lines = doc.splitTextToSize(text, maxW);
-      lines.forEach((line: string) => {
-        if (y > 780) { doc.addPage(); y = margin; }
-        doc.text(line, x, y);
-        y += 15;
-      });
-    };
+    const symptomsHtml = r.symptoms.length
+      ? `<ul class="bul">${r.symptoms.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`
+      : `<p class="muted">—</p>`;
 
-    section("Simptomlar");
-    if (r.symptoms.length === 0) writeWrapped("—");
-    else r.symptoms.forEach((s) => writeWrapped(`• ${s}`));
-    y += 6;
+    const rxHtml = r.prescriptions.length
+      ? `<table class="rx">
+          <thead><tr>
+            <th style="width:28px">№</th>
+            <th>Дори номи</th>
+            <th>Доза</th>
+            <th>Қабул тартиби</th>
+            <th>Давомийлиги</th>
+            <th>Изоҳ</th>
+          </tr></thead>
+          <tbody>
+            ${r.prescriptions
+              .map(
+                (p, i) => `<tr>
+                  <td>${i + 1}</td>
+                  <td><strong>${esc(p.name)}</strong></td>
+                  <td>${esc(p.dosage)}</td>
+                  <td>${esc(p.frequency)}</td>
+                  <td>${esc(p.duration)}</td>
+                  <td>${esc(p.notes || "—")}</td>
+                </tr>`,
+              )
+              .join("")}
+          </tbody>
+        </table>`
+      : `<p class="muted">—</p>`;
 
-    section("Tashxis");
-    writeWrapped(r.diagnosis || "—");
-    y += 6;
+    const html = `<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8" />
+<title>Clinora AI — ${esc(pn)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #f4f6fb; color: #111827; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { width: 210mm; min-height: 297mm; margin: 16px auto; padding: 18mm 16mm; background: #fff; box-shadow: 0 8px 30px rgba(0,0,0,.08); }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 3px solid #2176eb; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #2176eb, #4f9bff); display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 20px; }
+  .brand h1 { font-family: 'Manrope', sans-serif; font-size: 22px; margin: 0; color: #111827; }
+  .brand p { margin: 2px 0 0; font-size: 12px; color: #6b7280; }
+  .clinic { text-align: right; font-size: 12px; color: #374151; line-height: 1.55; }
+  .clinic .clinic-name { font-weight: 700; color: #2176eb; font-size: 14px; }
 
-    section("Tavsiya");
-    writeWrapped(r.recommendation || "—");
-    y += 6;
+  .meta { display: flex; justify-content: space-between; gap: 20px; margin: 18px 0 6px; font-size: 13px; }
+  .meta .row { background: #f9fafb; border: 1px solid #eef0f4; border-radius: 12px; padding: 10px 14px; flex: 1; }
+  .meta .label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; margin-bottom: 2px; }
+  .meta .val { font-weight: 600; color: #111827; }
 
-    section("Retsept (dorilar)");
-    if (r.prescriptions.length === 0) writeWrapped("—");
-    else {
-      r.prescriptions.forEach((p, i) => {
-        if (y > 740) { doc.addPage(); y = margin; }
-        doc.setFont("helvetica", "bold");
-        writeWrapped(`${i + 1}. ${p.name}`);
-        doc.setFont("helvetica", "normal");
-        writeWrapped(`   Doza: ${p.dosage}   |   Tartib: ${p.frequency}   |   Davomiyligi: ${p.duration}`);
-        if (p.notes) writeWrapped(`   Izoh: ${p.notes}`);
-        y += 4;
-      });
+  h2.section { font-family: 'Manrope', sans-serif; font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: #2176eb; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 1px dashed #d1d5db; }
+  .bul { margin: 0; padding-left: 18px; }
+  .bul li { margin: 4px 0; font-size: 14px; line-height: 1.5; }
+  p.body { font-size: 14px; line-height: 1.6; margin: 4px 0; white-space: pre-wrap; }
+  .muted { color: #9ca3af; font-style: italic; font-size: 13px; }
+
+  table.rx { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+  table.rx th { background: #eff5ff; color: #1e40af; text-align: left; padding: 9px 10px; font-weight: 600; border-bottom: 2px solid #c8dcfb; }
+  table.rx td { padding: 9px 10px; border-bottom: 1px solid #eef0f4; vertical-align: top; }
+  table.rx tr:last-child td { border-bottom: none; }
+
+  .signature { margin-top: 32px; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+  .doctor-card { font-size: 13px; color: #111827; line-height: 1.6; }
+  .doctor-card .name { font-weight: 700; font-size: 15px; color: #111827; }
+  .doctor-card .spec { color: #2176eb; font-weight: 500; }
+  .doctor-card .contact { color: #6b7280; font-size: 12px; }
+  .sig-line { width: 220px; text-align: center; font-size: 12px; color: #6b7280; }
+  .sig-line .line { border-bottom: 1px solid #111827; height: 30px; margin-bottom: 4px; }
+
+  .footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; gap: 16px; font-size: 11px; color: #6b7280; }
+  .footer .ad { background: linear-gradient(135deg, #eff5ff, #f5f3ff); border: 1px solid #dbeafe; border-radius: 12px; padding: 10px 14px; flex: 1; }
+  .footer .ad strong { color: #2176eb; }
+  .disclaimer { margin-top: 10px; font-size: 11px; color: #9ca3af; text-align: center; font-style: italic; }
+
+  .actions { position: fixed; top: 14px; right: 14px; display: flex; gap: 8px; z-index: 9999; }
+  .actions button { background: #2176eb; color: #fff; border: none; padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(33,118,235,.35); font-family: inherit; }
+  .actions .alt { background: #fff; color: #374151; border: 1px solid #d1d5db; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+
+  @media print {
+    body { background: #fff; }
+    .page { box-shadow: none; margin: 0; width: auto; min-height: auto; padding: 14mm 14mm; }
+    .actions { display: none; }
+    @page { size: A4; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="actions">
+  <button class="alt" onclick="window.close()">Ёпиш</button>
+  <button onclick="window.print()">📄 PDF сақлаш / Чоп этиш</button>
+</div>
+
+<div class="page">
+  <div class="header">
+    <div class="brand">
+      <div class="logo">C</div>
+      <div>
+        <h1>Clinora AI</h1>
+        <p>Тиббий хулоса ва рецепт</p>
+      </div>
+    </div>
+    <div class="clinic">
+      <div class="clinic-name">${esc(hosp || "Тиббий муассаса")}</div>
+      ${hospAddr ? `<div>${esc(hospAddr)}</div>` : ""}
+      ${hospPhone ? `<div>☎ ${esc(hospPhone)}</div>` : ""}
+    </div>
+  </div>
+
+  <div class="meta">
+    <div class="row">
+      <div class="label">Бемор Ф.И.О.</div>
+      <div class="val">${esc(pn)}</div>
+    </div>
+    <div class="row">
+      <div class="label">Сана ва вақт</div>
+      <div class="val">${esc(dateStr)}</div>
+    </div>
+  </div>
+
+  <h2 class="section">Симптомлар</h2>
+  ${symptomsHtml}
+
+  <h2 class="section">Тахминий ташхис</h2>
+  <p class="body">${esc(r.diagnosis || "—")}</p>
+
+  <h2 class="section">Тавсиялар</h2>
+  <p class="body">${esc(r.recommendation || "—")}</p>
+
+  <h2 class="section">Рецепт (дорилар)</h2>
+  ${rxHtml}
+
+  <div class="signature">
+    <div class="doctor-card">
+      <div class="name">Др. ${esc(docName)}</div>
+      ${specialty ? `<div class="spec">${esc(specialty)}</div>` : ""}
+      ${docPhone ? `<div class="contact">☎ ${esc(docPhone)}</div>` : ""}
+      ${workHours ? `<div class="contact">🕒 ${esc(workHours)}</div>` : ""}
+    </div>
+    <div class="sig-line">
+      <div class="line"></div>
+      Шифокор имзоси / муҳри
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="ad">
+      <strong>${esc(hosp || "Тиббий муассаса")}</strong>${hospAddr ? ` · ${esc(hospAddr)}` : ""}${hospPhone ? ` · ☎ ${esc(hospPhone)}` : ""}<br/>
+      Сифатли тиббий хизмат — сизнинг соғлиғингиз биз учун муҳим.
+    </div>
+    <div class="ad" style="text-align:right">
+      <strong>Др. ${esc(docName)}</strong>${specialty ? ` · ${esc(specialty)}` : ""}<br/>
+      ${docPhone ? `Қабул учун: ${esc(docPhone)}` : ""}${workHours ? ` · ${esc(workHours)}` : ""}
+    </div>
+  </div>
+
+  <p class="disclaimer">
+    ⚕ Ушбу ҳужжат Clinora AI ёрдамида тайёрланиб, шифокор томонидан тасдиқланди. AI фақат ёрдамчи воситадир — якуний қарор шифокорга тегишли.
+  </p>
+</div>
+
+<script>
+  window.addEventListener('load', function() {
+    setTimeout(function() { window.print(); }, 600);
+  });
+</script>
+</body>
+</html>`;
+
+    const w = window.open("", "_blank", "width=900,height=1000");
+    if (!w) {
+      toast.error("Браузер янги ойнани блоклади. Иловага рухсат беринг.");
+      return;
     }
-
-    y += 20;
-    if (y > 740) { doc.addPage(); y = margin; }
-    doc.setDrawColor(220);
-    doc.line(margin, y, pageW - margin, y);
-    y += 18;
-    doc.setFontSize(10);
-    doc.setTextColor(120);
-    writeWrapped("Eslatma: ushbu hujjat shifokor tomonidan tasdiqlangan. AI faqat yordamchi sifatida ishlatilgan, yakuniy qaror shifokorga tegishli.");
-    y += 10;
-    doc.setTextColor(20);
-    doc.setFontSize(11);
-    doc.text(`Shifokor: ${docName}`, margin, y + 20);
-    doc.text("Imzo: ____________________", pageW - margin, y + 20, { align: "right" });
-
-    const safe = pn.replace(/[^a-zA-Z0-9-_]/g, "_") || "bemor";
-    doc.save(`Clinora_${safe}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
   };
 
   const cardCls = "rounded-3xl border border-border bg-card p-6 shadow-md";
@@ -395,6 +493,12 @@ const AppPage = () => {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <Link to="/profile">
+              <Button variant="ghost" size="sm" className="rounded-full">
+                <User className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Профиль</span>
+              </Button>
+            </Link>
             <Link to="/analytics">
               <Button variant="ghost" size="sm" className="rounded-full">
                 <BarChart3 className="h-4 w-4 sm:mr-1.5" />
@@ -414,6 +518,19 @@ const AppPage = () => {
           <div className="mb-6 rounded-2xl border border-warning/30 bg-warning/10 p-4 text-sm">
             <strong className="text-warning">Диққат:</strong>{" "}
             <span className="text-foreground">Браузерингиз овоз танишни қўлламайди. Chrome ёки Edge'дан фойдаланинг.</span>
+          </div>
+        )}
+
+        {profile && (!profile.phone || !profile.hospital_phone) && (
+          <div className="mb-6 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-sm flex items-start gap-3">
+            <User className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <strong className="text-foreground">Профилингизни тўлдиринг.</strong>{" "}
+              <span className="text-muted-foreground">Телефон, иш вақти ва касалхона маълумотлари бемор PDF'ида кўринади.</span>
+            </div>
+            <Link to="/profile">
+              <Button size="sm" variant="outline" className="rounded-xl shrink-0">Тўлдириш</Button>
+            </Link>
           </div>
         )}
 

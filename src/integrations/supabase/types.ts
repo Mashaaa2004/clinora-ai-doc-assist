@@ -52,25 +52,40 @@ export type Database = {
           created_at: string
           full_name: string
           hospital: string
+          hospital_address: string
+          hospital_phone: string
           id: string
+          phone: string
+          specialty: string
           updated_at: string
           user_id: string
+          work_hours: string
         }
         Insert: {
           created_at?: string
           full_name?: string
           hospital?: string
+          hospital_address?: string
+          hospital_phone?: string
           id?: string
+          phone?: string
+          specialty?: string
           updated_at?: string
           user_id: string
+          work_hours?: string
         }
         Update: {
           created_at?: string
           full_name?: string
           hospital?: string
+          hospital_address?: string
+          hospital_phone?: string
           id?: string
+          phone?: string
+          specialty?: string
           updated_at?: string
           user_id?: string
+          work_hours?: string
         }
         Relationships: []
       }
