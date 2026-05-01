@@ -521,6 +521,19 @@ const AppPage = () => {
           </div>
         )}
 
+        {profile && (!profile.phone || !profile.hospital_phone) && (
+          <div className="mb-6 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-sm flex items-start gap-3">
+            <User className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <strong className="text-foreground">Профилингизни тўлдиринг.</strong>{" "}
+              <span className="text-muted-foreground">Телефон, иш вақти ва касалхона маълумотлари бемор PDF'ида кўринади.</span>
+            </div>
+            <Link to="/profile">
+              <Button size="sm" variant="outline" className="rounded-xl shrink-0">Тўлдириш</Button>
+            </Link>
+          </div>
+        )}
+
         {/* Recorder */}
         <section className={cardCls + " md:p-8"}>
           <div className="flex flex-col items-center text-center">
