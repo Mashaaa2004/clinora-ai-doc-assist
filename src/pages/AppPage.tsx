@@ -484,7 +484,22 @@ const AppPage = () => {
 
 <script>
   window.addEventListener('load', function() {
-    setTimeout(function() { window.print(); }, 600);
+    // Force-fit content to 1 page by progressively shrinking the .content area
+    setTimeout(function() {
+      try {
+        var content = document.querySelector('.content');
+        var scale = 1;
+        // Shrink only if content scrollHeight exceeds clientHeight
+        while (content && content.scrollHeight > content.clientHeight && scale > 0.55) {
+          scale -= 0.04;
+          content.style.transformOrigin = 'top left';
+          content.style.transform = 'scale(' + scale + ')';
+          content.style.width = (100 / scale) + '%';
+          content.style.height = (100 / scale) + '%';
+        }
+      } catch(e) {}
+      setTimeout(function() { window.print(); }, 300);
+    }, 600);
   });
 </script>
 </body>
