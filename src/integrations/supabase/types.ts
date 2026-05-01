@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      consultations: {
+        Row: {
+          created_at: string
+          diagnosis: string
+          id: string
+          patient_name: string
+          prescriptions: Json
+          recommendation: string
+          symptoms: Json
+          transcript: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          diagnosis?: string
+          id?: string
+          patient_name?: string
+          prescriptions?: Json
+          recommendation?: string
+          symptoms?: Json
+          transcript?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          diagnosis?: string
+          id?: string
+          patient_name?: string
+          prescriptions?: Json
+          recommendation?: string
+          symptoms?: Json
+          transcript?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       prescriptions_log: {
         Row: {
           created_at: string
