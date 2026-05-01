@@ -266,6 +266,18 @@ const AppPage = () => {
         prescriptions_count: cleaned.prescriptions.length,
       });
       if (error) console.error("log insert failed:", error);
+
+      // Save full consultation history for this doctor
+      const { error: cErr } = await supabase.from("consultations").insert({
+        user_id: user.id,
+        patient_name: conf.patientName,
+        transcript,
+        symptoms: cleaned.symptoms,
+        diagnosis: cleaned.diagnosis,
+        recommendation: cleaned.recommendation,
+        prescriptions: cleaned.prescriptions,
+      });
+      if (cErr) console.error("consultation insert failed:", cErr);
     }
     toast.success("Тасдиқланди — PDF юклаб олса бўлади");
   };
