@@ -61,7 +61,7 @@ const emptyPrescription = (): Prescription => ({
 });
 
 const AppPage = () => {
-  const { profile, user, signOut } = useAuth();
+  const { profile, user, signOut, isPro } = useAuth();
   const [transcript, setTranscript] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
