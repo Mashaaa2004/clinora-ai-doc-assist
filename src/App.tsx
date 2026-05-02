@@ -13,6 +13,8 @@ import Analytics from "./pages/Analytics.tsx";
 import Profile from "./pages/Profile.tsx";
 import History from "./pages/History.tsx";
 import Pricing from "./pages/Pricing.tsx";
+import AdminLogin from "./pages/AdminLogin.tsx";
+import AdminDashboard from "./pages/AdminDashboard.tsx";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +33,8 @@ const App = () => (
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
             <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

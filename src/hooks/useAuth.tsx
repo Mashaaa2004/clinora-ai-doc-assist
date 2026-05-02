@@ -10,14 +10,19 @@ type Profile = {
   hospital_phone: string;
   hospital_address: string;
   specialty: string;
+  avatar_url: string;
 };
 
 type Ctx = {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
+  isAdmin: boolean;
+  isPro: boolean;
+  proExpiresAt: string | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
+  refreshStatus: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -27,12 +32,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isPro, setIsPro] = useState(false);
+  const [proExpiresAt, setProExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadProfile = async (uid: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("full_name,hospital,phone,work_hours,hospital_phone,hospital_address,specialty")
+      .select("full_name,hospital,phone,work_hours,hospital_phone,hospital_address,specialty,avatar_url")
       .eq("user_id", uid)
       .maybeSingle();
     setProfile(
@@ -44,8 +52,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         hospital_phone: "",
         hospital_address: "",
         specialty: "",
+        avatar_url: "",
       },
     );
+  };
+
+  const loadStatus = async (uid: string) => {
+    const [{ data: roles }, { data: subs }] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", uid),
+      supabase
+        .from("subscriptions")
+        .select("expires_at,is_active")
+        .eq("user_id", uid)
+        .eq("is_active", true)
+        .gt("expires_at", new Date().toISOString())
+        .order("expires_at", { ascending: false })
+        .limit(1),
+    ]);
+    setIsAdmin((roles ?? []).some((r: any) => r.role === "admin"));
+    const sub = subs?.[0];
+    setIsPro(!!sub);
+    setProExpiresAt(sub?.expires_at ?? null);
   };
 
   useEffect(() => {
@@ -53,16 +80,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        setTimeout(() => loadProfile(s.user.id), 0);
+        setTimeout(() => {
+          loadProfile(s.user.id);
+          loadStatus(s.user.id);
+        }, 0);
       } else {
         setProfile(null);
+        setIsAdmin(false);
+        setIsPro(false);
+        setProExpiresAt(null);
       }
     });
 
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) loadProfile(s.user.id).finally(() => setLoading(false));
+      if (s?.user)
+        Promise.all([loadProfile(s.user.id), loadStatus(s.user.id)]).finally(() =>
+          setLoading(false),
+        );
       else setLoading(false);
     });
 
@@ -73,12 +109,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (user) await loadProfile(user.id);
   };
 
+  const refreshStatus = async () => {
+    if (user) await loadStatus(user.id);
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, refreshProfile, signOut }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        user,
+        profile,
+        isAdmin,
+        isPro,
+        proExpiresAt,
+        loading,
+        refreshProfile,
+        refreshStatus,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

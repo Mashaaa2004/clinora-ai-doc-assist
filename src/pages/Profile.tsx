@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Save, Stethoscope } from "lucide-react";
+import { ArrowLeft, Camera, Crown, Loader2, Save, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,9 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 const ProfilePage = () => {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, isPro, proExpiresAt } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     full_name: "",
     specialty: "",
@@ -37,6 +39,35 @@ const ProfilePage = () => {
   }, [profile]);
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const onPickAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (!isPro) {
+      toast.error("Аватар юклаш фақат Pro фойдаланувчилар учун");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error("Расм 3 МБ дан кичик бўлсин");
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) {
+      setUploading(false);
+      toast.error("Расм юкланмади");
+      return;
+    }
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    await supabase.from("profiles").update({ avatar_url: pub.publicUrl }).eq("user_id", user.id);
+    await refreshProfile();
+    setUploading(false);
+    toast.success("Профиль расми янгиланди");
+  };
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +105,51 @@ const ProfilePage = () => {
 
       <main className="container max-w-2xl py-8 md:py-12">
         <div className="rounded-3xl border border-border bg-card p-6 shadow-md md:p-8">
-          <h1 className="text-2xl font-semibold">Шифокор маълумотлари</h1>
+          <div className="flex flex-col items-center gap-3 pb-6 border-b border-border">
+            <div className="relative">
+              <div
+                className="h-24 w-24 overflow-hidden rounded-full border-4 shadow-md"
+                style={{ borderColor: isPro ? "hsl(var(--primary))" : "hsl(var(--border))" }}
+              >
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Профиль" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-muted text-2xl font-semibold text-muted-foreground">
+                    {(form.full_name || "?").charAt(0)}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                disabled={!isPro || uploading}
+                onClick={() => fileRef.current?.click()}
+                className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full text-primary-foreground shadow-md disabled:opacity-50"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPickAvatar} />
+            </div>
+            {isPro ? (
+              <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                <Crown className="h-3.5 w-3.5" /> PRO шифокор
+                {proExpiresAt && (
+                  <span className="text-muted-foreground">
+                    · {new Date(proExpiresAt).toLocaleDateString("ru-RU")} гача
+                  </span>
+                )}
+              </div>
+            ) : (
+              <Link
+                to="/pricing"
+                className="text-xs text-muted-foreground underline hover:text-primary"
+              >
+                Pro олиб расм юкланг
+              </Link>
+            )}
+          </div>
+
+          <h1 className="mt-6 text-2xl font-semibold">Шифокор маълумотлари</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Бу маълумотлар бемор учун чиқарилган PDF ҳужжатида кўринади.
           </p>
