@@ -142,6 +142,11 @@ const AuthPage = () => {
                 </>
               )}
             </div>
+            <div className="mt-4 text-center">
+              <Link to="/admin/login" className="text-xs text-muted-foreground hover:text-primary">
+                Админ кириши →
+              </Link>
+            </div>
           </div>
         </div>
       </div>
