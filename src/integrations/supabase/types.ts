@@ -53,6 +53,66 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          duration_months: number
+          id: string
+          note: string | null
+          plan: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          duration_months: number
+          id?: string
+          note?: string | null
+          plan: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          duration_months?: number
+          id?: string
+          note?: string | null
+          plan?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          card_holder: string
+          card_number: string
+          id: number
+          pro_price_monthly: number
+          telegram_support: string
+          updated_at: string
+        }
+        Insert: {
+          card_holder?: string
+          card_number?: string
+          id?: number
+          pro_price_monthly?: number
+          telegram_support?: string
+          updated_at?: string
+        }
+        Update: {
+          card_holder?: string
+          card_number?: string
+          id?: number
+          pro_price_monthly?: number
+          telegram_support?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prescriptions_log: {
         Row: {
           created_at: string
@@ -88,6 +148,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string
           created_at: string
           full_name: string
           hospital: string
@@ -101,6 +162,7 @@ export type Database = {
           work_hours: string
         }
         Insert: {
+          avatar_url?: string
           created_at?: string
           full_name?: string
           hospital?: string
@@ -114,6 +176,7 @@ export type Database = {
           work_hours?: string
         }
         Update: {
+          avatar_url?: string
           created_at?: string
           full_name?: string
           hospital?: string
@@ -128,15 +191,82 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          activated_by: string | null
+          branding_name: string | null
+          created_at: string
+          duration_months: number
+          expires_at: string
+          id: string
+          is_active: boolean
+          plan: string
+          starts_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_by?: string | null
+          branding_name?: string | null
+          created_at?: string
+          duration_months: number
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          plan: string
+          starts_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_by?: string | null
+          branding_name?: string | null
+          created_at?: string
+          duration_months?: number
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          plan?: string
+          starts_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_pro: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "doctor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -263,6 +393,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "doctor"],
+    },
   },
 } as const
