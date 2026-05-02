@@ -555,9 +555,14 @@ const AppPage = () => {
               </Button>
             </Link>
             <Link to="/pricing">
-              <Button variant="ghost" size="sm" className="rounded-full text-primary">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-full text-primary"
+                style={isPro ? { background: "hsl(var(--primary) / 0.12)" } : undefined}
+              >
                 <Crown className="h-4 w-4 sm:mr-1.5" />
-                <span className="hidden md:inline">Pro</span>
+                <span className="hidden md:inline">{isPro ? "PRO" : "Pro"}</span>
               </Button>
             </Link>
             <Button variant="ghost" size="sm" onClick={signOut} className="rounded-full">
