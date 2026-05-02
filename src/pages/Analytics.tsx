@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Building2, FileCheck2, Stethoscope, TrendingUp, Loader2 } from "lucide-react";
+import { ArrowLeft, Award, Building2, Crown, FileCheck2, Stethoscope, TrendingUp, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 type Stats = {
@@ -9,6 +9,7 @@ type Stats = {
   prescriptions: number;
   last7d: number;
   topHospitals: { hospital: string; count: number }[];
+  topDoctors: { doctor_name: string; hospital: string; count: number }[];
   recent: { doctor_name: string; hospital: string; patient_name: string; created_at: string }[];
 };
 
@@ -47,12 +48,27 @@ const Analytics = () => {
           .slice(0, 5)
           .map(([hospital, count]) => ({ hospital, count }));
 
+        // Top doctors by patient count
+        const docCounter = new Map<string, { count: number; hospital: string }>();
+        (logs ?? []).forEach((l) => {
+          const name = (l.doctor_name || "").trim();
+          if (!name) return;
+          const cur = docCounter.get(name) ?? { count: 0, hospital: l.hospital || "" };
+          cur.count += 1;
+          docCounter.set(name, cur);
+        });
+        const topDoctors = [...docCounter.entries()]
+          .sort((a, b) => b[1].count - a[1].count)
+          .slice(0, 5)
+          .map(([doctor_name, v]) => ({ doctor_name, hospital: v.hospital, count: v.count }));
+
         setS({
           doctors,
           hospitals: hospitalSet.size,
           prescriptions,
           last7d,
           topHospitals,
+          topDoctors,
           recent: (logs ?? []).slice(0, 8),
         });
       } finally {
@@ -106,6 +122,48 @@ const Analytics = () => {
                     );
                   })}
                 </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">Ҳали маълумот йўқ</p>
+              )}
+            </section>
+
+            <section className="mt-6 rounded-3xl border border-border bg-card p-6 shadow-md">
+              <div className="mb-4 flex items-center gap-2">
+                <Award className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">
+                  Энг кўп бемор кўрган шифокорлар
+                </h2>
+              </div>
+              {s.topDoctors.length ? (
+                <ol className="space-y-3">
+                  {s.topDoctors.map((d, i) => (
+                    <li key={d.doctor_name} className="flex items-center gap-3 rounded-2xl border border-border bg-background/50 p-3">
+                      <div
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                        style={{
+                          background: i === 0 ? "linear-gradient(135deg, hsl(45 93% 58%), hsl(35 93% 50%))" :
+                                      i === 1 ? "hsl(var(--muted))" :
+                                      i === 2 ? "linear-gradient(135deg, hsl(25 75% 55%), hsl(15 75% 45%))" :
+                                      "hsl(var(--muted))",
+                          color: i < 3 ? "white" : "hsl(var(--muted-foreground))",
+                        }}
+                      >
+                        {i + 1}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 truncate font-medium">
+                          {d.doctor_name}
+                          {i === 0 && <Crown className="h-3.5 w-3.5 text-warning" />}
+                        </div>
+                        <div className="truncate text-xs text-muted-foreground">{d.hospital || "—"}</div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="text-lg font-bold text-primary">{d.count}</div>
+                        <div className="text-[10px] text-muted-foreground">бемор</div>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
               ) : (
                 <p className="text-sm text-muted-foreground">Ҳали маълумот йўқ</p>
               )}
