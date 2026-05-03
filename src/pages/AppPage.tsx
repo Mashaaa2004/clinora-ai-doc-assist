@@ -160,6 +160,14 @@ const AppPage = () => {
       toast.error("Аввал бемор суҳбатини ёзинг");
       return;
     }
+    // Free-tier daily limit: 5 analyses/day
+    if (!isPro && user) {
+      const { data: cnt } = await supabase.rpc("daily_usage_count", { _user_id: user.id });
+      if ((cnt ?? 0) >= 5) {
+        toast.error("Бепул тарифда кунига 5 та таҳлил мумкин. Pro'га ўтинг!");
+        return;
+      }
+    }
     if (isRecording) {
       recognitionRef.current?.stop();
       setIsRecording(false);

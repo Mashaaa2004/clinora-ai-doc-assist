@@ -18,7 +18,7 @@ type Consultation = {
 };
 
 const HistoryPage = () => {
-  const { user } = useAuth();
+  const { user, isPro } = useAuth();
   const [items, setItems] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -27,11 +27,13 @@ const HistoryPage = () => {
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("consultations")
       .select("id,patient_name,diagnosis,recommendation,symptoms,prescriptions,created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
+    if (!isPro) query = query.limit(10);
+    const { data, error } = await query;
     setLoading(false);
     if (error) {
       toast.error("Юкланмади");
@@ -40,7 +42,7 @@ const HistoryPage = () => {
     setItems((data ?? []) as any);
   };
 
-  useEffect(() => { load(); }, [user]);
+  useEffect(() => { load(); }, [user, isPro]);
 
   const remove = async (id: string) => {
     if (!confirm("Ўчирилсинми?")) return;
@@ -107,6 +109,13 @@ const HistoryPage = () => {
               <div className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
                 <FileText className="mx-auto mb-3 h-8 w-8 opacity-40" />
                 Ҳозирча ёзувлар йўқ. Биринчи беморни қабул қилиб, тасдиқлаганингиздан сўнг шу ерда сақланади.
+              </div>
+            )}
+
+            {!loading && !isPro && items.length >= 10 && (
+              <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 text-center text-sm">
+                Бепул тарифда фақат охирги <b>10 та</b> ёзув кўрсатилади.{" "}
+                <Link to="/pricing" className="font-semibold text-primary underline">Pro'га ўтиш</Link>
               </div>
             )}
 
