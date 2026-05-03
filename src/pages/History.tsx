@@ -18,7 +18,7 @@ type Consultation = {
 };
 
 const HistoryPage = () => {
-  const { user } = useAuth();
+  const { user, isPro } = useAuth();
   const [items, setItems] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -27,11 +27,13 @@ const HistoryPage = () => {
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("consultations")
       .select("id,patient_name,diagnosis,recommendation,symptoms,prescriptions,created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
+    if (!isPro) query = query.limit(10);
+    const { data, error } = await query;
     setLoading(false);
     if (error) {
       toast.error("Юкланмади");
