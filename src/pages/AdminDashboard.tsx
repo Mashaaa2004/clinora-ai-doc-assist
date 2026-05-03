@@ -39,8 +39,35 @@ type Sub = {
 const AdminDashboard = () => {
   const { isAdmin, loading, signOut, user } = useAuth();
   const [tab, setTab] = useState<"requests" | "users" | "subs" | "settings">("requests");
+  const [adminAllowed, setAdminAllowed] = useState<boolean | null>(null);
 
-  if (loading) {
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      setAdminAllowed(false);
+      return;
+    }
+    if (isAdmin) {
+      setAdminAllowed(true);
+      return;
+    }
+
+    let active = true;
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .then(({ data }) => {
+        if (active) setAdminAllowed(!!data?.length);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isAdmin, loading, user]);
+
+  if (loading || (user && adminAllowed === null)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -48,7 +75,7 @@ const AdminDashboard = () => {
     );
   }
   if (!user) return <Navigate to="/admin/login" replace />;
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!adminAllowed) return <Navigate to="/admin/login" replace />;
 
   return (
     <div className="min-h-screen" style={{ background: "var(--gradient-soft)" }}>
