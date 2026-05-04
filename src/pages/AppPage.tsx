@@ -883,6 +883,43 @@ const AppPage = () => {
               </div>
             </div>
 
+            {/* Lab tests */}
+            <div className={cardCls}>
+              <h3 className={labelCls}><FlaskConical className="h-4 w-4" /> Лаборатория текширувлари</h3>
+              <p className="-mt-2 mb-4 text-xs text-muted-foreground">
+                AI таклиф қилди. Натижа келганидан сўнг шу ерда ёки PDF'да тўлдиринг.
+              </p>
+              <div className="space-y-3">
+                {(result.lab_tests || []).map((l, i) => (
+                  <div key={i} className="rounded-2xl border border-border/70 bg-background/60 p-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-medium text-muted-foreground">№ {i + 1}</span>
+                      <Button variant="ghost" size="icon" onClick={() => removeLabTest(i)} className="h-7 w-7">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      <div>
+                        <label className="mb-1 block text-xs text-muted-foreground">Текширув номи</label>
+                        <Input value={l.name} onChange={(e) => updateLabTest(i, "name", e.target.value)} className="rounded-xl" placeholder="Умумий қон таҳлили" />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-muted-foreground">Сабаб (нима учун)</label>
+                        <Input value={l.reason || ""} onChange={(e) => updateLabTest(i, "reason", e.target.value)} className="rounded-xl" placeholder="Анемияни истисно қилиш" />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-muted-foreground">Натижа (ихтиёрий — кейин тўлдириш мумкин)</label>
+                        <Input value={l.result || ""} onChange={(e) => updateLabTest(i, "result", e.target.value)} className="rounded-xl" placeholder="Бўш қолдирсангиз PDF'да жой бўлади" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Button variant="outline" onClick={addLabTest} className="rounded-xl w-full">
+                  <Plus className="mr-2 h-4 w-4" /> Текширув қўшиш
+                </Button>
+              </div>
+            </div>
+
             <Button
               onClick={handleConfirm}
               size="lg"
