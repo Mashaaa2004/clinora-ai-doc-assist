@@ -7,6 +7,7 @@ import {
   Crown,
   Download,
   FileText,
+  FlaskConical,
   History as HistoryIcon,
   Loader2,
   LogOut,
@@ -28,6 +29,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import SupportFooter from "@/components/SupportFooter";
+import QRCode from "qrcode";
 
 type Prescription = {
   name: string;
@@ -37,11 +39,18 @@ type Prescription = {
   notes?: string;
 };
 
+type LabTest = {
+  name: string;
+  reason?: string;
+  result?: string;
+};
+
 type AnalysisResult = {
   symptoms: string[];
   diagnosis: string;
   recommendation: string;
   prescriptions: Prescription[];
+  lab_tests: LabTest[];
 };
 
 type Confirmed = {
@@ -59,6 +68,8 @@ const emptyPrescription = (): Prescription => ({
   duration: "",
   notes: "",
 });
+
+const emptyLabTest = (): LabTest => ({ name: "", reason: "", result: "" });
 
 const AppPage = () => {
   const { profile, user, signOut, isPro } = useAuth();
@@ -175,9 +186,35 @@ const AppPage = () => {
     setIsAnalyzing(true);
     setResult(null);
     setConfirmed(null);
+
+    // Build previous history context for this patient (across all doctors)
+    let previousHistory = "";
+    const pn = patientName.trim();
+    if (pn.length >= 2) {
+      const { data: prev } = await supabase
+        .from("consultations")
+        .select("created_at,diagnosis,symptoms,recommendation,prescriptions,lab_tests")
+        .ilike("patient_name", pn)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (prev && prev.length > 0) {
+        previousHistory = prev
+          .map((c: any, i: number) => {
+            const d = new Date(c.created_at).toLocaleDateString("ru-RU");
+            const sx = Array.isArray(c.symptoms) ? c.symptoms.join(", ") : "";
+            const rx = Array.isArray(c.prescriptions) ? c.prescriptions.map((p: any) => p.name).join(", ") : "";
+            const labs = Array.isArray(c.lab_tests)
+              ? c.lab_tests.map((l: any) => `${l.name}${l.result ? `: ${l.result}` : ""}`).join("; ")
+              : "";
+            return `[${i + 1}] ${d} — Ташхис: ${c.diagnosis || "—"}. Симптомлар: ${sx || "—"}. Дорилар: ${rx || "—"}. Лаб: ${labs || "—"}. Тавсия: ${c.recommendation || "—"}`;
+          })
+          .join("\n");
+      }
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke("analyze", {
-        body: { transcript },
+        body: { transcript, previousHistory },
       });
       if (error) {
         const msg = (error as any).context?.error || (error as any).message || "Хатолик";
@@ -190,6 +227,7 @@ const AppPage = () => {
       }
       const res = data as AnalysisResult;
       if (!res.prescriptions) res.prescriptions = [];
+      if (!res.lab_tests) res.lab_tests = [];
       setResult(res);
       persist({ result: res, confirmed: null });
       toast.success("Таҳлил тайёр — таҳрирлаб тасдиқланг");
@@ -237,6 +275,16 @@ const AppPage = () => {
   const addPrescription = () =>
     updateResult((r) => ({ ...r, prescriptions: [...r.prescriptions, emptyPrescription()] }));
 
+  const updateLabTest = (i: number, field: keyof LabTest, v: string) =>
+    updateResult((r) => ({
+      ...r,
+      lab_tests: r.lab_tests.map((l, idx) => (idx === i ? { ...l, [field]: v } : l)),
+    }));
+  const removeLabTest = (i: number) =>
+    updateResult((r) => ({ ...r, lab_tests: r.lab_tests.filter((_, idx) => idx !== i) }));
+  const addLabTest = () =>
+    updateResult((r) => ({ ...r, lab_tests: [...r.lab_tests, emptyLabTest()] }));
+
   const handleConfirm = async () => {
     if (!result) return;
     const cleaned: AnalysisResult = {
@@ -251,6 +299,13 @@ const AppPage = () => {
           notes: p.notes?.trim() || "",
         }))
         .filter((p) => p.name),
+      lab_tests: (result.lab_tests || [])
+        .map((l) => ({
+          name: l.name.trim(),
+          reason: l.reason?.trim() || "",
+          result: l.result?.trim() || "",
+        }))
+        .filter((l) => l.name),
     };
     if (!cleaned.diagnosis.trim()) {
       toast.error("Ташхис бўш бўлмаслиги керак");
@@ -284,6 +339,7 @@ const AppPage = () => {
         diagnosis: cleaned.diagnosis,
         recommendation: cleaned.recommendation,
         prescriptions: cleaned.prescriptions,
+        lab_tests: cleaned.lab_tests,
       });
       if (cErr) console.error("consultation insert failed:", cErr);
     }
@@ -296,7 +352,7 @@ const AppPage = () => {
   };
 
   // ---- PDF (open print window with full Cyrillic support) ----
-  const generatePdf = () => {
+  const generatePdf = async () => {
     if (!confirmed) return;
     const { result: r, patientName: pn, confirmedAt } = confirmed;
     const dateStr = new Date(confirmedAt).toLocaleString("ru-RU");
@@ -307,6 +363,23 @@ const AppPage = () => {
     const hosp = profile?.hospital?.trim() || "";
     const hospPhone = profile?.hospital_phone?.trim() || "";
     const hospAddr = profile?.hospital_address?.trim() || "";
+
+    // Build QR payload (compact JSON) and generate dataURL
+    const qrPayload = JSON.stringify({
+      app: "Clinora",
+      patient: pn,
+      doctor: docName,
+      hospital: hosp,
+      date: confirmedAt,
+      diagnosis: r.diagnosis?.slice(0, 120) || "",
+      rx: (r.prescriptions || []).map((p) => p.name),
+    });
+    let qrDataUrl = "";
+    try {
+      qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 220, margin: 1 });
+    } catch (e) {
+      console.warn("QR generation failed", e);
+    }
 
     const esc = (s: string) =>
       s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -341,6 +414,30 @@ const AppPage = () => {
           </tbody>
         </table>`
       : `<p class="muted">—</p>`;
+
+    const labs = r.lab_tests || [];
+    const labsHtml = labs.length
+      ? `<table class="rx">
+          <thead><tr>
+            <th style="width:28px">№</th>
+            <th>Текширув номи</th>
+            <th>Сабаб</th>
+            <th style="width:35%">Натижа</th>
+          </tr></thead>
+          <tbody>
+            ${labs
+              .map(
+                (l, i) => `<tr>
+                  <td>${i + 1}</td>
+                  <td><strong>${esc(l.name)}</strong></td>
+                  <td>${esc(l.reason || "—")}</td>
+                  <td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td>
+                </tr>`,
+              )
+              .join("")}
+          </tbody>
+        </table>`
+      : "";
 
     const html = `<!DOCTYPE html>
 <html lang="uz">
@@ -454,6 +551,8 @@ const AppPage = () => {
 
   <h2 class="section">Рецепт (дорилар)</h2>
   ${rxHtml}
+
+  ${labs.length ? `<h2 class="section">Лаборатория ва инструментал текширувлар</h2>${labsHtml}` : ""}
   </div>
 
   <div class="bottom">
@@ -464,6 +563,10 @@ const AppPage = () => {
       ${docPhone ? `<div class="contact">☎ ${esc(docPhone)}</div>` : ""}
       ${workHours ? `<div class="contact">🕒 ${esc(workHours)}</div>` : ""}
     </div>
+    ${qrDataUrl ? `<div style="text-align:center;font-size:9px;color:#6b7280">
+      <img src="${qrDataUrl}" alt="QR" style="width:70px;height:70px;display:block;margin:0 auto 2px" />
+      Тасдиқ QR
+    </div>` : ""}
     <div class="sig-line">
       <div class="line"></div>
       Шифокор имзоси / муҳри
