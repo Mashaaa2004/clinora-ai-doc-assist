@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           diagnosis: string
           id: string
+          lab_tests: Json
           patient_name: string
           prescriptions: Json
           recommendation: string
@@ -31,6 +32,7 @@ export type Database = {
           created_at?: string
           diagnosis?: string
           id?: string
+          lab_tests?: Json
           patient_name?: string
           prescriptions?: Json
           recommendation?: string
@@ -43,6 +45,7 @@ export type Database = {
           created_at?: string
           diagnosis?: string
           id?: string
+          lab_tests?: Json
           patient_name?: string
           prescriptions?: Json
           recommendation?: string

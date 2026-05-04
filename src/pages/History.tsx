@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, FileText, Loader2, Search, Stethoscope, Trash2, User } from "lucide-react";
+import { ArrowLeft, FileText, FlaskConical, Loader2, Search, Stethoscope, Trash2, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -14,6 +14,8 @@ type Consultation = {
   recommendation: string;
   symptoms: string[];
   prescriptions: { name: string; dosage: string; frequency: string; duration: string; notes?: string }[];
+  lab_tests?: { name: string; reason?: string; result?: string }[];
+  user_id: string;
   created_at: string;
 };
 
@@ -23,15 +25,17 @@ const HistoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [scope, setScope] = useState<"mine" | "all">("mine");
+  const [doctorNames, setDoctorNames] = useState<Record<string, string>>({});
 
   const load = async () => {
     if (!user) return;
     setLoading(true);
     let query = supabase
       .from("consultations")
-      .select("id,patient_name,diagnosis,recommendation,symptoms,prescriptions,created_at")
-      .eq("user_id", user.id)
+      .select("id,user_id,patient_name,diagnosis,recommendation,symptoms,prescriptions,lab_tests,created_at")
       .order("created_at", { ascending: false });
+    if (scope === "mine") query = query.eq("user_id", user.id);
     if (!isPro) query = query.limit(10);
     const { data, error } = await query;
     setLoading(false);
@@ -39,10 +43,24 @@ const HistoryPage = () => {
       toast.error("Юкланмади");
       return;
     }
-    setItems((data ?? []) as any);
+    const list = (data ?? []) as any as Consultation[];
+    setItems(list);
+    // Load doctor names for shared view
+    if (scope === "all" && list.length) {
+      const ids = Array.from(new Set(list.map((x) => x.user_id)));
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id,full_name,hospital")
+        .in("user_id", ids);
+      const map: Record<string, string> = {};
+      (profs || []).forEach((p: any) => {
+        map[p.user_id] = p.full_name ? `Др. ${p.full_name}${p.hospital ? ` · ${p.hospital}` : ""}` : "Шифокор";
+      });
+      setDoctorNames(map);
+    }
   };
 
-  useEffect(() => { load(); }, [user, isPro]);
+  useEffect(() => { load(); }, [user, isPro, scope]);
 
   const remove = async (id: string) => {
     if (!confirm("Ўчирилсинми?")) return;
@@ -80,12 +98,31 @@ const HistoryPage = () => {
             <div>
               <h1 className="text-2xl font-semibold">Беморлар тарихи</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Сиз кўрган ҳар бир бемор бу ерда сақланади.
+                {scope === "mine" ? "Сиз кўрган ҳар бир бемор." : "Барча шифокорлар кўрган беморлар."}
               </p>
             </div>
             <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
               {items.length}
             </span>
+          </div>
+
+          <div className="mt-4 flex gap-2">
+            <Button
+              variant={scope === "mine" ? "default" : "outline"}
+              size="sm"
+              className="rounded-xl"
+              onClick={() => setScope("mine")}
+            >
+              <User className="mr-2 h-4 w-4" /> Менинг
+            </Button>
+            <Button
+              variant={scope === "all" ? "default" : "outline"}
+              size="sm"
+              className="rounded-xl"
+              onClick={() => setScope("all")}
+            >
+              <Users className="mr-2 h-4 w-4" /> Барча шифокорлар
+            </Button>
           </div>
 
           <div className="mt-5 relative">
@@ -121,6 +158,7 @@ const HistoryPage = () => {
 
             {!loading && filtered.map((x) => {
               const open = openId === x.id;
+              const isMine = x.user_id === user?.id;
               return (
                 <div key={x.id} className="rounded-2xl border border-border bg-background/60">
                   <button
@@ -135,6 +173,7 @@ const HistoryPage = () => {
                         <div className="font-medium truncate">{x.patient_name || "Бемор"}</div>
                         <div className="text-xs text-muted-foreground truncate">
                           {x.diagnosis || "—"} · {new Date(x.created_at).toLocaleDateString("ru-RU")}
+                          {scope === "all" && doctorNames[x.user_id] ? ` · ${doctorNames[x.user_id]}` : ""}
                         </div>
                       </div>
                     </div>
@@ -176,10 +215,36 @@ const HistoryPage = () => {
                           </ol>
                         </div>
                       )}
+                      {x.lab_tests && x.lab_tests.length > 0 && (
+                        <div>
+                          <div className="mb-1 flex items-center gap-1 text-xs uppercase text-muted-foreground">
+                            <FlaskConical className="h-3 w-3" /> Лаборатория текширувлари
+                          </div>
+                          <ol className="space-y-2">
+                            {x.lab_tests.map((l, i) => (
+                              <li key={i} className="rounded-xl bg-muted/40 p-3">
+                                <div className="font-medium">{i + 1}. {l.name}</div>
+                                {l.reason && <div className="text-xs text-muted-foreground">Сабаб: {l.reason}</div>}
+                                <div className="text-xs">
+                                  <span className="text-muted-foreground">Натижа: </span>
+                                  {l.result || <span className="italic text-muted-foreground">—</span>}
+                                </div>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      )}
+                      {scope === "all" && doctorNames[x.user_id] && (
+                        <div className="text-xs text-muted-foreground">
+                          Қабул қилган: <b>{doctorNames[x.user_id]}</b>
+                        </div>
+                      )}
                       <div className="pt-2 flex justify-end">
-                        <Button variant="outline" size="sm" onClick={() => remove(x.id)} className="rounded-xl text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" /> Ўчириш
-                        </Button>
+                        {isMine && (
+                          <Button variant="outline" size="sm" onClick={() => remove(x.id)} className="rounded-xl text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" /> Ўчириш
+                          </Button>
+                        )}
                       </div>
                     </div>
                   )}

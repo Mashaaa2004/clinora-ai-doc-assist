@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { transcript } = await req.json();
+    const { transcript, previousHistory } = await req.json();
     if (!transcript || typeof transcript !== "string" || transcript.trim().length < 3) {
       return new Response(JSON.stringify({ error: "Матн бўш ёки жуда қисқа" }), {
         status: 400,
@@ -22,7 +22,11 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY мавжуд эмас");
 
-    const systemPrompt = `Сиз — тажрибали тиббий ёрдамчи AI сиз. Шифокор ёзиб олган бемор билан суҳбатни таҳлил қилиб, фақат қисқа ва аниқ маълумот беринг. Жавобни ҳамиша КИРИЛЛ ўзбек тилида қайтаринг. Натижани structured tool орқали юборинг.`;
+    const systemPrompt = `Сиз — тажрибали тиббий ёрдамчи AI сиз. Шифокор ёзиб олган бемор билан суҳбатни таҳлил қилиб, фақат қисқа ва аниқ маълумот беринг. Агар беморнинг олдинги ташрифлари тарихи берилган бўлса, уни ҳам инобатга олиб таҳлил қилинг (сурункали касалликлар, аввалги ташхислар, такрорланаётган симптомлар). Жавобни ҳамиша КИРИЛЛ ўзбек тилида қайтаринг. Натижани structured tool орқали юборинг.`;
+
+    const userContent = previousHistory && typeof previousHistory === "string" && previousHistory.trim().length > 0
+      ? `БЕМОРНИНГ ОЛДИНГИ ТАШРИФЛАРИ ТАРИХИ:\n${previousHistory}\n\n=====\n\nБУГУНГИ СУҲБАТ:\n"""${transcript}"""\n\nИккаласини ҳисобга олиб таҳлил қилинг.`
+      : `Қуйидаги бемор суҳбатини тиббий тарзда таҳлил қил:\n\n"""${transcript}"""`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -34,7 +38,7 @@ Deno.serve(async (req) => {
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Қуйидаги бемор суҳбатини тиббий тарзда таҳлил қил:\n\n"""${transcript}"""` },
+          { role: "user", content: userContent },
         ],
         tools: [
           {
@@ -74,8 +78,21 @@ Deno.serve(async (req) => {
                       additionalProperties: false,
                     },
                   },
+                  lab_tests: {
+                    type: "array",
+                    description: "Тавсия этиладиган лаборатория ва инструментал текширувлар рўйхати (кирилл ўзбек тилида). Масалан: 'Умумий қон таҳлили', 'Қанд миқдори', 'УЗИ', 'ЭКГ'. Натижа киритиш учун жой шифокор томонидан тўлдирилади.",
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: { type: "string", description: "Текширув номи" },
+                        reason: { type: "string", description: "Нима учун керак (қисқа изоҳ)" },
+                      },
+                      required: ["name"],
+                      additionalProperties: false,
+                    },
+                  },
                 },
-                required: ["symptoms", "diagnosis", "recommendation", "prescriptions"],
+                required: ["symptoms", "diagnosis", "recommendation", "prescriptions", "lab_tests"],
                 additionalProperties: false,
               },
             },
