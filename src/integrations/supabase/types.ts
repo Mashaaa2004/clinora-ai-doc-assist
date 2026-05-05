@@ -16,10 +16,15 @@ export type Database = {
     Tables: {
       consultations: {
         Row: {
+          chosen_diagnosis: string
           created_at: string
           diagnosis: string
+          differentials: Json
+          family_advice: string
           id: string
+          instrumental_tests: Json
           lab_tests: Json
+          language: string
           patient_name: string
           prescriptions: Json
           recommendation: string
@@ -29,10 +34,15 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          chosen_diagnosis?: string
           created_at?: string
           diagnosis?: string
+          differentials?: Json
+          family_advice?: string
           id?: string
+          instrumental_tests?: Json
           lab_tests?: Json
+          language?: string
           patient_name?: string
           prescriptions?: Json
           recommendation?: string
@@ -42,10 +52,15 @@ export type Database = {
           user_id: string
         }
         Update: {
+          chosen_diagnosis?: string
           created_at?: string
           diagnosis?: string
+          differentials?: Json
+          family_advice?: string
           id?: string
+          instrumental_tests?: Json
           lab_tests?: Json
+          language?: string
           patient_name?: string
           prescriptions?: Json
           recommendation?: string

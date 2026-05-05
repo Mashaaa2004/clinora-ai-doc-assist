@@ -3,12 +3,15 @@ import { Link } from "react-router-dom";
 import {
   BarChart3,
   Brain,
+  Check,
   CheckCircle2,
   Crown,
   Download,
   FileText,
   FlaskConical,
+  HeartHandshake,
   History as HistoryIcon,
+  HelpCircle,
   Loader2,
   LogOut,
   Mic,
@@ -21,6 +24,7 @@ import {
   Trash2,
   User,
   X,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +32,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useT } from "@/i18n/LanguageContext";
+import { SR_LOCALE, DATE_LOCALE } from "@/i18n/translations";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import GuideModal from "@/components/GuideModal";
 import SupportFooter from "@/components/SupportFooter";
 import QRCode from "qrcode";
 
@@ -39,115 +47,122 @@ type Prescription = {
   notes?: string;
 };
 
-type LabTest = {
+type LabTest = { name: string; reason?: string; result?: string };
+type InstrTest = { name: string; reason?: string; result?: string };
+type Differential = {
   name: string;
-  reason?: string;
-  result?: string;
+  probability: "high" | "medium" | "low";
+  reasoning: string;
 };
 
 type AnalysisResult = {
   symptoms: string[];
-  diagnosis: string;
   recommendation: string;
   prescriptions: Prescription[];
   lab_tests: LabTest[];
+  instrumental_tests: InstrTest[];
+  differentials: Differential[];
+  family_advice: string;
 };
 
-type Confirmed = {
-  patientName: string;
-  result: AnalysisResult;
-  confirmedAt: string;
-};
+const STORAGE_KEY = "clinora:last-result-v2";
+const GUIDE_KEY = "clinora:guide-seen";
 
-const STORAGE_KEY = "clinora:last-result";
+const emptyRx = (): Prescription => ({ name: "", dosage: "", frequency: "", duration: "", notes: "" });
+const emptyLab = (): LabTest => ({ name: "", reason: "", result: "" });
+const emptyInstr = (): InstrTest => ({ name: "", reason: "", result: "" });
 
-const emptyPrescription = (): Prescription => ({
-  name: "",
-  dosage: "",
-  frequency: "",
-  duration: "",
-  notes: "",
-});
-
-const emptyLabTest = (): LabTest => ({ name: "", reason: "", result: "" });
+type Step = 1 | 2 | 3 | 4 | 5;
 
 const AppPage = () => {
   const { profile, user, signOut, isPro } = useAuth();
+  const { t, lang } = useT();
+
+  const [step, setStep] = useState<Step>(1);
   const [transcript, setTranscript] = useState("");
+  const [patientName, setPatientName] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [patientName, setPatientName] = useState("");
-  const [confirmed, setConfirmed] = useState<Confirmed | null>(null);
+  const [chosenIdx, setChosenIdx] = useState<number>(0);
+  const [confirmed, setConfirmed] = useState(false);
   const [supported, setSupported] = useState(true);
+  const [showGuide, setShowGuide] = useState(false);
+
   const recognitionRef = useRef<any>(null);
   const baseTranscriptRef = useRef("");
 
+  // ---- init ----
+  useEffect(() => {
+    if (!localStorage.getItem(GUIDE_KEY)) setShowGuide(true);
+
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const p = JSON.parse(saved);
+        if (p.transcript) {
+          setTranscript(p.transcript);
+          baseTranscriptRef.current = p.transcript;
+        }
+        if (p.patientName) setPatientName(p.patientName);
+        if (p.result) setResult(p.result);
+        if (typeof p.chosenIdx === "number") setChosenIdx(p.chosenIdx);
+        if (typeof p.step === "number") setStep(p.step);
+        if (p.confirmed) setConfirmed(true);
+      } catch {}
+    }
+  }, []);
+
+  // ---- speech recognition (re-init on language change) ----
   useEffect(() => {
     const SR =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
       setSupported(false);
-    } else {
-      const recognition = new SR();
-      recognition.lang = "uz-UZ";
-      recognition.continuous = true;
-      recognition.interimResults = true;
-
-      recognition.onresult = (event: any) => {
-        let interim = "";
-        let finalText = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const t = event.results[i][0].transcript;
-          if (event.results[i].isFinal) finalText += t + " ";
-          else interim += t;
-        }
-        if (finalText) {
-          baseTranscriptRef.current = (baseTranscriptRef.current + " " + finalText).trim();
-        }
-        setTranscript((baseTranscriptRef.current + " " + interim).trim());
-      };
-
-      recognition.onerror = (e: any) => {
-        if (e.error === "not-allowed") toast.error("Микрофонга рухсат берилмади");
-        else if (e.error !== "no-speech" && e.error !== "aborted")
-          toast.error("Овоз танишда хатолик: " + e.error);
-      };
-
-      recognition.onend = () => setIsRecording(false);
-      recognitionRef.current = recognition;
+      return;
     }
+    try { recognitionRef.current?.stop(); } catch {}
 
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.transcript) {
-          setTranscript(parsed.transcript);
-          baseTranscriptRef.current = parsed.transcript;
-        }
-        if (parsed.result) setResult(parsed.result);
-        if (parsed.patientName) setPatientName(parsed.patientName);
-        if (parsed.confirmed) setConfirmed(parsed.confirmed);
-      } catch {}
-    }
+    const recognition = new SR();
+    recognition.lang = SR_LOCALE[lang];
+    recognition.continuous = true;
+    recognition.interimResults = true;
 
-    return () => {
-      try {
-        recognitionRef.current?.stop();
-      } catch {}
+    recognition.onresult = (event: any) => {
+      let interim = "";
+      let finalText = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const tr = event.results[i][0].transcript;
+        if (event.results[i].isFinal) finalText += tr + " ";
+        else interim += tr;
+      }
+      if (finalText) {
+        baseTranscriptRef.current = (baseTranscriptRef.current + " " + finalText).trim();
+      }
+      setTranscript((baseTranscriptRef.current + " " + interim).trim());
     };
-  }, []);
+    recognition.onerror = (e: any) => {
+      if (e.error === "not-allowed") toast.error("Microphone permission denied");
+      else if (e.error !== "no-speech" && e.error !== "aborted")
+        toast.error("Speech error: " + e.error);
+    };
+    recognition.onend = () => setIsRecording(false);
+    recognitionRef.current = recognition;
 
-  const persist = (next: Partial<{ transcript: string; result: AnalysisResult | null; patientName: string; confirmed: Confirmed | null }>) => {
-    const current = {
+    return () => { try { recognition.stop(); } catch {} };
+  }, [lang]);
+
+  const persist = (extra?: Partial<{ result: AnalysisResult | null; chosenIdx: number; step: Step; confirmed: boolean; patientName: string; transcript: string }>) => {
+    const data = {
       transcript,
-      result,
       patientName,
+      result,
+      chosenIdx,
+      step,
       confirmed,
-      ...next,
+      ...extra,
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   };
 
   const toggleRecording = () => {
@@ -160,203 +175,175 @@ const AppPage = () => {
       try {
         recognitionRef.current.start();
         setIsRecording(true);
-      } catch {
-        toast.error("Ёзишни бошлаб бўлмади");
-      }
+      } catch { toast.error("Could not start recording"); }
     }
   };
 
-  const handleAnalyze = async () => {
-    if (!transcript.trim() || transcript.trim().length < 5) {
-      toast.error("Аввал бемор суҳбатини ёзинг");
-      return;
-    }
-    // Free-tier daily limit: 5 analyses/day
+  // ---- run AI analysis ----
+  const runAnalysis = async () => {
+    if (!transcript.trim() || transcript.trim().length < 5) { toast.error(t("err.short")); return; }
     if (!isPro && user) {
       const { data: cnt } = await supabase.rpc("daily_usage_count", { _user_id: user.id });
-      if ((cnt ?? 0) >= 5) {
-        toast.error("Бепул тарифда кунига 5 та таҳлил мумкин. Pro'га ўтинг!");
-        return;
-      }
+      if ((cnt ?? 0) >= 5) { toast.error(t("err.dailyLimit")); return; }
     }
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      setIsRecording(false);
-    }
+    if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); }
     setIsAnalyzing(true);
-    setResult(null);
-    setConfirmed(null);
 
-    // Build previous history context for this patient (across all doctors)
+    // Build previous history
     let previousHistory = "";
     const pn = patientName.trim();
     if (pn.length >= 2) {
       const { data: prev } = await supabase
         .from("consultations")
-        .select("created_at,diagnosis,symptoms,recommendation,prescriptions,lab_tests")
+        .select("created_at,chosen_diagnosis,diagnosis,symptoms,recommendation,prescriptions,lab_tests,instrumental_tests")
         .ilike("patient_name", pn)
         .order("created_at", { ascending: false })
         .limit(5);
       if (prev && prev.length > 0) {
-        previousHistory = prev
-          .map((c: any, i: number) => {
-            const d = new Date(c.created_at).toLocaleDateString("ru-RU");
-            const sx = Array.isArray(c.symptoms) ? c.symptoms.join(", ") : "";
-            const rx = Array.isArray(c.prescriptions) ? c.prescriptions.map((p: any) => p.name).join(", ") : "";
-            const labs = Array.isArray(c.lab_tests)
-              ? c.lab_tests.map((l: any) => `${l.name}${l.result ? `: ${l.result}` : ""}`).join("; ")
-              : "";
-            return `[${i + 1}] ${d} — Ташхис: ${c.diagnosis || "—"}. Симптомлар: ${sx || "—"}. Дорилар: ${rx || "—"}. Лаб: ${labs || "—"}. Тавсия: ${c.recommendation || "—"}`;
-          })
-          .join("\n");
+        previousHistory = prev.map((c: any, i: number) => {
+          const d = new Date(c.created_at).toLocaleDateString(DATE_LOCALE[lang]);
+          const sx = Array.isArray(c.symptoms) ? c.symptoms.join(", ") : "";
+          const rx = Array.isArray(c.prescriptions) ? c.prescriptions.map((p: any) => p.name).join(", ") : "";
+          return `[${i + 1}] ${d} — Dx: ${c.chosen_diagnosis || c.diagnosis || "—"}. Sx: ${sx || "—"}. Rx: ${rx || "—"}. Plan: ${c.recommendation || "—"}`;
+        }).join("\n");
       }
     }
+
+    // Build labResults / instrumentalResults from already-entered values
+    const labResults = (result?.lab_tests || [])
+      .filter((l) => l.result && l.result.trim())
+      .map((l) => `- ${l.name}: ${l.result}`).join("\n");
+    const instrumentalResults = (result?.instrumental_tests || [])
+      .filter((l) => l.result && l.result.trim())
+      .map((l) => `- ${l.name}: ${l.result}`).join("\n");
 
     try {
       const { data, error } = await supabase.functions.invoke("analyze", {
-        body: { transcript, previousHistory },
+        body: { transcript, previousHistory, language: lang, labResults, instrumentalResults },
       });
       if (error) {
-        const msg = (error as any).context?.error || (error as any).message || "Хатолик";
-        toast.error(msg);
-        return;
+        const msg = (error as any).context?.error || (error as any).message || t("err.failed");
+        toast.error(msg); return;
       }
-      if ((data as any)?.error) {
-        toast.error((data as any).error);
-        return;
-      }
+      if ((data as any)?.error) { toast.error((data as any).error); return; }
       const res = data as AnalysisResult;
-      if (!res.prescriptions) res.prescriptions = [];
-      if (!res.lab_tests) res.lab_tests = [];
+      // Sanitize
+      res.symptoms ||= [];
+      res.prescriptions ||= [];
+      res.lab_tests ||= [];
+      res.instrumental_tests ||= [];
+      res.differentials ||= [];
+      res.family_advice ||= "";
+      res.recommendation ||= "";
+      // Merge previously-entered lab/instr results so doctor's input isn't lost
+      if (result) {
+        const mergeResults = <T extends { name: string; result?: string }>(neu: T[], old: T[]): T[] => {
+          return neu.map((n) => {
+            const match = old.find((o) => o.name?.trim().toLowerCase() === n.name?.trim().toLowerCase());
+            return match?.result ? { ...n, result: match.result } : n;
+          });
+        };
+        res.lab_tests = mergeResults(res.lab_tests, result.lab_tests || []);
+        res.instrumental_tests = mergeResults(res.instrumental_tests, result.instrumental_tests || []);
+      }
       setResult(res);
-      persist({ result: res, confirmed: null });
-      toast.success("Таҳлил тайёр — таҳрирлаб тасдиқланг");
+      setChosenIdx(0);
+      setConfirmed(false);
+      // Move to step 2 (lab)
+      const nextStep: Step = 2;
+      setStep(nextStep);
+      persist({ result: res, chosenIdx: 0, step: nextStep, confirmed: false });
+      toast.success("AI: " + (res.differentials?.length || 0) + " diagnoses + " + (res.lab_tests?.length || 0) + " labs");
     } catch (e) {
-      console.error(e);
-      toast.error("Сўровни юбориб бўлмади");
-    } finally {
-      setIsAnalyzing(false);
-    }
+      console.error(e); toast.error(t("err.failed"));
+    } finally { setIsAnalyzing(false); }
+  };
+
+  // ---- updaters ----
+  const update = (fn: (r: AnalysisResult) => AnalysisResult) => {
+    setResult((p) => {
+      if (!p) return p;
+      const n = fn(p);
+      const data = { transcript, patientName, result: n, chosenIdx, step, confirmed };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      return n;
+    });
   };
 
   const handleClear = () => {
-    setTranscript("");
-    setResult(null);
-    setConfirmed(null);
-    setPatientName("");
+    setStep(1); setTranscript(""); setPatientName("");
+    setResult(null); setChosenIdx(0); setConfirmed(false);
     baseTranscriptRef.current = "";
     localStorage.removeItem(STORAGE_KEY);
   };
 
-  // ---- Editing helpers ----
-  const updateResult = (updater: (r: AnalysisResult) => AnalysisResult) => {
-    setResult((prev) => {
-      if (!prev) return prev;
-      const next = updater(prev);
-      persist({ result: next });
-      return next;
-    });
-  };
+  const goToStep = (s: Step) => { setStep(s); persist({ step: s }); };
 
-  const updateSymptom = (i: number, v: string) =>
-    updateResult((r) => ({ ...r, symptoms: r.symptoms.map((s, idx) => (idx === i ? v : s)) }));
-  const removeSymptom = (i: number) =>
-    updateResult((r) => ({ ...r, symptoms: r.symptoms.filter((_, idx) => idx !== i) }));
-  const addSymptom = () =>
-    updateResult((r) => ({ ...r, symptoms: [...r.symptoms, ""] }));
-
-  const updatePrescription = (i: number, field: keyof Prescription, v: string) =>
-    updateResult((r) => ({
-      ...r,
-      prescriptions: r.prescriptions.map((p, idx) => (idx === i ? { ...p, [field]: v } : p)),
-    }));
-  const removePrescription = (i: number) =>
-    updateResult((r) => ({ ...r, prescriptions: r.prescriptions.filter((_, idx) => idx !== i) }));
-  const addPrescription = () =>
-    updateResult((r) => ({ ...r, prescriptions: [...r.prescriptions, emptyPrescription()] }));
-
-  const updateLabTest = (i: number, field: keyof LabTest, v: string) =>
-    updateResult((r) => ({
-      ...r,
-      lab_tests: r.lab_tests.map((l, idx) => (idx === i ? { ...l, [field]: v } : l)),
-    }));
-  const removeLabTest = (i: number) =>
-    updateResult((r) => ({ ...r, lab_tests: r.lab_tests.filter((_, idx) => idx !== i) }));
-  const addLabTest = () =>
-    updateResult((r) => ({ ...r, lab_tests: [...r.lab_tests, emptyLabTest()] }));
-
+  // ---- confirm & save ----
   const handleConfirm = async () => {
     if (!result) return;
+    const chosen = result.differentials[chosenIdx];
+    if (!chosen?.name?.trim()) { toast.error(t("err.diagnosisEmpty")); return; }
+
     const cleaned: AnalysisResult = {
-      ...result,
       symptoms: result.symptoms.map((s) => s.trim()).filter(Boolean),
+      recommendation: result.recommendation.trim(),
+      family_advice: result.family_advice.trim(),
+      differentials: result.differentials,
       prescriptions: result.prescriptions
         .map((p) => ({
-          name: p.name.trim(),
-          dosage: p.dosage.trim(),
-          frequency: p.frequency.trim(),
-          duration: p.duration.trim(),
-          notes: p.notes?.trim() || "",
+          name: p.name.trim(), dosage: p.dosage.trim(), frequency: p.frequency.trim(),
+          duration: p.duration.trim(), notes: p.notes?.trim() || "",
         }))
         .filter((p) => p.name),
-      lab_tests: (result.lab_tests || [])
-        .map((l) => ({
-          name: l.name.trim(),
-          reason: l.reason?.trim() || "",
-          result: l.result?.trim() || "",
-        }))
-        .filter((l) => l.name),
+      lab_tests: (result.lab_tests || []).map((l) => ({
+        name: l.name.trim(), reason: l.reason?.trim() || "", result: l.result?.trim() || "",
+      })).filter((l) => l.name),
+      instrumental_tests: (result.instrumental_tests || []).map((l) => ({
+        name: l.name.trim(), reason: l.reason?.trim() || "", result: l.result?.trim() || "",
+      })).filter((l) => l.name),
     };
-    if (!cleaned.diagnosis.trim()) {
-      toast.error("Ташхис бўш бўлмаслиги керак");
-      return;
-    }
-    const conf: Confirmed = {
-      patientName: patientName.trim() || "Бемор",
-      result: cleaned,
-      confirmedAt: new Date().toISOString(),
-    };
+
     setResult(cleaned);
-    setConfirmed(conf);
-    persist({ result: cleaned, patientName: conf.patientName, confirmed: conf });
+    setConfirmed(true);
+    setStep(5);
+    persist({ result: cleaned, confirmed: true, step: 5 });
+
     if (user) {
-      const { error } = await supabase.from("prescriptions_log").insert({
+      await supabase.from("prescriptions_log").insert({
         user_id: user.id,
         doctor_name: profile?.full_name || "",
         hospital: profile?.hospital || "",
-        patient_name: conf.patientName,
+        patient_name: patientName.trim() || "—",
         symptoms_count: cleaned.symptoms.length,
         prescriptions_count: cleaned.prescriptions.length,
       });
-      if (error) console.error("log insert failed:", error);
-
-      // Save full consultation history for this doctor
-      const { error: cErr } = await supabase.from("consultations").insert({
+      await supabase.from("consultations").insert({
         user_id: user.id,
-        patient_name: conf.patientName,
+        patient_name: patientName.trim() || "—",
         transcript,
         symptoms: cleaned.symptoms,
-        diagnosis: cleaned.diagnosis,
+        diagnosis: chosen.name,
+        chosen_diagnosis: chosen.name,
+        differentials: cleaned.differentials as any,
         recommendation: cleaned.recommendation,
-        prescriptions: cleaned.prescriptions,
-        lab_tests: cleaned.lab_tests,
+        prescriptions: cleaned.prescriptions as any,
+        lab_tests: cleaned.lab_tests as any,
+        instrumental_tests: cleaned.instrumental_tests as any,
+        family_advice: cleaned.family_advice,
+        language: lang,
       });
-      if (cErr) console.error("consultation insert failed:", cErr);
     }
-    toast.success("Тасдиқланди — PDF юклаб олса бўлади");
+    toast.success(t("status.confirmed"));
   };
 
-  const handleEditAgain = () => {
-    setConfirmed(null);
-    persist({ confirmed: null });
-  };
-
-  // ---- PDF (open print window with full Cyrillic support) ----
+  // ---- PDF ----
   const generatePdf = async () => {
-    if (!confirmed) return;
-    const { result: r, patientName: pn, confirmedAt } = confirmed;
-    const dateStr = new Date(confirmedAt).toLocaleString("ru-RU");
-    const docName = profile?.full_name?.trim() || "Шифокор";
+    if (!result || !confirmed) return;
+    const chosen = result.differentials[chosenIdx];
+    const pn = patientName.trim() || (lang === "ru" ? "Пациент" : lang === "en" ? "Patient" : "Бемор");
+    const dateStr = new Date().toLocaleString(DATE_LOCALE[lang]);
+    const docName = profile?.full_name?.trim() || "—";
     const specialty = profile?.specialty?.trim() || "";
     const docPhone = profile?.phone?.trim() || "";
     const workHours = profile?.work_hours?.trim() || "";
@@ -364,273 +351,184 @@ const AppPage = () => {
     const hospPhone = profile?.hospital_phone?.trim() || "";
     const hospAddr = profile?.hospital_address?.trim() || "";
 
-    // Build QR payload (compact JSON) and generate dataURL
     const qrPayload = JSON.stringify({
       app: "Clinora",
       patient: pn,
       doctor: docName,
       hospital: hosp,
-      date: confirmedAt,
-      diagnosis: r.diagnosis?.slice(0, 120) || "",
-      rx: (r.prescriptions || []).map((p) => p.name),
+      date: new Date().toISOString(),
+      diagnosis: chosen?.name?.slice(0, 120) || "",
+      rx: (result.prescriptions || []).map((p) => p.name),
+      lang,
     });
     let qrDataUrl = "";
-    try {
-      qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 220, margin: 1 });
-    } catch (e) {
-      console.warn("QR generation failed", e);
-    }
+    try { qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 220, margin: 1 }); } catch {}
 
-    const esc = (s: string) =>
-      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const esc = (s: string) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const L = (key: string) => t(key);
 
-    const symptomsHtml = r.symptoms.length
-      ? `<ul class="bul">${r.symptoms.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`
+    const symptomsHtml = result.symptoms.length
+      ? `<ul class="bul">${result.symptoms.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`
       : `<p class="muted">—</p>`;
 
-    const rxHtml = r.prescriptions.length
-      ? `<table class="rx">
-          <thead><tr>
-            <th style="width:28px">№</th>
-            <th>Дори номи</th>
-            <th>Доза</th>
-            <th>Қабул тартиби</th>
-            <th>Давомийлиги</th>
-            <th>Изоҳ</th>
-          </tr></thead>
-          <tbody>
-            ${r.prescriptions
-              .map(
-                (p, i) => `<tr>
-                  <td>${i + 1}</td>
-                  <td><strong>${esc(p.name)}</strong></td>
-                  <td>${esc(p.dosage)}</td>
-                  <td>${esc(p.frequency)}</td>
-                  <td>${esc(p.duration)}</td>
-                  <td>${esc(p.notes || "—")}</td>
-                </tr>`,
-              )
-              .join("")}
-          </tbody>
-        </table>`
+    const labsHtml = result.lab_tests.length
+      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${result.lab_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
+
+    const instrHtml = result.instrumental_tests.length
+      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${result.instrumental_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
+
+    const rxHtml = result.prescriptions.length
+      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("rx.name")}</th><th>${L("rx.dosage")}</th><th>${L("rx.frequency")}</th><th>${L("rx.duration")}</th><th>${L("rx.notes")}</th></tr></thead><tbody>${result.prescriptions.map((p, i) => `<tr><td>${i + 1}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.dosage)}</td><td>${esc(p.frequency)}</td><td>${esc(p.duration)}</td><td>${esc(p.notes || "—")}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">—</p>`;
+
+    const diffHtml = result.differentials.length
+      ? `<ol class="diff">${result.differentials.map((d, i) => `<li class="${i === chosenIdx ? "chosen" : ""}"><strong>${esc(d.name)}</strong> <span class="prob prob-${d.probability}">${esc(d.probability)}</span>${i === chosenIdx ? ` <span class="badge">✓ ${L("diff.chosen")}</span>` : ""}<div class="reason">${esc(d.reasoning)}</div></li>`).join("")}</ol>`
       : `<p class="muted">—</p>`;
 
-    const labs = r.lab_tests || [];
-    const labsHtml = labs.length
-      ? `<table class="rx">
-          <thead><tr>
-            <th style="width:28px">№</th>
-            <th>Текширув номи</th>
-            <th>Сабаб</th>
-            <th style="width:35%">Натижа</th>
-          </tr></thead>
-          <tbody>
-            ${labs
-              .map(
-                (l, i) => `<tr>
-                  <td>${i + 1}</td>
-                  <td><strong>${esc(l.name)}</strong></td>
-                  <td>${esc(l.reason || "—")}</td>
-                  <td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td>
-                </tr>`,
-              )
-              .join("")}
-          </tbody>
-        </table>`
-      : "";
-
-    const html = `<!DOCTYPE html>
-<html lang="uz">
-<head>
-<meta charset="UTF-8" />
-<title>Clinora AI — ${esc(pn)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="UTF-8"/><title>Clinora AI — ${esc(pn)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: #f4f6fb; color: #111827; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 12px; }
-  /* Strict single A4 page */
-  .page { width: 210mm; height: 297mm; margin: 16px auto; padding: 10mm 12mm; background: #fff; box-shadow: 0 8px 30px rgba(0,0,0,.08); display: flex; flex-direction: column; overflow: hidden; }
-  .content { flex: 1 1 auto; min-height: 0; overflow: hidden; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 8px; border-bottom: 2px solid #2176eb; }
-  .brand { display: flex; align-items: center; gap: 12px; }
-  .logo { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #2176eb, #4f9bff); display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 16px; }
-  .brand h1 { font-family: 'Manrope', sans-serif; font-size: 18px; margin: 0; color: #111827; line-height: 1.1; }
-  .brand p { margin: 2px 0 0; font-size: 10px; color: #6b7280; }
-  .clinic { text-align: right; font-size: 10.5px; color: #374151; line-height: 1.4; }
-  .clinic .clinic-name { font-weight: 700; color: #2176eb; font-size: 12px; }
-
-  .meta { display: flex; justify-content: space-between; gap: 10px; margin: 8px 0 4px; font-size: 11px; }
-  .meta .row { background: #f9fafb; border: 1px solid #eef0f4; border-radius: 8px; padding: 6px 10px; flex: 1; }
-  .meta .label { font-size: 9px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; margin-bottom: 1px; }
-  .meta .val { font-weight: 600; color: #111827; font-size: 12px; }
-
-  h2.section { font-family: 'Manrope', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #2176eb; margin: 10px 0 4px; padding-bottom: 2px; border-bottom: 1px dashed #d1d5db; }
-  .bul { margin: 0; padding-left: 16px; }
-  .bul li { margin: 1px 0; font-size: 11.5px; line-height: 1.35; }
-  p.body { font-size: 11.5px; line-height: 1.4; margin: 2px 0; white-space: pre-wrap; }
-  .muted { color: #9ca3af; font-style: italic; font-size: 11px; }
-
-  table.rx { width: 100%; border-collapse: collapse; font-size: 10.5px; margin-top: 4px; }
-  table.rx th { background: #eff5ff; color: #1e40af; text-align: left; padding: 5px 7px; font-weight: 600; border-bottom: 1.5px solid #c8dcfb; font-size: 10px; }
-  table.rx td { padding: 5px 7px; border-bottom: 1px solid #eef0f4; vertical-align: top; line-height: 1.3; }
-  table.rx tr:last-child td { border-bottom: none; }
-
-  .bottom { flex-shrink: 0; margin-top: auto; }
-  .signature { margin-top: 10px; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
-  .doctor-card { font-size: 11px; color: #111827; line-height: 1.4; }
-  .doctor-card .name { font-weight: 700; font-size: 12.5px; color: #111827; }
-  .doctor-card .spec { color: #2176eb; font-weight: 500; font-size: 11px; }
-  .doctor-card .contact { color: #6b7280; font-size: 10.5px; }
-  .sig-line { width: 170px; text-align: center; font-size: 10px; color: #6b7280; }
-  .sig-line .line { border-bottom: 1px solid #111827; height: 22px; margin-bottom: 3px; }
-
-  .footer { margin-top: 8px; padding-top: 6px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; gap: 8px; font-size: 9.5px; color: #6b7280; }
-  .footer .ad { background: linear-gradient(135deg, #eff5ff, #f5f3ff); border: 1px solid #dbeafe; border-radius: 8px; padding: 6px 9px; flex: 1; line-height: 1.35; }
-  .footer .ad strong { color: #2176eb; }
-  .support { margin-top: 4px; text-align: center; font-size: 9px; color: #6b7280; }
-  .support b { color: #2176eb; }
-  .disclaimer { margin-top: 4px; font-size: 9px; color: #9ca3af; text-align: center; font-style: italic; }
-
-  .actions { position: fixed; top: 14px; right: 14px; display: flex; gap: 8px; z-index: 9999; }
-  .actions button { background: #2176eb; color: #fff; border: none; padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(33,118,235,.35); font-family: inherit; }
-  .actions .alt { background: #fff; color: #374151; border: 1px solid #d1d5db; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
-
-  @media print {
-    body { background: #fff; }
-    .page { box-shadow: none; margin: 0; width: 210mm; height: 297mm; padding: 8mm 10mm; page-break-after: avoid; page-break-inside: avoid; }
-    .actions { display: none; }
-    @page { size: A4 portrait; margin: 0; }
-    html, body { width: 210mm; height: 297mm; }
-  }
-</style>
-</head>
-<body>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#f4f6fb;color:#111827;font-family:'Inter',system-ui,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11.5px}
+  .page{width:210mm;min-height:297mm;margin:16px auto;padding:10mm 12mm;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.08);display:flex;flex-direction:column}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:8px;border-bottom:2px solid #2176eb}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2176eb,#4f9bff);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Manrope',sans-serif;font-weight:800;font-size:16px}
+  .brand h1{font-family:'Manrope',sans-serif;font-size:17px;margin:0;color:#111827}
+  .brand p{margin:2px 0 0;font-size:10px;color:#6b7280}
+  .clinic{text-align:right;font-size:10px;color:#374151;line-height:1.4}
+  .clinic .clinic-name{font-weight:700;color:#2176eb;font-size:11.5px}
+  .meta{display:flex;justify-content:space-between;gap:10px;margin:8px 0 4px}
+  .meta .row{background:#f9fafb;border:1px solid #eef0f4;border-radius:8px;padding:6px 10px;flex:1}
+  .meta .label{font-size:9px;text-transform:uppercase;color:#6b7280;margin-bottom:1px}
+  .meta .val{font-weight:600;color:#111827;font-size:11.5px}
+  h2.section{font-family:'Manrope',sans-serif;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#2176eb;margin:9px 0 4px;padding-bottom:2px;border-bottom:1px dashed #d1d5db}
+  .bul{margin:0;padding-left:16px}
+  .bul li{margin:1px 0;font-size:11px;line-height:1.35}
+  p.body{font-size:11px;line-height:1.4;margin:2px 0;white-space:pre-wrap}
+  .muted{color:#9ca3af;font-style:italic;font-size:11px}
+  table.rx{width:100%;border-collapse:collapse;font-size:10px;margin-top:4px}
+  table.rx th{background:#eff5ff;color:#1e40af;text-align:left;padding:5px 7px;font-weight:600;border-bottom:1.5px solid #c8dcfb;font-size:9.5px}
+  table.rx td{padding:5px 7px;border-bottom:1px solid #eef0f4;vertical-align:top;line-height:1.3}
+  ol.diff{padding-left:18px;margin:4px 0;font-size:10.5px}
+  ol.diff li{margin-bottom:4px;line-height:1.35}
+  ol.diff li.chosen{background:#ecfdf5;border-left:3px solid #10b981;padding:5px 7px;border-radius:4px;margin-left:-10px}
+  .prob{display:inline-block;font-size:8.5px;padding:1px 6px;border-radius:8px;text-transform:uppercase;font-weight:700;margin-left:4px}
+  .prob-high{background:#fee2e2;color:#991b1b}.prob-medium{background:#fef3c7;color:#92400e}.prob-low{background:#e0e7ff;color:#3730a3}
+  .badge{background:#10b981;color:#fff;padding:1px 6px;border-radius:8px;font-size:8.5px;font-weight:700;margin-left:4px}
+  .reason{color:#4b5563;font-size:9.5px;margin-top:1px;font-style:italic}
+  .family-box{background:#fffbeb;border-left:3px solid #f59e0b;border-radius:6px;padding:8px 10px;margin-top:4px}
+  .family-box p{margin:0;font-size:10.5px;line-height:1.45;color:#374151;white-space:pre-wrap}
+  .signature{margin-top:10px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+  .doctor-card{font-size:11px;color:#111827;line-height:1.4}
+  .doctor-card .name{font-weight:700;font-size:12px}
+  .doctor-card .spec{color:#2176eb;font-weight:500}
+  .doctor-card .contact{color:#6b7280;font-size:10px}
+  .sig-line{width:170px;text-align:center;font-size:9.5px;color:#6b7280}
+  .sig-line .line{border-bottom:1px solid #111827;height:22px;margin-bottom:3px}
+  .footer{margin-top:8px;padding-top:6px;border-top:1px solid #e5e7eb;font-size:9px;color:#6b7280;text-align:center}
+  .footer b{color:#2176eb}
+  .actions{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:9999}
+  .actions button{background:#2176eb;color:#fff;border:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(33,118,235,.35);font-family:inherit}
+  .actions .alt{background:#fff;color:#374151;border:1px solid #d1d5db}
+  @media print{body{background:#fff}.page{box-shadow:none;margin:0;padding:8mm 10mm}.actions{display:none}@page{size:A4 portrait;margin:0}}
+</style></head><body>
 <div class="actions">
-  <button class="alt" onclick="window.close()">Ёпиш</button>
-  <button onclick="window.print()">📄 PDF сақлаш / Чоп этиш</button>
+  <button class="alt" onclick="window.close()">${L("common.close")}</button>
+  <button onclick="window.print()">📄 ${L("act.downloadPdf")}</button>
 </div>
-
 <div class="page">
-  <div class="content">
   <div class="header">
-    <div class="brand">
-      <div class="logo">C</div>
-      <div>
-        <h1>Clinora AI</h1>
-        <p>Тиббий хулоса ва рецепт</p>
-      </div>
-    </div>
-    <div class="clinic">
-      <div class="clinic-name">${esc(hosp || "Тиббий муассаса")}</div>
-      ${hospAddr ? `<div>${esc(hospAddr)}</div>` : ""}
-      ${hospPhone ? `<div>☎ ${esc(hospPhone)}</div>` : ""}
-    </div>
+    <div class="brand"><div class="logo">C</div><div><h1>Clinora AI</h1><p>${L("pdf.title")}</p></div></div>
+    <div class="clinic"><div class="clinic-name">${esc(hosp || "—")}</div>${hospAddr ? `<div>${esc(hospAddr)}</div>` : ""}${hospPhone ? `<div>☎ ${esc(hospPhone)}</div>` : ""}</div>
   </div>
-
   <div class="meta">
-    <div class="row">
-      <div class="label">Бемор Ф.И.О.</div>
-      <div class="val">${esc(pn)}</div>
-    </div>
-    <div class="row">
-      <div class="label">Сана ва вақт</div>
-      <div class="val">${esc(dateStr)}</div>
-    </div>
+    <div class="row"><div class="label">${L("sec.patient")}</div><div class="val">${esc(pn)}</div></div>
+    <div class="row"><div class="label">${lang === "ru" ? "Дата" : lang === "en" ? "Date" : "Сана"}</div><div class="val">${esc(dateStr)}</div></div>
   </div>
 
-  <h2 class="section">Симптомлар</h2>
+  <h2 class="section">${L("sec.symptoms")}</h2>
   ${symptomsHtml}
 
-  <h2 class="section">Тахминий ташхис</h2>
-  <p class="body">${esc(r.diagnosis || "—")}</p>
+  ${labsHtml ? `<h2 class="section">${L("sec.labs")}</h2>${labsHtml}` : ""}
+  ${instrHtml ? `<h2 class="section">${L("sec.instr")}</h2>${instrHtml}` : ""}
 
-  <h2 class="section">Тавсиялар</h2>
-  <p class="body">${esc(r.recommendation || "—")}</p>
+  <h2 class="section">${L("sec.diff")}</h2>
+  ${diffHtml}
 
-  <h2 class="section">Рецепт (дорилар)</h2>
+  <h2 class="section">${L("sec.diagnosis")}</h2>
+  <p class="body"><strong style="color:#10b981">${esc(chosen?.name || "—")}</strong></p>
+
+  <h2 class="section">${L("sec.recommendation")}</h2>
+  <p class="body">${esc(result.recommendation || "—")}</p>
+
+  <h2 class="section">${L("sec.rx")}</h2>
   ${rxHtml}
 
-  ${labs.length ? `<h2 class="section">Лаборатория ва инструментал текширувлар</h2>${labsHtml}` : ""}
-  </div>
+  ${result.family_advice ? `<h2 class="section">${L("sec.family")}</h2><div class="family-box"><p>${esc(result.family_advice)}</p></div>` : ""}
 
-  <div class="bottom">
   <div class="signature">
     <div class="doctor-card">
-      <div class="name">Др. ${esc(docName)}</div>
+      <div class="name">Dr. ${esc(docName)}</div>
       ${specialty ? `<div class="spec">${esc(specialty)}</div>` : ""}
       ${docPhone ? `<div class="contact">☎ ${esc(docPhone)}</div>` : ""}
       ${workHours ? `<div class="contact">🕒 ${esc(workHours)}</div>` : ""}
     </div>
-    ${qrDataUrl ? `<div style="text-align:center;font-size:9px;color:#6b7280">
-      <img src="${qrDataUrl}" alt="QR" style="width:70px;height:70px;display:block;margin:0 auto 2px" />
-      Тасдиқ QR
-    </div>` : ""}
-    <div class="sig-line">
-      <div class="line"></div>
-      Шифокор имзоси / муҳри
-    </div>
+    ${qrDataUrl ? `<div style="text-align:center;font-size:9px;color:#6b7280"><img src="${qrDataUrl}" alt="QR" style="width:80px;height:80px;display:block;margin:0 auto 2px"/>${L("pdf.qr")}</div>` : ""}
+    <div class="sig-line"><div class="line"></div>${L("pdf.signature")}</div>
   </div>
 
   <div class="footer">
-    <div class="ad">
-      <strong>${esc(hosp || "Тиббий муассаса")}</strong>${hospAddr ? ` · ${esc(hospAddr)}` : ""}${hospPhone ? ` · ☎ ${esc(hospPhone)}` : ""}<br/>
-      Сифатли тиббий хизмат — сизнинг соғлиғингиз биз учун муҳим.
-    </div>
-    <div class="ad" style="text-align:right">
-      <strong>Др. ${esc(docName)}</strong>${specialty ? ` · ${esc(specialty)}` : ""}<br/>
-      ${docPhone ? `Қабул учун: ${esc(docPhone)}` : ""}${workHours ? ` · ${esc(workHours)}` : ""}
-    </div>
-  </div>
-
-  <p class="support">
-    Clinora AI · <b>Telegram:</b> @clinora_support · <b>Instagram:</b> @clinora.ai
-  </p>
-  <p class="disclaimer">
-    ⚕ Ушбу ҳужжат Clinora AI ёрдамида тайёрланиб, шифокор томонидан тасдиқланди. AI фақат ёрдамчи воситадир — якуний қарор шифокорга тегишли.
-  </p>
+    Clinora AI · <b>Telegram:</b> @clinora_support · <b>Instagram:</b> @clinora.ai<br/>
+    <span style="font-style:italic">${L("pdf.disclaimer")}</span>
   </div>
 </div>
-
-<script>
-  window.addEventListener('load', function() {
-    // Force-fit content to 1 page by progressively shrinking the .content area
-    setTimeout(function() {
-      try {
-        var content = document.querySelector('.content');
-        var scale = 1;
-        // Shrink only if content scrollHeight exceeds clientHeight
-        while (content && content.scrollHeight > content.clientHeight && scale > 0.55) {
-          scale -= 0.04;
-          content.style.transformOrigin = 'top left';
-          content.style.transform = 'scale(' + scale + ')';
-          content.style.width = (100 / scale) + '%';
-          content.style.height = (100 / scale) + '%';
-        }
-      } catch(e) {}
-      setTimeout(function() { window.print(); }, 300);
-    }, 600);
-  });
-</script>
-</body>
-</html>`;
+<script>window.addEventListener('load',function(){setTimeout(function(){window.print();},500);});</script>
+</body></html>`;
 
     const w = window.open("", "_blank", "width=900,height=1000");
-    if (!w) {
-      toast.error("Браузер янги ойнани блоклади. Иловага рухсат беринг.");
-      return;
-    }
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
+    if (!w) { toast.error("Browser blocked the new window. Please allow popups."); return; }
+    w.document.open(); w.document.write(html); w.document.close();
   };
 
+  // ---- UI ----
   const cardCls = "rounded-3xl border border-border bg-card p-6 shadow-md";
   const labelCls = "mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-primary";
 
+  const Stepper = () => (
+    <div className="mb-6 flex items-center gap-1 overflow-x-auto pb-1">
+      {[1, 2, 3, 4, 5].map((n) => {
+        const active = step === n;
+        const done = step > n;
+        return (
+          <button
+            key={n}
+            disabled={n > step && !result}
+            onClick={() => { if (n <= step || result) goToStep(n as Step); }}
+            className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+              active ? "bg-primary text-primary-foreground" :
+              done ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"
+            } ${n > step && !result ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          >
+            <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${
+              active ? "bg-primary-foreground/20" : done ? "bg-success/30" : "bg-background"
+            }`}>{done ? <Check className="h-3 w-3" /> : n}</span>
+            <span className="hidden sm:inline">{t(`step.${n}.title`).split(":")[1]?.trim() || t(`step.${n}.title`)}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="min-h-screen" style={{ background: "var(--gradient-soft)" }}>
+      {showGuide && (
+        <GuideModal onClose={(dontShow) => {
+          setShowGuide(false);
+          if (dontShow) localStorage.setItem(GUIDE_KEY, "1");
+        }} />
+      )}
+
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
@@ -640,376 +538,252 @@ const AppPage = () => {
             <div className="leading-tight">
               <div className="text-sm font-semibold text-foreground">Clinora AI</div>
               {profile?.full_name && (
-                <div className="text-[11px] text-muted-foreground">
-                  Др. {profile.full_name}{profile.hospital ? ` · ${profile.hospital}` : ""}
-                </div>
+                <div className="text-[11px] text-muted-foreground">Dr. {profile.full_name}{profile.hospital ? ` · ${profile.hospital}` : ""}</div>
               )}
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <Link to="/history">
-              <Button variant="ghost" size="sm" className="rounded-full">
-                <HistoryIcon className="h-4 w-4 sm:mr-1.5" />
-                <span className="hidden sm:inline">Тарих</span>
-              </Button>
-            </Link>
-            <Link to="/profile">
-              <Button variant="ghost" size="sm" className="rounded-full">
-                <User className="h-4 w-4 sm:mr-1.5" />
-                <span className="hidden md:inline">Профиль</span>
-              </Button>
-            </Link>
-            <Link to="/analytics">
-              <Button variant="ghost" size="sm" className="rounded-full">
-                <BarChart3 className="h-4 w-4 sm:mr-1.5" />
-                <span className="hidden md:inline">Аналитика</span>
-              </Button>
-            </Link>
-            <Link to="/pricing">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="rounded-full text-primary"
-                style={isPro ? { background: "hsl(var(--primary) / 0.12)" } : undefined}
-              >
-                <Crown className="h-4 w-4 sm:mr-1.5" />
-                <span className="hidden md:inline">{isPro ? "PRO" : "Pro"}</span>
-              </Button>
-            </Link>
-            <Button variant="ghost" size="sm" onClick={signOut} className="rounded-full">
-              <LogOut className="h-4 w-4 sm:mr-1.5" />
-              <span className="hidden md:inline">Чиқиш</span>
+            <Button variant="ghost" size="sm" className="rounded-full" onClick={() => setShowGuide(true)}>
+              <HelpCircle className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">{t("nav.guide")}</span>
             </Button>
+            <LanguageSwitcher />
+            <Link to="/history"><Button variant="ghost" size="sm" className="rounded-full"><HistoryIcon className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">{t("nav.history")}</span></Button></Link>
+            <Link to="/profile"><Button variant="ghost" size="sm" className="rounded-full"><User className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.profile")}</span></Button></Link>
+            <Link to="/analytics"><Button variant="ghost" size="sm" className="rounded-full"><BarChart3 className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.analytics")}</span></Button></Link>
+            <Link to="/pricing"><Button variant="ghost" size="sm" className="rounded-full text-primary" style={isPro ? { background: "hsl(var(--primary) / 0.12)" } : undefined}><Crown className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{isPro ? "PRO" : t("nav.pro")}</span></Button></Link>
+            <Button variant="ghost" size="sm" onClick={signOut} className="rounded-full"><LogOut className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.signout")}</span></Button>
           </div>
         </div>
       </header>
 
       <main className="container max-w-2xl py-8 md:py-12">
-        {!supported && (
-          <div className="mb-6 rounded-2xl border border-warning/30 bg-warning/10 p-4 text-sm">
-            <strong className="text-warning">Диққат:</strong>{" "}
-            <span className="text-foreground">Браузерингиз овоз танишни қўлламайди. Chrome ёки Edge'дан фойдаланинг.</span>
-          </div>
-        )}
+        <Stepper />
 
-        {profile && (!profile.phone || !profile.hospital_phone) && (
-          <div className="mb-6 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-sm flex items-start gap-3">
-            <User className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <strong className="text-foreground">Профилингизни тўлдиринг.</strong>{" "}
-              <span className="text-muted-foreground">Телефон, иш вақти ва касалхона маълумотлари бемор PDF'ида кўринади.</span>
+        {/* STEP 1: Complaints */}
+        {step === 1 && (
+          <section className={cardCls + " md:p-8"}>
+            <h2 className="text-lg font-semibold">{t("step.1.title")}</h2>
+            <p className="mb-5 text-sm text-muted-foreground">{t("step.1.desc")}</p>
+
+            {!supported && (
+              <div className="mb-4 rounded-2xl border border-warning/30 bg-warning/10 p-3 text-sm">{t("rec.unsupported")}</div>
+            )}
+
+            <div className="mb-4">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">{t("sec.patient")}</label>
+              <Input value={patientName} onChange={(e) => { setPatientName(e.target.value); persist({ patientName: e.target.value }); }} placeholder="—" className="rounded-xl" />
             </div>
-            <Link to="/profile">
-              <Button size="sm" variant="outline" className="rounded-xl shrink-0">Тўлдириш</Button>
-            </Link>
-          </div>
-        )}
 
-        {/* Recorder */}
-        <section className={cardCls + " md:p-8"}>
-          <div className="flex flex-col items-center text-center">
-            <button
-              onClick={toggleRecording}
-              disabled={!supported}
-              aria-label={isRecording ? "Тўхтатиш" : "Ёзишни бошлаш"}
-              className="relative flex h-24 w-24 items-center justify-center rounded-full shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ background: isRecording ? "hsl(var(--destructive))" : "var(--gradient-primary)" }}
-            >
-              {isRecording && (
-                <span className="absolute inset-0 rounded-full animate-pulse-ring" style={{ background: "hsl(var(--destructive) / 0.4)" }} />
-              )}
-              {isRecording ? (
-                <MicOff className="relative h-10 w-10 text-destructive-foreground" />
-              ) : (
-                <Mic className="relative h-10 w-10 text-primary-foreground" />
-              )}
-            </button>
-            <p className="mt-4 text-sm font-medium text-foreground">
-              {isRecording ? "🔴 Ёзилмоқда... гапиринг" : "🎤 Ёзишни бошлаш"}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">Тил: ўзбек (uz-UZ)</p>
-          </div>
-
-          <div className="mt-6">
-            <label className="mb-2 block text-xs font-medium text-muted-foreground">Жонли матн</label>
-            <Textarea
-              value={transcript}
-              onChange={(e) => {
-                setTranscript(e.target.value);
-                baseTranscriptRef.current = e.target.value;
-              }}
-              placeholder="Бемор билан суҳбат шу ерда пайдо бўлади..."
-              className="min-h-[140px] resize-none rounded-2xl border-border bg-background text-base"
-            />
-          </div>
-
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-            <Button
-              onClick={handleAnalyze}
-              disabled={isAnalyzing || !transcript.trim()}
-              size="lg"
-              className="flex-1 rounded-2xl shadow-md"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              {isAnalyzing ? (
-                <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Таҳлил қилинмоқда...</>
-              ) : (
-                <><Sparkles className="mr-2 h-5 w-5" /> Анализ қилиш</>
-              )}
-            </Button>
-            <Button
-              onClick={handleClear}
-              variant="outline"
-              size="lg"
-              className="rounded-2xl"
-              disabled={isAnalyzing || (!transcript && !result)}
-            >
-              <Trash2 className="h-5 w-5" />
-            </Button>
-          </div>
-        </section>
-
-        {/* Loading */}
-        {isAnalyzing && (
-          <section className={"mt-6 animate-fade-up " + cardCls}>
-            <div className="flex items-center gap-3">
-              <Brain className="h-5 w-5 animate-pulse text-primary" />
-              <span className="text-sm text-muted-foreground">AI таҳлил қилмоқда...</span>
+            <div className="flex flex-col items-center text-center">
+              <button onClick={toggleRecording} disabled={!supported}
+                className="relative flex h-20 w-20 items-center justify-center rounded-full shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ background: isRecording ? "hsl(var(--destructive))" : "var(--gradient-primary)" }}>
+                {isRecording && <span className="absolute inset-0 rounded-full animate-pulse-ring" style={{ background: "hsl(var(--destructive) / 0.4)" }} />}
+                {isRecording ? <MicOff className="relative h-8 w-8 text-destructive-foreground" /> : <Mic className="relative h-8 w-8 text-primary-foreground" />}
+              </button>
+              <p className="mt-3 text-sm font-medium">{isRecording ? t("rec.recording") : t("rec.start")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("rec.langNote")}</p>
             </div>
-            <div className="mt-4 space-y-3">
-              <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
-              <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
-              <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+
+            <div className="mt-5">
+              <label className="mb-2 block text-xs font-medium text-muted-foreground">{t("sec.complaints")}</label>
+              <Textarea value={transcript} onChange={(e) => { setTranscript(e.target.value); baseTranscriptRef.current = e.target.value; persist({ transcript: e.target.value }); }}
+                placeholder={t("rec.placeholder")} className="min-h-[140px] rounded-2xl bg-background text-base" />
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <Button onClick={runAnalysis} disabled={isAnalyzing || !transcript.trim()} size="lg" className="flex-1 rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
+                {isAnalyzing ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t("act.analyzing")}</> : <><Sparkles className="mr-2 h-5 w-5" /> {t("act.suggestLabs")}</>}
+              </Button>
+              <Button onClick={handleClear} variant="outline" size="lg" className="rounded-2xl" disabled={isAnalyzing || (!transcript && !result)}>
+                <Trash2 className="h-5 w-5" />
+              </Button>
             </div>
           </section>
         )}
 
-        {/* Editable result */}
-        {result && !isAnalyzing && !confirmed && (
-          <section className="mt-6 animate-fade-up space-y-4">
+        {/* STEP 2: Lab tests */}
+        {step === 2 && result && (
+          <section className="space-y-4">
             <div className={cardCls}>
-              <div className="mb-3 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                <Pencil className="h-4 w-4" /> AI натижасини таҳрирланг ва тасдиқланг
-              </div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Бемор Ф.И.О.</label>
-              <Input
-                value={patientName}
-                onChange={(e) => { setPatientName(e.target.value); persist({ patientName: e.target.value }); }}
-                placeholder="Масалан: Алиев Аброр"
-                className="rounded-xl"
-              />
+              <h2 className="text-lg font-semibold">{t("step.2.title")}</h2>
+              <p className="text-sm text-muted-foreground">{t("step.2.desc")}</p>
             </div>
-
-            {/* Symptoms */}
             <div className={cardCls}>
-              <h3 className={labelCls}><span className="h-2 w-2 rounded-full bg-primary" /> Симптомлар</h3>
-              <div className="space-y-2">
-                {result.symptoms.map((s, i) => (
-                  <div key={i} className="flex gap-2">
-                    <Input value={s} onChange={(e) => updateSymptom(i, e.target.value)} className="rounded-xl" />
-                    <Button variant="outline" size="icon" onClick={() => removeSymptom(i)} className="rounded-xl shrink-0">
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button variant="outline" onClick={addSymptom} className="rounded-xl w-full">
-                  <Plus className="mr-2 h-4 w-4" /> Симптом қўшиш
-                </Button>
-              </div>
-            </div>
-
-            {/* Diagnosis */}
-            <div className={cardCls}>
-              <h3 className={labelCls}><span className="h-2 w-2 rounded-full bg-primary" /> Тахминий ташхис</h3>
-              <Textarea
-                value={result.diagnosis}
-                onChange={(e) => updateResult((r) => ({ ...r, diagnosis: e.target.value }))}
-                className="min-h-[90px] rounded-2xl"
-              />
-            </div>
-
-            {/* Recommendation */}
-            <div className={cardCls}>
-              <h3 className={labelCls}><span className="h-2 w-2 rounded-full bg-primary" /> Тавсия</h3>
-              <Textarea
-                value={result.recommendation}
-                onChange={(e) => updateResult((r) => ({ ...r, recommendation: e.target.value }))}
-                className="min-h-[100px] rounded-2xl"
-              />
-            </div>
-
-            {/* Prescriptions */}
-            <div className={cardCls}>
-              <h3 className={labelCls}><Pill className="h-4 w-4" /> Тахминий рецепт (дорилар)</h3>
-              <p className="-mt-2 mb-4 text-xs text-muted-foreground">
-                AI таклиф қилди. Шифокор қайта кўриб чиқиб, ўзгартириши шарт.
-              </p>
-              <div className="space-y-4">
-                {result.prescriptions.map((p, i) => (
-                  <div key={i} className="rounded-2xl border border-border/70 bg-background/60 p-4">
-                    <div className="mb-3 flex items-center justify-between">
-                      <span className="text-xs font-medium text-muted-foreground">№ {i + 1}</span>
-                      <Button variant="ghost" size="icon" onClick={() => removePrescription(i)} className="h-7 w-7">
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      <div className="sm:col-span-2">
-                        <label className="mb-1 block text-xs text-muted-foreground">Дори номи</label>
-                        <Input value={p.name} onChange={(e) => updatePrescription(i, "name", e.target.value)} className="rounded-xl" />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs text-muted-foreground">Доза</label>
-                        <Input value={p.dosage} onChange={(e) => updatePrescription(i, "dosage", e.target.value)} className="rounded-xl" placeholder="500 мг" />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs text-muted-foreground">Тартиб</label>
-                        <Input value={p.frequency} onChange={(e) => updatePrescription(i, "frequency", e.target.value)} className="rounded-xl" placeholder="Кунига 3 маҳал" />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs text-muted-foreground">Давомийлиги</label>
-                        <Input value={p.duration} onChange={(e) => updatePrescription(i, "duration", e.target.value)} className="rounded-xl" placeholder="5 кун" />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs text-muted-foreground">Изоҳ</label>
-                        <Input value={p.notes || ""} onChange={(e) => updatePrescription(i, "notes", e.target.value)} className="rounded-xl" placeholder="Овқатдан кейин" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <Button variant="outline" onClick={addPrescription} className="rounded-xl w-full">
-                  <Plus className="mr-2 h-4 w-4" /> Дори қўшиш
-                </Button>
-              </div>
-            </div>
-
-            {/* Lab tests */}
-            <div className={cardCls}>
-              <h3 className={labelCls}><FlaskConical className="h-4 w-4" /> Лаборатория текширувлари</h3>
-              <p className="-mt-2 mb-4 text-xs text-muted-foreground">
-                AI таклиф қилди. Натижа келганидан сўнг шу ерда ёки PDF'да тўлдиринг.
-              </p>
+              <h3 className={labelCls}><FlaskConical className="h-4 w-4" /> {t("sec.labs")}</h3>
               <div className="space-y-3">
-                {(result.lab_tests || []).map((l, i) => (
+                {result.lab_tests.map((l, i) => (
                   <div key={i} className="rounded-2xl border border-border/70 bg-background/60 p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs font-medium text-muted-foreground">№ {i + 1}</span>
-                      <Button variant="ghost" size="icon" onClick={() => removeLabTest(i)} className="h-7 w-7">
-                        <X className="h-4 w-4" />
-                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => update((r) => ({ ...r, lab_tests: r.lab_tests.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button>
                     </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      <div>
-                        <label className="mb-1 block text-xs text-muted-foreground">Текширув номи</label>
-                        <Input value={l.name} onChange={(e) => updateLabTest(i, "name", e.target.value)} className="rounded-xl" placeholder="Умумий қон таҳлили" />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs text-muted-foreground">Сабаб (нима учун)</label>
-                        <Input value={l.reason || ""} onChange={(e) => updateLabTest(i, "reason", e.target.value)} className="rounded-xl" placeholder="Анемияни истисно қилиш" />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs text-muted-foreground">Натижа (ихтиёрий — кейин тўлдириш мумкин)</label>
-                        <Input value={l.result || ""} onChange={(e) => updateLabTest(i, "result", e.target.value)} className="rounded-xl" placeholder="Бўш қолдирсангиз PDF'да жой бўлади" />
-                      </div>
+                    <div className="space-y-2">
+                      <Input value={l.name} onChange={(e) => update((r) => ({ ...r, lab_tests: r.lab_tests.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x) }))} className="rounded-xl" placeholder={t("lab.name")} />
+                      <Input value={l.reason || ""} onChange={(e) => update((r) => ({ ...r, lab_tests: r.lab_tests.map((x, idx) => idx === i ? { ...x, reason: e.target.value } : x) }))} className="rounded-xl" placeholder={t("lab.reason")} />
+                      <Input value={l.result || ""} onChange={(e) => update((r) => ({ ...r, lab_tests: r.lab_tests.map((x, idx) => idx === i ? { ...x, result: e.target.value } : x) }))} className="rounded-xl" placeholder={t("lab.result") + " (" + t("common.optional") + ")"} />
                     </div>
                   </div>
                 ))}
-                <Button variant="outline" onClick={addLabTest} className="rounded-xl w-full">
-                  <Plus className="mr-2 h-4 w-4" /> Текширув қўшиш
-                </Button>
+                <Button variant="outline" onClick={() => update((r) => ({ ...r, lab_tests: [...r.lab_tests, emptyLab()] }))} className="rounded-xl w-full"><Plus className="mr-2 h-4 w-4" /> {t("common.add")}</Button>
               </div>
             </div>
-
-            <Button
-              onClick={handleConfirm}
-              size="lg"
-              className="w-full rounded-2xl shadow-md"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              <CheckCircle2 className="mr-2 h-5 w-5" />
-              Шифокор сифатида тасдиқлаш
-            </Button>
+            <div className="flex gap-3">
+              <Button onClick={() => goToStep(1)} variant="outline" size="lg" className="rounded-2xl">{t("common.back")}</Button>
+              <Button onClick={() => goToStep(3)} size="lg" className="flex-1 rounded-2xl" style={{ background: "var(--gradient-primary)" }}>{t("common.next")}</Button>
+            </div>
           </section>
         )}
 
-        {/* Confirmed view */}
-        {confirmed && (
-          <section className="mt-6 animate-fade-up space-y-4">
-            <div className={cardCls + " border-success/40"}>
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="mt-0.5 h-6 w-6 text-success" />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground">Тасдиқланди</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Бемор: <span className="font-medium text-foreground">{confirmed.patientName}</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(confirmed.confirmedAt).toLocaleString("ru-RU")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <Button
-                  onClick={generatePdf}
-                  size="lg"
-                  className="flex-1 rounded-2xl shadow-md"
-                  style={{ background: "var(--gradient-primary)" }}
-                >
-                  <Download className="mr-2 h-5 w-5" /> PDF юклаб олиш
-                </Button>
-                <Button onClick={handleEditAgain} variant="outline" size="lg" className="rounded-2xl">
-                  <Pencil className="mr-2 h-4 w-4" /> Қайта таҳрирлаш
-                </Button>
-              </div>
-            </div>
-
-            {/* Read-only preview */}
+        {/* STEP 3: Instrumental tests */}
+        {step === 3 && result && (
+          <section className="space-y-4">
             <div className={cardCls}>
-              <h3 className={labelCls}><FileText className="h-4 w-4" /> Хулоса (превью)</h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <div className="mb-1 text-xs uppercase text-muted-foreground">Симптомлар</div>
-                  {confirmed.result.symptoms.length ? (
-                    <ul className="space-y-1">
-                      {confirmed.result.symptoms.map((s, i) => (
-                        <li key={i} className="flex gap-2"><span className="text-primary">•</span><span>{s}</span></li>
-                      ))}
-                    </ul>
-                  ) : <p className="text-muted-foreground">—</p>}
-                </div>
-                <div>
-                  <div className="mb-1 text-xs uppercase text-muted-foreground">Ташхис</div>
-                  <p>{confirmed.result.diagnosis}</p>
-                </div>
-                <div>
-                  <div className="mb-1 text-xs uppercase text-muted-foreground">Тавсия</div>
-                  <p>{confirmed.result.recommendation}</p>
-                </div>
-                <div>
-                  <div className="mb-1 text-xs uppercase text-muted-foreground">Рецепт</div>
-                  {confirmed.result.prescriptions.length ? (
-                    <ol className="space-y-2">
-                      {confirmed.result.prescriptions.map((p, i) => (
-                        <li key={i} className="rounded-xl bg-muted/40 p-3">
-                          <div className="font-medium">{i + 1}. {p.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {p.dosage} · {p.frequency} · {p.duration}
-                            {p.notes ? ` · ${p.notes}` : ""}
-                          </div>
-                        </li>
-                      ))}
-                    </ol>
-                  ) : <p className="text-muted-foreground">—</p>}
-                </div>
+              <h2 className="text-lg font-semibold">{t("step.3.title")}</h2>
+              <p className="text-sm text-muted-foreground">{t("step.3.desc")}</p>
+            </div>
+            <div className={cardCls}>
+              <h3 className={labelCls}><Activity className="h-4 w-4" /> {t("sec.instr")}</h3>
+              <div className="space-y-3">
+                {result.instrumental_tests.map((l, i) => (
+                  <div key={i} className="rounded-2xl border border-border/70 bg-background/60 p-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-medium text-muted-foreground">№ {i + 1}</span>
+                      <Button variant="ghost" size="icon" onClick={() => update((r) => ({ ...r, instrumental_tests: r.instrumental_tests.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button>
+                    </div>
+                    <div className="space-y-2">
+                      <Input value={l.name} onChange={(e) => update((r) => ({ ...r, instrumental_tests: r.instrumental_tests.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x) }))} className="rounded-xl" placeholder="УЗИ / ЭКГ / МРТ ..." />
+                      <Input value={l.reason || ""} onChange={(e) => update((r) => ({ ...r, instrumental_tests: r.instrumental_tests.map((x, idx) => idx === i ? { ...x, reason: e.target.value } : x) }))} className="rounded-xl" placeholder={t("lab.reason")} />
+                      <Textarea value={l.result || ""} onChange={(e) => update((r) => ({ ...r, instrumental_tests: r.instrumental_tests.map((x, idx) => idx === i ? { ...x, result: e.target.value } : x) }))} className="rounded-xl min-h-[60px]" placeholder={t("lab.result") + " (" + t("common.optional") + ")"} />
+                    </div>
+                  </div>
+                ))}
+                <Button variant="outline" onClick={() => update((r) => ({ ...r, instrumental_tests: [...r.instrumental_tests, emptyInstr()] }))} className="rounded-xl w-full"><Plus className="mr-2 h-4 w-4" /> {t("common.add")}</Button>
               </div>
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={() => goToStep(2)} variant="outline" size="lg" className="rounded-2xl">{t("common.back")}</Button>
+              <Button onClick={runAnalysis} disabled={isAnalyzing} variant="outline" size="lg" className="rounded-2xl">
+                {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Brain className="mr-2 h-4 w-4" /> {t("act.suggestDiagnosis")}</>}
+              </Button>
+              <Button onClick={() => goToStep(4)} disabled={!result.differentials?.length} size="lg" className="flex-1 rounded-2xl" style={{ background: "var(--gradient-primary)" }}>{t("common.next")}</Button>
             </div>
           </section>
         )}
 
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-          ⚕️ Бу AI фақат ёрдамчи, якуний қарор шифокорга тегишли
-        </p>
+        {/* STEP 4: Differential diagnosis selection */}
+        {step === 4 && result && (
+          <section className="space-y-4">
+            <div className={cardCls}>
+              <h2 className="text-lg font-semibold">{t("step.4.title")}</h2>
+              <p className="text-sm text-muted-foreground">{t("step.4.desc")}</p>
+            </div>
+            <div className={cardCls}>
+              <h3 className={labelCls}><Brain className="h-4 w-4" /> {t("sec.diff")}</h3>
+              <div className="space-y-3">
+                {result.differentials.map((d, i) => {
+                  const chosen = i === chosenIdx;
+                  const probColor = d.probability === "high" ? "bg-destructive/15 text-destructive" : d.probability === "medium" ? "bg-warning/15 text-warning" : "bg-primary/15 text-primary";
+                  return (
+                    <button key={i}
+                      onClick={() => { setChosenIdx(i); persist({ chosenIdx: i }); }}
+                      className={`block w-full rounded-2xl border p-4 text-left transition-all ${chosen ? "border-success bg-success/5 shadow-md" : "border-border bg-background/60 hover:border-primary/40"}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold">{d.name}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${probColor}`}>{d.probability}</span>
+                            {chosen && <span className="rounded-full bg-success px-2 py-0.5 text-[10px] font-bold uppercase text-success-foreground">✓ {t("diff.chosen")}</span>}
+                          </div>
+                          <p className="mt-1.5 text-xs text-muted-foreground italic">{d.reasoning}</p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={() => goToStep(3)} variant="outline" size="lg" className="rounded-2xl">{t("common.back")}</Button>
+              <Button onClick={() => goToStep(5)} size="lg" className="flex-1 rounded-2xl" style={{ background: "var(--gradient-primary)" }}>{t("common.next")}</Button>
+            </div>
+          </section>
+        )}
+
+        {/* STEP 5: Recommendation, Rx, Family advice */}
+        {step === 5 && result && (
+          <section className="space-y-4">
+            <div className={cardCls}>
+              <h2 className="text-lg font-semibold">{t("step.5.title")}</h2>
+              <p className="text-sm text-muted-foreground">{t("step.5.desc")}</p>
+            </div>
+
+            <div className={cardCls + " border-success/40"}>
+              <h3 className={labelCls}><CheckCircle2 className="h-4 w-4 text-success" /> {t("sec.diagnosis")}</h3>
+              <p className="text-base font-semibold text-success">{result.differentials[chosenIdx]?.name || "—"}</p>
+            </div>
+
+            <div className={cardCls}>
+              <h3 className={labelCls}><span className="h-2 w-2 rounded-full bg-primary" /> {t("sec.recommendation")}</h3>
+              <Textarea value={result.recommendation} onChange={(e) => update((r) => ({ ...r, recommendation: e.target.value }))} className="min-h-[100px] rounded-2xl" />
+            </div>
+
+            <div className={cardCls}>
+              <h3 className={labelCls}><Pill className="h-4 w-4" /> {t("sec.rx")}</h3>
+              <div className="space-y-3">
+                {result.prescriptions.map((p, i) => (
+                  <div key={i} className="rounded-2xl border border-border/70 bg-background/60 p-4">
+                    <div className="mb-3 flex items-center justify-between"><span className="text-xs font-medium text-muted-foreground">№ {i + 1}</span><Button variant="ghost" size="icon" onClick={() => update((r) => ({ ...r, prescriptions: r.prescriptions.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button></div>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <div className="sm:col-span-2"><label className="mb-1 block text-xs text-muted-foreground">{t("rx.name")}</label><Input value={p.name} onChange={(e) => update((r) => ({ ...r, prescriptions: r.prescriptions.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x) }))} className="rounded-xl" /></div>
+                      <div><label className="mb-1 block text-xs text-muted-foreground">{t("rx.dosage")}</label><Input value={p.dosage} onChange={(e) => update((r) => ({ ...r, prescriptions: r.prescriptions.map((x, idx) => idx === i ? { ...x, dosage: e.target.value } : x) }))} className="rounded-xl" /></div>
+                      <div><label className="mb-1 block text-xs text-muted-foreground">{t("rx.frequency")}</label><Input value={p.frequency} onChange={(e) => update((r) => ({ ...r, prescriptions: r.prescriptions.map((x, idx) => idx === i ? { ...x, frequency: e.target.value } : x) }))} className="rounded-xl" /></div>
+                      <div><label className="mb-1 block text-xs text-muted-foreground">{t("rx.duration")}</label><Input value={p.duration} onChange={(e) => update((r) => ({ ...r, prescriptions: r.prescriptions.map((x, idx) => idx === i ? { ...x, duration: e.target.value } : x) }))} className="rounded-xl" /></div>
+                      <div className="sm:col-span-2"><label className="mb-1 block text-xs text-muted-foreground">{t("rx.notes")}</label><Input value={p.notes || ""} onChange={(e) => update((r) => ({ ...r, prescriptions: r.prescriptions.map((x, idx) => idx === i ? { ...x, notes: e.target.value } : x) }))} className="rounded-xl" /></div>
+                    </div>
+                  </div>
+                ))}
+                <Button variant="outline" onClick={() => update((r) => ({ ...r, prescriptions: [...r.prescriptions, emptyRx()] }))} className="rounded-xl w-full"><Plus className="mr-2 h-4 w-4" /> {t("common.add")}</Button>
+              </div>
+            </div>
+
+            <div className={cardCls}>
+              <h3 className={labelCls}><HeartHandshake className="h-4 w-4" /> {t("sec.family")}</h3>
+              <p className="-mt-2 mb-3 text-xs text-muted-foreground">{t("sec.familyHint")}</p>
+              <Textarea value={result.family_advice} onChange={(e) => update((r) => ({ ...r, family_advice: e.target.value }))} className="min-h-[140px] rounded-2xl" />
+            </div>
+
+            {!confirmed ? (
+              <div className="flex gap-3">
+                <Button onClick={() => goToStep(4)} variant="outline" size="lg" className="rounded-2xl">{t("common.back")}</Button>
+                <Button onClick={handleConfirm} size="lg" className="flex-1 rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
+                  <CheckCircle2 className="mr-2 h-5 w-5" /> {t("act.confirm")}
+                </Button>
+              </div>
+            ) : (
+              <div className={cardCls + " border-success/40"}>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-6 w-6 text-success" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{t("status.confirmed")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("status.patient")}: <span className="font-medium text-foreground">{patientName || "—"}</span></p>
+                  </div>
+                </div>
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <Button onClick={generatePdf} size="lg" className="flex-1 rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
+                    <Download className="mr-2 h-5 w-5" /> {t("act.downloadPdf")}
+                  </Button>
+                  <Button onClick={handleClear} variant="outline" size="lg" className="rounded-2xl">
+                    <Plus className="mr-2 h-4 w-4" /> {t("act.newPatient")}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        <p className="mt-8 text-center text-xs text-muted-foreground">⚕️ {t("status.aiNote")}</p>
       </main>
       <SupportFooter />
     </div>

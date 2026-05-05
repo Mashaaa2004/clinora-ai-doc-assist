@@ -5,28 +5,82 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+type Lang = "uz" | "ru" | "en";
+
+const LANG_INSTRUCTION: Record<Lang, string> = {
+  uz: "Жавобни ҳамиша КИРИЛЛ ўзбек тилида қайтаринг.",
+  ru: "Всегда возвращайте ответ на русском языке.",
+  en: "Always return the response in English.",
+};
+
+const LABELS: Record<Lang, { history: string; today: string; analyze: string }> = {
+  uz: {
+    history: "БЕМОРНИНГ ОЛДИНГИ ТАШРИФЛАРИ ТАРИХИ",
+    today: "БУГУНГИ ШИКОЯТ ВА СУҲБАТ",
+    analyze: "Иккаласини ҳисобга олиб тиббий тарзда таҳлил қилинг.",
+  },
+  ru: {
+    history: "ИСТОРИЯ ПРЕДЫДУЩИХ ВИЗИТОВ ПАЦИЕНТА",
+    today: "СЕГОДНЯШНИЕ ЖАЛОБЫ И БЕСЕДА",
+    analyze: "Проанализируйте оба блока медицински.",
+  },
+  en: {
+    history: "PATIENT'S PREVIOUS VISIT HISTORY",
+    today: "TODAY'S COMPLAINTS AND CONVERSATION",
+    analyze: "Analyze both blocks medically.",
+  },
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { transcript, previousHistory } = await req.json();
+    const { transcript, previousHistory, language, labResults, instrumentalResults } = await req.json();
     if (!transcript || typeof transcript !== "string" || transcript.trim().length < 3) {
-      return new Response(JSON.stringify({ error: "Матн бўш ёки жуда қисқа" }), {
+      return new Response(JSON.stringify({ error: "Текст пуст или слишком короткий" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY мавжуд эмас");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const systemPrompt = `Сиз — тажрибали тиббий ёрдамчи AI сиз. Шифокор ёзиб олган бемор билан суҳбатни таҳлил қилиб, фақат қисқа ва аниқ маълумот беринг. Агар беморнинг олдинги ташрифлари тарихи берилган бўлса, уни ҳам инобатга олиб таҳлил қилинг (сурункали касалликлар, аввалги ташхислар, такрорланаётган симптомлар). Жавобни ҳамиша КИРИЛЛ ўзбек тилида қайтаринг. Натижани structured tool орқали юборинг.`;
+    const lang: Lang = language === "ru" || language === "en" ? language : "uz";
+    const langInstr = LANG_INSTRUCTION[lang];
+    const labels = LABELS[lang];
 
-    const userContent = previousHistory && typeof previousHistory === "string" && previousHistory.trim().length > 0
-      ? `БЕМОРНИНГ ОЛДИНГИ ТАШРИФЛАРИ ТАРИХИ:\n${previousHistory}\n\n=====\n\nБУГУНГИ СУҲБАТ:\n"""${transcript}"""\n\nИккаласини ҳисобга олиб таҳлил қилинг.`
-      : `Қуйидаги бемор суҳбатини тиббий тарзда таҳлил қил:\n\n"""${transcript}"""`;
+    const systemPrompt = `You are an experienced medical assistant AI helping a doctor during a patient consultation.
+You will receive: (1) the patient's complaints / dialogue, (2) optionally previous visit history, (3) optionally already-known laboratory results, (4) optionally already-known instrumental exam results (US, ECG, MRI, etc.).
+
+Your task — return ONE structured analysis containing:
+- symptoms: list of identified symptoms
+- lab_tests: recommended laboratory tests (with reason). If lab results are already provided, include them with their result filled in and add new ones only if necessary.
+- instrumental_tests: recommended instrumental/apparatus exams (US, ECG, X-ray, MRI, CT, EEG, etc.) with reason. Same rule for already-provided results.
+- differentials: EXACTLY 3 most likely differential diagnoses ordered by probability, each with: name, probability ("high"/"medium"/"low"), short reasoning (2-3 sentences) tying it to the symptoms and any test results.
+- recommendation: treatment plan (lifestyle, regimen, follow-up) for the MOST LIKELY diagnosis (the first differential). The doctor may switch to another diagnosis afterwards.
+- prescriptions: tentative drug prescriptions for the MOST LIKELY diagnosis. The doctor will review and approve.
+- family_advice: a clear, simple-language note (4-8 sentences) for the patient's family members explaining the patient's condition, what they should do at home (diet, regimen, monitoring), warning signs that require calling emergency services, and emotional support tips.
+
+IMPORTANT: ${langInstr}
+If previous history is provided, use it (chronic conditions, recurring symptoms).
+Return the result via the structured tool only.`;
+
+    const parts: string[] = [];
+    if (previousHistory && typeof previousHistory === "string" && previousHistory.trim()) {
+      parts.push(`${labels.history}:\n${previousHistory}`);
+    }
+    parts.push(`${labels.today}:\n"""${transcript}"""`);
+    if (labResults && typeof labResults === "string" && labResults.trim()) {
+      parts.push(`LAB RESULTS ALREADY OBTAINED:\n${labResults}`);
+    }
+    if (instrumentalResults && typeof instrumentalResults === "string" && instrumentalResults.trim()) {
+      parts.push(`INSTRUMENTAL EXAM RESULTS ALREADY OBTAINED:\n${instrumentalResults}`);
+    }
+    parts.push(labels.analyze);
+    const userContent = parts.join("\n\n=====\n\n");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -53,10 +107,6 @@ Deno.serve(async (req) => {
                     type: "array",
                     items: { type: "string" },
                     description: "Аниқланган симптомлар рўйхати (кирилл ўзбек тилида)",
-                  },
-                  diagnosis: {
-                    type: "string",
-                    description: "Эҳтимолий ташхис, қисқа изоҳ билан (кирилл ўзбек тилида)",
                   },
                   recommendation: {
                     type: "string",
@@ -91,8 +141,42 @@ Deno.serve(async (req) => {
                       additionalProperties: false,
                     },
                   },
+                  instrumental_tests: {
+                    type: "array",
+                    description: "Recommended instrumental / apparatus exams (US, ECG, X-ray, MRI, CT, EEG, etc.) with reason.",
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: { type: "string", description: "Exam name" },
+                        reason: { type: "string", description: "Short reason why" },
+                        result: { type: "string", description: "Result if already known, otherwise empty" },
+                      },
+                      required: ["name"],
+                      additionalProperties: false,
+                    },
+                  },
+                  differentials: {
+                    type: "array",
+                    description: "Exactly 3 differential diagnoses ordered by probability.",
+                    minItems: 3,
+                    maxItems: 3,
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: { type: "string", description: "Diagnosis name" },
+                        probability: { type: "string", enum: ["high", "medium", "low"] },
+                        reasoning: { type: "string", description: "Short 2-3 sentence reasoning" },
+                      },
+                      required: ["name", "probability", "reasoning"],
+                      additionalProperties: false,
+                    },
+                  },
+                  family_advice: {
+                    type: "string",
+                    description: "Clear simple-language guidance for the patient's family members (4-8 sentences). Explains condition, home care, warning signs that require emergency, emotional support.",
+                  },
                 },
-                required: ["symptoms", "diagnosis", "recommendation", "prescriptions", "lab_tests"],
+                required: ["symptoms", "recommendation", "prescriptions", "lab_tests", "instrumental_tests", "differentials", "family_advice"],
                 additionalProperties: false,
               },
             },
@@ -103,13 +187,13 @@ Deno.serve(async (req) => {
     });
 
     if (response.status === 429) {
-      return new Response(JSON.stringify({ error: "Сўровлар чегарасига етдингиз. Бироздан сўнг қайта уриниб кўринг." }), {
+      return new Response(JSON.stringify({ error: "Rate limit. Try again later." }), {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     if (response.status === 402) {
-      return new Response(JSON.stringify({ error: "AI кредитлари тугади. Илтимос ҳисобингизга маблағ қўшинг." }), {
+      return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds to your workspace." }), {
         status: 402,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -117,7 +201,7 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI хизматида хатолик" }), {
+      return new Response(JSON.stringify({ error: "AI gateway error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -126,7 +210,7 @@ Deno.serve(async (req) => {
     const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) {
-      return new Response(JSON.stringify({ error: "Натижа олинмади" }), {
+      return new Response(JSON.stringify({ error: "No result returned" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -138,7 +222,7 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("analyze error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Номаълум хатолик" }), {
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

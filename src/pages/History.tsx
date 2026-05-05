@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, FileText, FlaskConical, Loader2, Search, Stethoscope, Trash2, User, Users } from "lucide-react";
+import { Activity, ArrowLeft, FileText, FlaskConical, HeartHandshake, Loader2, Search, Stethoscope, Trash2, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -11,10 +11,13 @@ type Consultation = {
   id: string;
   patient_name: string;
   diagnosis: string;
+  chosen_diagnosis?: string;
   recommendation: string;
   symptoms: string[];
   prescriptions: { name: string; dosage: string; frequency: string; duration: string; notes?: string }[];
   lab_tests?: { name: string; reason?: string; result?: string }[];
+  instrumental_tests?: { name: string; reason?: string; result?: string }[];
+  family_advice?: string;
   user_id: string;
   created_at: string;
 };
@@ -33,7 +36,7 @@ const HistoryPage = () => {
     setLoading(true);
     let query = supabase
       .from("consultations")
-      .select("id,user_id,patient_name,diagnosis,recommendation,symptoms,prescriptions,lab_tests,created_at")
+      .select("id,user_id,patient_name,diagnosis,chosen_diagnosis,recommendation,symptoms,prescriptions,lab_tests,instrumental_tests,family_advice,created_at")
       .order("created_at", { ascending: false });
     if (scope === "mine") query = query.eq("user_id", user.id);
     if (!isPro) query = query.limit(10);
@@ -194,7 +197,7 @@ const HistoryPage = () => {
                       )}
                       <div>
                         <div className="mb-1 text-xs uppercase text-muted-foreground">Ташхис</div>
-                        <p>{x.diagnosis || "—"}</p>
+                        <p className="font-medium text-success">{x.chosen_diagnosis || x.diagnosis || "—"}</p>
                       </div>
                       <div>
                         <div className="mb-1 text-xs uppercase text-muted-foreground">Тавсия</div>
@@ -232,6 +235,33 @@ const HistoryPage = () => {
                               </li>
                             ))}
                           </ol>
+                        </div>
+                      )}
+                      {x.instrumental_tests && x.instrumental_tests.length > 0 && (
+                        <div>
+                          <div className="mb-1 flex items-center gap-1 text-xs uppercase text-muted-foreground">
+                            <Activity className="h-3 w-3" /> Аппарат текширувлари
+                          </div>
+                          <ol className="space-y-2">
+                            {x.instrumental_tests.map((l, i) => (
+                              <li key={i} className="rounded-xl bg-muted/40 p-3">
+                                <div className="font-medium">{i + 1}. {l.name}</div>
+                                {l.reason && <div className="text-xs text-muted-foreground">Сабаб: {l.reason}</div>}
+                                <div className="text-xs">
+                                  <span className="text-muted-foreground">Натижа: </span>
+                                  {l.result || <span className="italic text-muted-foreground">—</span>}
+                                </div>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      )}
+                      {x.family_advice && (
+                        <div>
+                          <div className="mb-1 flex items-center gap-1 text-xs uppercase text-muted-foreground">
+                            <HeartHandshake className="h-3 w-3" /> Оилага тавсия
+                          </div>
+                          <p className="rounded-xl bg-warning/10 p-3 text-sm whitespace-pre-wrap">{x.family_advice}</p>
                         </div>
                       )}
                       {scope === "all" && doctorNames[x.user_id] && (
