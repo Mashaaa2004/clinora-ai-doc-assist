@@ -62,7 +62,7 @@ Your task — return ONE structured analysis containing:
 - differentials: EXACTLY 3 most likely differential diagnoses ordered by probability, each with: name, probability ("high"/"medium"/"low"), short reasoning (2-3 sentences) tying it to the symptoms and any test results.
 - recommendation: treatment plan (lifestyle, regimen, follow-up) for the MOST LIKELY diagnosis (the first differential). The doctor may switch to another diagnosis afterwards.
 - prescriptions: tentative drug prescriptions for the MOST LIKELY diagnosis. The doctor will review and approve.
-- family_advice: a clear, simple-language note (4-8 sentences) for the patient's family members explaining the patient's condition, what they should do at home (diet, regimen, monitoring), warning signs that require calling emergency services, and emotional support tips.
+- family_advice: a SHORT, concise note (MAX 3 sentences, ~40-50 words total) for the patient's family in plain language. Cover only: (1) what the patient has (one sentence), (2) the most important home-care action(s), (3) when to call emergency. No filler, no greetings, no emotional preamble.
 
 IMPORTANT: ${langInstr}
 If previous history is provided, use it (chronic conditions, recurring symptoms).

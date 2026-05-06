@@ -16,6 +16,7 @@ import History from "./pages/History.tsx";
 import Pricing from "./pages/Pricing.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
+import Verify from "./pages/Verify.tsx";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/verify/:id" element={<Verify />} />
             <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

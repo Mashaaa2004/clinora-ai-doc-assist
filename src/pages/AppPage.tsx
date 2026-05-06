@@ -88,6 +88,7 @@ const AppPage = () => {
   const [confirmed, setConfirmed] = useState(false);
   const [supported, setSupported] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
+  const [consultationId, setConsultationId] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
   const baseTranscriptRef = useRef("");
@@ -273,6 +274,7 @@ const AppPage = () => {
   const handleClear = () => {
     setStep(1); setTranscript(""); setPatientName("");
     setResult(null); setChosenIdx(0); setConfirmed(false);
+    setConsultationId(null);
     baseTranscriptRef.current = "";
     localStorage.removeItem(STORAGE_KEY);
   };
@@ -318,7 +320,7 @@ const AppPage = () => {
         symptoms_count: cleaned.symptoms.length,
         prescriptions_count: cleaned.prescriptions.length,
       });
-      await supabase.from("consultations").insert({
+      const { data: ins } = await supabase.from("consultations").insert({
         user_id: user.id,
         patient_name: patientName.trim() || "—",
         transcript,
@@ -332,7 +334,8 @@ const AppPage = () => {
         instrumental_tests: cleaned.instrumental_tests as any,
         family_advice: cleaned.family_advice,
         language: lang,
-      });
+      }).select("id").maybeSingle();
+      if (ins?.id) setConsultationId(ins.id);
     }
     toast.success(t("status.confirmed"));
   };
@@ -351,18 +354,13 @@ const AppPage = () => {
     const hospPhone = profile?.hospital_phone?.trim() || "";
     const hospAddr = profile?.hospital_address?.trim() || "";
 
-    const qrPayload = JSON.stringify({
-      app: "Clinora",
-      patient: pn,
-      doctor: docName,
-      hospital: hosp,
-      date: new Date().toISOString(),
-      diagnosis: chosen?.name?.slice(0, 120) || "",
-      rx: (result.prescriptions || []).map((p) => p.name),
-      lang,
-    });
+    // QR encodes a real, scannable verification URL that opens the public verify page.
+    const origin = window.location.origin;
+    const qrPayload = consultationId
+      ? `${origin}/verify/${consultationId}`
+      : origin;
     let qrDataUrl = "";
-    try { qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 220, margin: 1 }); } catch {}
+    try { qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 220, margin: 1, errorCorrectionLevel: "M" }); } catch {}
 
     const esc = (s: string) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const L = (key: string) => t(key);
@@ -380,58 +378,50 @@ const AppPage = () => {
     const rxHtml = result.prescriptions.length
       ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("rx.name")}</th><th>${L("rx.dosage")}</th><th>${L("rx.frequency")}</th><th>${L("rx.duration")}</th><th>${L("rx.notes")}</th></tr></thead><tbody>${result.prescriptions.map((p, i) => `<tr><td>${i + 1}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.dosage)}</td><td>${esc(p.frequency)}</td><td>${esc(p.duration)}</td><td>${esc(p.notes || "—")}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">—</p>`;
 
-    const diffHtml = result.differentials.length
-      ? `<ol class="diff">${result.differentials.map((d, i) => `<li class="${i === chosenIdx ? "chosen" : ""}"><strong>${esc(d.name)}</strong> <span class="prob prob-${d.probability}">${esc(d.probability)}</span>${i === chosenIdx ? ` <span class="badge">✓ ${L("diff.chosen")}</span>` : ""}<div class="reason">${esc(d.reasoning)}</div></li>`).join("")}</ol>`
-      : `<p class="muted">—</p>`;
-
     const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="UTF-8"/><title>Clinora AI — ${esc(pn)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box}
-  html,body{margin:0;padding:0;background:#f4f6fb;color:#111827;font-family:'Inter',system-ui,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11.5px}
-  .page{width:210mm;min-height:297mm;margin:16px auto;padding:10mm 12mm;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.08);display:flex;flex-direction:column}
+  html,body{margin:0;padding:0;background:#f4f6fb;color:#111827;font-family:'Inter',system-ui,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:10.5px}
+  .page{width:210mm;height:297mm;margin:16px auto;padding:8mm 11mm;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.08);display:flex;flex-direction:column;overflow:hidden}
   .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:8px;border-bottom:2px solid #2176eb}
   .brand{display:flex;align-items:center;gap:12px}
-  .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2176eb,#4f9bff);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Manrope',sans-serif;font-weight:800;font-size:16px}
-  .brand h1{font-family:'Manrope',sans-serif;font-size:17px;margin:0;color:#111827}
-  .brand p{margin:2px 0 0;font-size:10px;color:#6b7280}
-  .clinic{text-align:right;font-size:10px;color:#374151;line-height:1.4}
-  .clinic .clinic-name{font-weight:700;color:#2176eb;font-size:11.5px}
-  .meta{display:flex;justify-content:space-between;gap:10px;margin:8px 0 4px}
-  .meta .row{background:#f9fafb;border:1px solid #eef0f4;border-radius:8px;padding:6px 10px;flex:1}
-  .meta .label{font-size:9px;text-transform:uppercase;color:#6b7280;margin-bottom:1px}
-  .meta .val{font-weight:600;color:#111827;font-size:11.5px}
-  h2.section{font-family:'Manrope',sans-serif;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#2176eb;margin:9px 0 4px;padding-bottom:2px;border-bottom:1px dashed #d1d5db}
-  .bul{margin:0;padding-left:16px}
-  .bul li{margin:1px 0;font-size:11px;line-height:1.35}
-  p.body{font-size:11px;line-height:1.4;margin:2px 0;white-space:pre-wrap}
-  .muted{color:#9ca3af;font-style:italic;font-size:11px}
-  table.rx{width:100%;border-collapse:collapse;font-size:10px;margin-top:4px}
-  table.rx th{background:#eff5ff;color:#1e40af;text-align:left;padding:5px 7px;font-weight:600;border-bottom:1.5px solid #c8dcfb;font-size:9.5px}
-  table.rx td{padding:5px 7px;border-bottom:1px solid #eef0f4;vertical-align:top;line-height:1.3}
-  ol.diff{padding-left:18px;margin:4px 0;font-size:10.5px}
-  ol.diff li{margin-bottom:4px;line-height:1.35}
-  ol.diff li.chosen{background:#ecfdf5;border-left:3px solid #10b981;padding:5px 7px;border-radius:4px;margin-left:-10px}
-  .prob{display:inline-block;font-size:8.5px;padding:1px 6px;border-radius:8px;text-transform:uppercase;font-weight:700;margin-left:4px}
-  .prob-high{background:#fee2e2;color:#991b1b}.prob-medium{background:#fef3c7;color:#92400e}.prob-low{background:#e0e7ff;color:#3730a3}
-  .badge{background:#10b981;color:#fff;padding:1px 6px;border-radius:8px;font-size:8.5px;font-weight:700;margin-left:4px}
-  .reason{color:#4b5563;font-size:9.5px;margin-top:1px;font-style:italic}
-  .family-box{background:#fffbeb;border-left:3px solid #f59e0b;border-radius:6px;padding:8px 10px;margin-top:4px}
-  .family-box p{margin:0;font-size:10.5px;line-height:1.45;color:#374151;white-space:pre-wrap}
-  .signature{margin-top:10px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
-  .doctor-card{font-size:11px;color:#111827;line-height:1.4}
-  .doctor-card .name{font-weight:700;font-size:12px}
+  .logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#2176eb,#4f9bff);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Manrope',sans-serif;font-weight:800;font-size:15px}
+  .brand h1{font-family:'Manrope',sans-serif;font-size:15px;margin:0;color:#111827}
+  .brand p{margin:1px 0 0;font-size:9px;color:#6b7280}
+  .clinic{text-align:right;font-size:9px;color:#374151;line-height:1.35}
+  .clinic .clinic-name{font-weight:700;color:#2176eb;font-size:10.5px}
+  .meta{display:flex;justify-content:space-between;gap:8px;margin:6px 0 2px}
+  .meta .row{background:#f9fafb;border:1px solid #eef0f4;border-radius:6px;padding:4px 8px;flex:1}
+  .meta .label{font-size:8px;text-transform:uppercase;color:#6b7280;margin-bottom:1px}
+  .meta .val{font-weight:600;color:#111827;font-size:10.5px}
+  h2.section{font-family:'Manrope',sans-serif;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:#2176eb;margin:6px 0 2px;padding-bottom:1px;border-bottom:1px dashed #d1d5db}
+  .bul{margin:0;padding-left:14px}
+  .bul li{margin:0;font-size:10px;line-height:1.3}
+  p.body{font-size:10px;line-height:1.35;margin:1px 0;white-space:pre-wrap}
+  .muted{color:#9ca3af;font-style:italic;font-size:10px}
+  table.rx{width:100%;border-collapse:collapse;font-size:9.5px;margin-top:2px}
+  table.rx th{background:#eff5ff;color:#1e40af;text-align:left;padding:3px 6px;font-weight:600;border-bottom:1.5px solid #c8dcfb;font-size:9px}
+  table.rx td{padding:3px 6px;border-bottom:1px solid #eef0f4;vertical-align:top;line-height:1.25}
+  .dx-pill{display:inline-block;background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:4px 12px;border-radius:8px;font-weight:700;font-size:11.5px;margin-top:2px}
+  .family-box{background:#fffbeb;border-left:3px solid #f59e0b;border-radius:5px;padding:5px 9px;margin-top:2px}
+  .family-box p{margin:0;font-size:10px;line-height:1.4;color:#374151;white-space:pre-wrap}
+  .signature{margin-top:auto;padding-top:8px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+  .doctor-card{font-size:10px;color:#111827;line-height:1.35}
+  .doctor-card .name{font-weight:700;font-size:11px}
   .doctor-card .spec{color:#2176eb;font-weight:500}
-  .doctor-card .contact{color:#6b7280;font-size:10px}
-  .sig-line{width:170px;text-align:center;font-size:9.5px;color:#6b7280}
-  .sig-line .line{border-bottom:1px solid #111827;height:22px;margin-bottom:3px}
-  .footer{margin-top:8px;padding-top:6px;border-top:1px solid #e5e7eb;font-size:9px;color:#6b7280;text-align:center}
+  .doctor-card .contact{color:#6b7280;font-size:9px}
+  .qr-block{text-align:center;font-size:8.5px;color:#6b7280}
+  .qr-block img{width:74px;height:74px;display:block;margin:0 auto 1px}
+  .sig-line{width:150px;text-align:center;font-size:9px;color:#6b7280}
+  .sig-line .line{border-bottom:1px solid #111827;height:20px;margin-bottom:2px}
+  .footer{margin-top:6px;padding-top:5px;border-top:1px solid #e5e7eb;font-size:8.5px;color:#6b7280;text-align:center}
   .footer b{color:#2176eb}
   .actions{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:9999}
   .actions button{background:#2176eb;color:#fff;border:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(33,118,235,.35);font-family:inherit}
   .actions .alt{background:#fff;color:#374151;border:1px solid #d1d5db}
-  @media print{body{background:#fff}.page{box-shadow:none;margin:0;padding:8mm 10mm}.actions{display:none}@page{size:A4 portrait;margin:0}}
+  @media print{body{background:#fff}.page{box-shadow:none;margin:0;padding:7mm 10mm;height:297mm}.actions{display:none}@page{size:A4 portrait;margin:0}}
 </style></head><body>
 <div class="actions">
   <button class="alt" onclick="window.close()">${L("common.close")}</button>
@@ -453,11 +443,8 @@ const AppPage = () => {
   ${labsHtml ? `<h2 class="section">${L("sec.labs")}</h2>${labsHtml}` : ""}
   ${instrHtml ? `<h2 class="section">${L("sec.instr")}</h2>${instrHtml}` : ""}
 
-  <h2 class="section">${L("sec.diff")}</h2>
-  ${diffHtml}
-
   <h2 class="section">${L("sec.diagnosis")}</h2>
-  <p class="body"><strong style="color:#10b981">${esc(chosen?.name || "—")}</strong></p>
+  <div><span class="dx-pill">${esc(chosen?.name || "—")}</span></div>
 
   <h2 class="section">${L("sec.recommendation")}</h2>
   <p class="body">${esc(result.recommendation || "—")}</p>
@@ -474,7 +461,7 @@ const AppPage = () => {
       ${docPhone ? `<div class="contact">☎ ${esc(docPhone)}</div>` : ""}
       ${workHours ? `<div class="contact">🕒 ${esc(workHours)}</div>` : ""}
     </div>
-    ${qrDataUrl ? `<div style="text-align:center;font-size:9px;color:#6b7280"><img src="${qrDataUrl}" alt="QR" style="width:80px;height:80px;display:block;margin:0 auto 2px"/>${L("pdf.qr")}</div>` : ""}
+    ${qrDataUrl ? `<div class="qr-block"><img src="${qrDataUrl}" alt="QR"/>${L("pdf.qr")}</div>` : ""}
     <div class="sig-line"><div class="line"></div>${L("pdf.signature")}</div>
   </div>
 
