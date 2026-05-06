@@ -88,6 +88,7 @@ const AppPage = () => {
   const [confirmed, setConfirmed] = useState(false);
   const [supported, setSupported] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
+  const [consultationId, setConsultationId] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
   const baseTranscriptRef = useRef("");
@@ -273,6 +274,7 @@ const AppPage = () => {
   const handleClear = () => {
     setStep(1); setTranscript(""); setPatientName("");
     setResult(null); setChosenIdx(0); setConfirmed(false);
+    setConsultationId(null);
     baseTranscriptRef.current = "";
     localStorage.removeItem(STORAGE_KEY);
   };
@@ -318,7 +320,7 @@ const AppPage = () => {
         symptoms_count: cleaned.symptoms.length,
         prescriptions_count: cleaned.prescriptions.length,
       });
-      await supabase.from("consultations").insert({
+      const { data: ins } = await supabase.from("consultations").insert({
         user_id: user.id,
         patient_name: patientName.trim() || "—",
         transcript,
@@ -332,7 +334,8 @@ const AppPage = () => {
         instrumental_tests: cleaned.instrumental_tests as any,
         family_advice: cleaned.family_advice,
         language: lang,
-      });
+      }).select("id").maybeSingle();
+      if (ins?.id) setConsultationId(ins.id);
     }
     toast.success(t("status.confirmed"));
   };
