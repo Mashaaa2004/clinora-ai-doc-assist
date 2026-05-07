@@ -413,8 +413,9 @@ const AppPage = () => {
   .doctor-card .name{font-weight:700;font-size:11px}
   .doctor-card .spec{color:#2176eb;font-weight:500}
   .doctor-card .contact{color:#6b7280;font-size:9px}
-  .qr-block{text-align:center;font-size:8.5px;color:#6b7280}
-  .qr-block img{width:74px;height:74px;display:block;margin:0 auto 1px}
+  .qr-pair{display:flex;gap:10px}
+  .qr-block{text-align:center;font-size:8px;color:#6b7280}
+  .qr-block img{width:64px;height:64px;display:block;margin:0 auto 1px}
   .sig-line{width:150px;text-align:center;font-size:9px;color:#6b7280}
   .sig-line .line{border-bottom:1px solid #111827;height:20px;margin-bottom:2px}
   .footer{margin-top:6px;padding-top:5px;border-top:1px solid #e5e7eb;font-size:8.5px;color:#6b7280;text-align:center}
