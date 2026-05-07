@@ -356,11 +356,12 @@ const AppPage = () => {
 
     // QR encodes a real, scannable verification URL that opens the public verify page.
     const origin = window.location.origin;
-    const qrPayload = consultationId
-      ? `${origin}/verify/${consultationId}`
-      : origin;
-    let qrDataUrl = "";
-    try { qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 220, margin: 1, errorCorrectionLevel: "M" }); } catch {}
+    const verifyUrl = consultationId ? `${origin}/verify/${consultationId}` : origin;
+    const appUrl = origin;
+    let qrVerifyUrl = "";
+    let qrAppUrl = "";
+    try { qrVerifyUrl = await QRCode.toDataURL(verifyUrl, { width: 220, margin: 1, errorCorrectionLevel: "M" }); } catch {}
+    try { qrAppUrl = await QRCode.toDataURL(appUrl, { width: 220, margin: 1, errorCorrectionLevel: "M" }); } catch {}
 
     const esc = (s: string) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const L = (key: string) => t(key);
@@ -461,7 +462,10 @@ const AppPage = () => {
       ${docPhone ? `<div class="contact">☎ ${esc(docPhone)}</div>` : ""}
       ${workHours ? `<div class="contact">🕒 ${esc(workHours)}</div>` : ""}
     </div>
-    ${qrDataUrl ? `<div class="qr-block"><img src="${qrDataUrl}" alt="QR"/>${L("pdf.qr")}</div>` : ""}
+    <div class="qr-pair">
+      ${qrAppUrl ? `<div class="qr-block"><img src="${qrAppUrl}" alt="App QR"/>${L("pdf.qrApp")}</div>` : ""}
+      ${qrVerifyUrl ? `<div class="qr-block"><img src="${qrVerifyUrl}" alt="Verify QR"/>${L("pdf.qr")}</div>` : ""}
+    </div>
     <div class="sig-line"><div class="line"></div>${L("pdf.signature")}</div>
   </div>
 
