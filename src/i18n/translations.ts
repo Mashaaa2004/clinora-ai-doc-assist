@@ -99,7 +99,8 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
 
     // PDF
     "pdf.title": "Тиббий хулоса ва рецепт",
-    "pdf.qr": "Тасдиқ QR",
+    "pdf.qr": "Ҳужжатни текшириш",
+    "pdf.qrApp": "Clinora AI платформаси",
     "pdf.signature": "Шифокор имзоси / муҳри",
     "pdf.disclaimer": "⚕ Ушбу ҳужжат Clinora AI ёрдамида тайёрланиб, шифокор томонидан тасдиқланди. AI фақат ёрдамчи восита — якуний қарор шифокорга тегишли.",
 
@@ -206,7 +207,8 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
     "diff.reasoning": "Обоснование AI",
 
     "pdf.title": "Медицинское заключение и рецепт",
-    "pdf.qr": "QR подтверждение",
+    "pdf.qr": "Проверить документ",
+    "pdf.qrApp": "Платформа Clinora AI",
     "pdf.signature": "Подпись / печать врача",
     "pdf.disclaimer": "⚕ Документ подготовлен с помощью Clinora AI и подтверждён врачом. AI — лишь вспомогательное средство, окончательное решение принимает врач.",
 
@@ -310,7 +312,8 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
     "diff.reasoning": "AI reasoning",
 
     "pdf.title": "Medical report and prescription",
-    "pdf.qr": "Verification QR",
+    "pdf.qr": "Verify document",
+    "pdf.qrApp": "Clinora AI platform",
     "pdf.signature": "Doctor signature / stamp",
     "pdf.disclaimer": "⚕ This document was prepared with Clinora AI and confirmed by the doctor. AI is only an assistant — the final decision belongs to the doctor.",
 

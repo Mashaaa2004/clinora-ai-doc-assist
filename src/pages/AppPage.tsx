@@ -356,11 +356,12 @@ const AppPage = () => {
 
     // QR encodes a real, scannable verification URL that opens the public verify page.
     const origin = window.location.origin;
-    const qrPayload = consultationId
-      ? `${origin}/verify/${consultationId}`
-      : origin;
-    let qrDataUrl = "";
-    try { qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 220, margin: 1, errorCorrectionLevel: "M" }); } catch {}
+    const verifyUrl = consultationId ? `${origin}/verify/${consultationId}` : origin;
+    const appUrl = origin;
+    let qrVerifyUrl = "";
+    let qrAppUrl = "";
+    try { qrVerifyUrl = await QRCode.toDataURL(verifyUrl, { width: 220, margin: 1, errorCorrectionLevel: "M" }); } catch {}
+    try { qrAppUrl = await QRCode.toDataURL(appUrl, { width: 220, margin: 1, errorCorrectionLevel: "M" }); } catch {}
 
     const esc = (s: string) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const L = (key: string) => t(key);
@@ -412,8 +413,9 @@ const AppPage = () => {
   .doctor-card .name{font-weight:700;font-size:11px}
   .doctor-card .spec{color:#2176eb;font-weight:500}
   .doctor-card .contact{color:#6b7280;font-size:9px}
-  .qr-block{text-align:center;font-size:8.5px;color:#6b7280}
-  .qr-block img{width:74px;height:74px;display:block;margin:0 auto 1px}
+  .qr-pair{display:flex;gap:10px}
+  .qr-block{text-align:center;font-size:8px;color:#6b7280}
+  .qr-block img{width:64px;height:64px;display:block;margin:0 auto 1px}
   .sig-line{width:150px;text-align:center;font-size:9px;color:#6b7280}
   .sig-line .line{border-bottom:1px solid #111827;height:20px;margin-bottom:2px}
   .footer{margin-top:6px;padding-top:5px;border-top:1px solid #e5e7eb;font-size:8.5px;color:#6b7280;text-align:center}
@@ -461,7 +463,10 @@ const AppPage = () => {
       ${docPhone ? `<div class="contact">☎ ${esc(docPhone)}</div>` : ""}
       ${workHours ? `<div class="contact">🕒 ${esc(workHours)}</div>` : ""}
     </div>
-    ${qrDataUrl ? `<div class="qr-block"><img src="${qrDataUrl}" alt="QR"/>${L("pdf.qr")}</div>` : ""}
+    <div class="qr-pair">
+      ${qrAppUrl ? `<div class="qr-block"><img src="${qrAppUrl}" alt="App QR"/>${L("pdf.qrApp")}</div>` : ""}
+      ${qrVerifyUrl ? `<div class="qr-block"><img src="${qrVerifyUrl}" alt="Verify QR"/>${L("pdf.qr")}</div>` : ""}
+    </div>
     <div class="sig-line"><div class="line"></div>${L("pdf.signature")}</div>
   </div>
 
