@@ -75,7 +75,7 @@ const emptyInstr = (): InstrTest => ({ name: "", reason: "", result: "" });
 type Step = 1 | 2 | 3 | 4 | 5;
 
 const AppPage = () => {
-  const { profile, user, signOut, isPro } = useAuth();
+  const { profile, user, signOut, isPro, refreshProfile } = useAuth();
   const { t, lang } = useT();
 
   const [step, setStep] = useState<Step>(1);
@@ -343,6 +343,8 @@ const AppPage = () => {
   // ---- PDF ----
   const generatePdf = async () => {
     if (!result || !confirmed) return;
+    // Refresh profile so latest doctor/hospital info appears on the PDF
+    try { await refreshProfile(); } catch {}
     const chosen = result.differentials[chosenIdx];
     const pn = patientName.trim() || (lang === "ru" ? "Пациент" : lang === "en" ? "Patient" : "Бемор");
     const dateStr = new Date().toLocaleString(DATE_LOCALE[lang]);
@@ -475,7 +477,26 @@ const AppPage = () => {
     <span style="font-style:italic">${L("pdf.disclaimer")}</span>
   </div>
 </div>
-<script>window.addEventListener('load',function(){setTimeout(function(){window.print();},500);});</script>
+<script>
+(function(){
+  function doPrint(){ try { window.focus(); window.print(); } catch(e){} }
+  function whenImagesReady(cb){
+    var imgs = Array.prototype.slice.call(document.images);
+    if(!imgs.length) return cb();
+    var left = imgs.length;
+    var done = function(){ if(--left <= 0) cb(); };
+    imgs.forEach(function(img){
+      if(img.complete && img.naturalWidth > 0) done();
+      else { img.addEventListener('load', done); img.addEventListener('error', done); }
+    });
+    // Safety timeout in case something hangs
+    setTimeout(function(){ if(left > 0){ left = 0; cb(); } }, 2500);
+  }
+  window.addEventListener('load', function(){
+    whenImagesReady(function(){ setTimeout(doPrint, 350); });
+  });
+})();
+</script>
 </body></html>`;
 
     const w = window.open("", "_blank", "width=900,height=1000");
