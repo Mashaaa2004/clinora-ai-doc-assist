@@ -495,36 +495,32 @@ const Empty = ({ text }: { text: string }) => (
 /* ============ MAINTENANCE ============ */
 const MaintenancePanel = () => {
   const [busy, setBusy] = useState<"reset" | "cache" | null>(null);
-  const [stats, setStats] = useState<{ consultations: number; logs: number; requests: number } | null>(null);
+  const [stats, setStats] = useState<{ consultations: number; subs: number; profiles: number } | null>(null);
 
   const loadStats = async () => {
-    const [c, l, r] = await Promise.all([
+    const [c, s, p] = await Promise.all([
       supabase.from("consultations").select("id", { count: "exact", head: true }),
-      supabase.from("prescriptions_log").select("id", { count: "exact", head: true }),
-      supabase.from("payment_requests").select("id", { count: "exact", head: true }),
+      supabase.from("subscriptions").select("id", { count: "exact", head: true }),
+      supabase.from("profiles").select("id", { count: "exact", head: true }),
     ]);
     setStats({
       consultations: c.count ?? 0,
-      logs: l.count ?? 0,
-      requests: r.count ?? 0,
+      subs: s.count ?? 0,
+      profiles: p.count ?? 0,
     });
   };
 
   useEffect(() => { loadStats(); }, []);
 
   const resetTestData = async () => {
-    if (!confirm("ДИҚҚАТ! Барча беморлар, рецептлар тарихи ва тўлов сўровлари ўчирилади. Давом этасизми?")) return;
+    if (!confirm("ДИҚҚАТ! Барча шифокор аккаунтлари, обуналар, беморлар ва тарих ўчирилади. Фақат админ аккаунт қолади. Давом этасизми?")) return;
     if (!confirm("Бу амални ортга қайтариб бўлмайди. Аниқ ўчирасизми?")) return;
     setBusy("reset");
     try {
-      const [c, l, r] = await Promise.all([
-        supabase.from("consultations").delete().not("id", "is", null),
-        supabase.from("prescriptions_log").delete().not("id", "is", null),
-        supabase.from("payment_requests").delete().not("id", "is", null),
-      ]);
-      const err = c.error || l.error || r.error;
-      if (err) { toast.error("Хатолик: " + err.message); return; }
-      toast.success("Тест маълумотлари тозаланди ✓");
+      const { data, error } = await supabase.functions.invoke("admin-reset");
+      if (error) { toast.error("Хатолик: " + error.message); return; }
+      if (data?.error) { toast.error("Хатолик: " + data.error); return; }
+      toast.success(`Платформа 0 дан тайёр ✓ (${data?.deleted_users ?? 0} аккаунт ўчирилди)`);
       loadStats();
     } finally {
       setBusy(null);
@@ -566,12 +562,12 @@ const MaintenancePanel = () => {
             <div className="text-xs text-muted-foreground">Беморлар</div>
           </div>
           <div className="rounded-xl bg-muted/40 p-3 text-center">
-            <div className="text-2xl font-bold text-primary">{stats?.logs ?? "—"}</div>
-            <div className="text-xs text-muted-foreground">Рецепт логи</div>
+            <div className="text-2xl font-bold text-primary">{stats?.subs ?? "—"}</div>
+            <div className="text-xs text-muted-foreground">Обуналар</div>
           </div>
           <div className="rounded-xl bg-muted/40 p-3 text-center">
-            <div className="text-2xl font-bold text-primary">{stats?.requests ?? "—"}</div>
-            <div className="text-xs text-muted-foreground">Тўлов сўровлари</div>
+            <div className="text-2xl font-bold text-primary">{stats?.profiles ?? "—"}</div>
+            <div className="text-xs text-muted-foreground">Шифокорлар</div>
           </div>
         </div>
       </div>
@@ -582,9 +578,9 @@ const MaintenancePanel = () => {
             <Trash2 className="h-5 w-5 text-destructive" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold">Тест маълумотларни тозалаш</h3>
+            <h3 className="font-semibold">Платформани 0 дан тайёрлаш</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Барча беморлар тарихи, рецепт логлари ва тўлов сўровлари ўчирилади. Шифокор аккаунтлари ва обуналар сақланиб қолади. Илк мижозлар учун платформани 0 дан тайёрлашда ишлатинг.
+              Барча беморлар тарихи, рецепт логлари, тўлов сўровлари, обуналар, шифокор аккаунтлари ва уларнинг профиллари тўлиқ ўчирилади. Фақат админ логин ва пароли сақланиб қолади. Илк мижозларга платформани тоза ҳолда тайёрлашда ишлатинг.
             </p>
             <Button
               onClick={resetTestData}
@@ -592,7 +588,7 @@ const MaintenancePanel = () => {
               variant="destructive"
               className="mt-4 rounded-xl"
             >
-              {busy === "reset" ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Trash2 className="h-4 w-4" /> Тест маълумотларни ўчириш</>}
+              {busy === "reset" ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Trash2 className="h-4 w-4" /> Ҳаммасини ўчириш (админдан ташқари)</>}
             </Button>
           </div>
         </div>
