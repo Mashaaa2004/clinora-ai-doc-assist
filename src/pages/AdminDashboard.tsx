@@ -492,4 +492,135 @@ const Empty = ({ text }: { text: string }) => (
   </div>
 );
 
+/* ============ MAINTENANCE ============ */
+const MaintenancePanel = () => {
+  const [busy, setBusy] = useState<"reset" | "cache" | null>(null);
+  const [stats, setStats] = useState<{ consultations: number; logs: number; requests: number } | null>(null);
+
+  const loadStats = async () => {
+    const [c, l, r] = await Promise.all([
+      supabase.from("consultations").select("id", { count: "exact", head: true }),
+      supabase.from("prescriptions_log").select("id", { count: "exact", head: true }),
+      supabase.from("payment_requests").select("id", { count: "exact", head: true }),
+    ]);
+    setStats({
+      consultations: c.count ?? 0,
+      logs: l.count ?? 0,
+      requests: r.count ?? 0,
+    });
+  };
+
+  useEffect(() => { loadStats(); }, []);
+
+  const resetTestData = async () => {
+    if (!confirm("ДИҚҚАТ! Барча беморлар, рецептлар тарихи ва тўлов сўровлари ўчирилади. Давом этасизми?")) return;
+    if (!confirm("Бу амални ортга қайтариб бўлмайди. Аниқ ўчирасизми?")) return;
+    setBusy("reset");
+    try {
+      const [c, l, r] = await Promise.all([
+        supabase.from("consultations").delete().not("id", "is", null),
+        supabase.from("prescriptions_log").delete().not("id", "is", null),
+        supabase.from("payment_requests").delete().not("id", "is", null),
+      ]);
+      const err = c.error || l.error || r.error;
+      if (err) { toast.error("Хатолик: " + err.message); return; }
+      toast.success("Тест маълумотлари тозаланди ✓");
+      loadStats();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const clearCacheAndReload = async () => {
+    if (!confirm("Барча локал кэш ва сақланган ҳолат тозаланади, саҳифа қайта юкланади. Давом этасизми?")) return;
+    setBusy("cache");
+    try {
+      // Clear app-specific localStorage keys + sessionStorage
+      try {
+        const keys = Object.keys(localStorage);
+        keys.filter((k) => k.startsWith("clinora:") || k.startsWith("sb-")).forEach((k) => localStorage.removeItem(k));
+        sessionStorage.clear();
+      } catch {}
+      // Clear service worker caches if any
+      try {
+        if ("caches" in window) {
+          const names = await caches.keys();
+          await Promise.all(names.map((n) => caches.delete(n)));
+        }
+      } catch {}
+      toast.success("Кэш тозаланди. Қайта юкланмоқда...");
+      setTimeout(() => window.location.reload(), 600);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="text-lg font-semibold">Платформа ҳолати</h2>
+        <p className="mt-1 text-xs text-muted-foreground">Жорий маълумотлар миқдори</p>
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className="rounded-xl bg-muted/40 p-3 text-center">
+            <div className="text-2xl font-bold text-primary">{stats?.consultations ?? "—"}</div>
+            <div className="text-xs text-muted-foreground">Беморлар</div>
+          </div>
+          <div className="rounded-xl bg-muted/40 p-3 text-center">
+            <div className="text-2xl font-bold text-primary">{stats?.logs ?? "—"}</div>
+            <div className="text-xs text-muted-foreground">Рецепт логи</div>
+          </div>
+          <div className="rounded-xl bg-muted/40 p-3 text-center">
+            <div className="text-2xl font-bold text-primary">{stats?.requests ?? "—"}</div>
+            <div className="text-xs text-muted-foreground">Тўлов сўровлари</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-destructive/30 bg-card p-6 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="rounded-xl bg-destructive/10 p-2">
+            <Trash2 className="h-5 w-5 text-destructive" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold">Тест маълумотларни тозалаш</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Барча беморлар тарихи, рецепт логлари ва тўлов сўровлари ўчирилади. Шифокор аккаунтлари ва обуналар сақланиб қолади. Илк мижозлар учун платформани 0 дан тайёрлашда ишлатинг.
+            </p>
+            <Button
+              onClick={resetTestData}
+              disabled={busy !== null}
+              variant="destructive"
+              className="mt-4 rounded-xl"
+            >
+              {busy === "reset" ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Trash2 className="h-4 w-4" /> Тест маълумотларни ўчириш</>}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-primary/30 bg-card p-6 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="rounded-xl bg-primary/10 p-2">
+            <RefreshCw className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold">Янгиланишларни қўллаш</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Локал кэш, сақланган ҳолат ва эски версия файлларни тозалайди ҳамда саҳифани янгилайди. Кейинги барча янгиланишлар тўлиқ қўлланилади.
+            </p>
+            <Button
+              onClick={clearCacheAndReload}
+              disabled={busy !== null}
+              className="mt-4 rounded-xl"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              {busy === "cache" ? <Loader2 className="h-4 w-4 animate-spin" /> : <><RefreshCw className="h-4 w-4" /> Янгиланишларни қўллаш</>}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default AdminDashboard;
