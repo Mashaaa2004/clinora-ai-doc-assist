@@ -366,7 +366,7 @@ const AppPage = () => {
 
     // QR encodes a real, scannable verification URL that opens the public verify page.
     const origin = window.location.origin;
-    const verifyUrl = consultationId ? `${origin}/verify/${consultationId}` : origin;
+    const verifyUrl = consultationId ? `${origin}/verify/${consultationId}?print=1` : origin;
     const appUrl = origin;
     let qrVerifyUrl = "";
     let qrAppUrl = "";
