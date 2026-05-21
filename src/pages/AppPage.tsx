@@ -633,6 +633,7 @@ const AppPage = () => {
           </div>
 
           <Stepper />
+        </div>
 
         {/* STEP 1: Complaints */}
         {step === 1 && (
@@ -878,7 +879,6 @@ const AppPage = () => {
         )}
 
         <p className="mt-8 text-center text-xs text-muted-foreground">⚕️ {t("status.aiNote")}</p>
-        </div>
       </main>
       <SupportFooter />
     </div>
