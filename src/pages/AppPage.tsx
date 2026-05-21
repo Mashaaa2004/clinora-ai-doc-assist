@@ -518,8 +518,33 @@ const AppPage = () => {
   };
 
   // ---- UI ----
-  const cardCls = "paper-section p-5 md:p-6 mb-4";
+  const cardCls = "glass-card card-tilt rounded-3xl p-5 md:p-6 mb-4";
   const labelCls = "mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-primary";
+
+  const MedicalBackdrop = () => (
+    <div className="med-bg" aria-hidden>
+      <svg className="med-float-1" width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="hsl(174 72% 45%)" strokeWidth="1.2">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+      <svg className="med-float-2" width="110" height="110" viewBox="0 0 64 64" fill="none" stroke="hsl(188 85% 55%)" strokeWidth="1.4">
+        <path d="M16 4 C40 16 24 32 48 44 M48 4 C24 16 40 32 16 44 M16 12 H48 M16 20 H48 M16 28 H48 M16 36 H48"/>
+      </svg>
+      <svg className="med-float-3" width="80" height="80" viewBox="0 0 24 24" fill="hsl(160 70% 55% / 0.25)" stroke="hsl(160 70% 45%)" strokeWidth="1">
+        <path d="M9 2h6v7h7v6h-7v7H9v-7H2V9h7z"/>
+      </svg>
+      <svg className="med-float-4" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="hsl(200 90% 55%)" strokeWidth="1.4">
+        <rect x="2" y="8" width="20" height="8" rx="4"/>
+        <path d="M12 8v8"/>
+      </svg>
+      <svg className="med-float-5" width="220" height="60" viewBox="0 0 220 60" fill="none">
+        <path className="ecg-line" d="M0 30 H40 L50 10 L60 50 L72 20 L82 40 L92 30 H220" stroke="hsl(174 72% 50%)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      <svg className="med-float-1" style={{ top: "65%", left: "70%" }} width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="hsl(188 85% 50%)" strokeWidth="1.2">
+        <circle cx="12" cy="12" r="8"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    </div>
+  );
 
   const Stepper = () => (
     <div className="mb-6 flex items-center gap-1 overflow-x-auto pb-1">
@@ -547,7 +572,9 @@ const AppPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-mesh">
+    <div className="relative min-h-screen bg-mesh overflow-hidden">
+      <div className="bg-mesh-animated pointer-events-none absolute inset-0 -z-10" aria-hidden />
+      <div className="absolute inset-0 -z-10"><MedicalBackdrop /></div>
       {showGuide && (
         <GuideModal onClose={(dontShow) => {
           setShowGuide(false);
@@ -583,23 +610,23 @@ const AppPage = () => {
         </div>
       </header>
 
-      <main className="container py-6 md:py-10">
-        <div className="paper-a4">
-          <div className="paper-letterhead flex items-center justify-between gap-4">
+      <main className="container max-w-3xl py-6 md:py-10 relative">
+        <div className="glass-card rounded-[2rem] p-5 md:p-8 mb-6 animate-fade-in">
+          <div className="flex items-center justify-between gap-4 border-b border-border/50 pb-4 mb-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ background: "var(--gradient-primary)" }}>
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl shadow-md animate-glow-pulse" style={{ background: "var(--gradient-primary)" }}>
                 <Stethoscope className="h-5 w-5 text-primary-foreground" />
               </div>
               <div className="leading-tight">
                 <div className="font-display text-lg font-bold">Clinora AI</div>
-                <div className="text-[11px] text-slate-500">
+                <div className="text-[11px] text-muted-foreground">
                   {profile?.full_name ? `Dr. ${profile.full_name}` : "—"}
                   {profile?.specialty ? ` · ${profile.specialty}` : ""}
                 </div>
               </div>
             </div>
-            <div className="text-right text-[11px] leading-tight text-slate-600">
-              {profile?.hospital && <div className="font-semibold text-slate-800">{profile.hospital}</div>}
+            <div className="text-right text-[11px] leading-tight text-muted-foreground">
+              {profile?.hospital && <div className="font-semibold text-foreground">{profile.hospital}</div>}
               {profile?.hospital_phone && <div>{profile.hospital_phone}</div>}
               <div>{new Date().toLocaleDateString(DATE_LOCALE[lang])}</div>
             </div>
