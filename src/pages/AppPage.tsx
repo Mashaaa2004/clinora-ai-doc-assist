@@ -518,7 +518,7 @@ const AppPage = () => {
   };
 
   // ---- UI ----
-  const cardCls = "glass-card card-tilt rounded-3xl p-5 md:p-6 mb-4";
+  const cardCls = "paper-section p-5 md:p-6 mb-4";
   const labelCls = "mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-primary";
 
   const MedicalBackdrop = () => (
@@ -538,10 +538,6 @@ const AppPage = () => {
       </svg>
       <svg className="med-float-5" width="220" height="60" viewBox="0 0 220 60" fill="none">
         <path className="ecg-line" d="M0 30 H40 L50 10 L60 50 L72 20 L82 40 L92 30 H220" stroke="hsl(174 72% 50%)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-      <svg className="med-float-1" style={{ top: "65%", left: "70%" }} width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="hsl(188 85% 50%)" strokeWidth="1.2">
-        <circle cx="12" cy="12" r="8"/>
-        <circle cx="12" cy="12" r="3"/>
       </svg>
     </div>
   );
@@ -610,30 +606,29 @@ const AppPage = () => {
         </div>
       </header>
 
-      <main className="container max-w-3xl py-6 md:py-10 relative">
-        <div className="glass-card rounded-[2rem] p-5 md:p-8 mb-6 animate-fade-in">
-          <div className="flex items-center justify-between gap-4 border-b border-border/50 pb-4 mb-5">
+      <main className="container py-6 md:py-10 relative">
+        <div className="paper-a4">
+          <div className="paper-letterhead flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl shadow-md animate-glow-pulse" style={{ background: "var(--gradient-primary)" }}>
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ background: "var(--gradient-primary)" }}>
                 <Stethoscope className="h-5 w-5 text-primary-foreground" />
               </div>
               <div className="leading-tight">
                 <div className="font-display text-lg font-bold">Clinora AI</div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-[11px] text-slate-500">
                   {profile?.full_name ? `Dr. ${profile.full_name}` : "—"}
                   {profile?.specialty ? ` · ${profile.specialty}` : ""}
                 </div>
               </div>
             </div>
-            <div className="text-right text-[11px] leading-tight text-muted-foreground">
-              {profile?.hospital && <div className="font-semibold text-foreground">{profile.hospital}</div>}
+            <div className="text-right text-[11px] leading-tight text-slate-600">
+              {profile?.hospital && <div className="font-semibold text-slate-800">{profile.hospital}</div>}
               {profile?.hospital_phone && <div>{profile.hospital_phone}</div>}
               <div>{new Date().toLocaleDateString(DATE_LOCALE[lang])}</div>
             </div>
           </div>
 
           <Stepper />
-        </div>
 
         {/* STEP 1: Complaints */}
         {step === 1 && (
@@ -879,6 +874,7 @@ const AppPage = () => {
         )}
 
         <p className="mt-8 text-center text-xs text-muted-foreground">⚕️ {t("status.aiNote")}</p>
+        </div>
       </main>
       <SupportFooter />
     </div>
