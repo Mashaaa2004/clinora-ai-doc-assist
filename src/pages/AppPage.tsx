@@ -54,6 +54,11 @@ type Differential = {
   probability: "high" | "medium" | "low";
   reasoning: string;
 };
+type Comorbidity = {
+  name: string;
+  risk_level: "high" | "medium" | "low";
+  reasoning: string;
+};
 
 type AnalysisResult = {
   symptoms: string[];
@@ -62,6 +67,7 @@ type AnalysisResult = {
   lab_tests: LabTest[];
   instrumental_tests: InstrTest[];
   differentials: Differential[];
+  comorbidities: Comorbidity[];
   family_advice: string;
 };
 
@@ -234,6 +240,7 @@ const AppPage = () => {
       res.lab_tests ||= [];
       res.instrumental_tests ||= [];
       res.differentials ||= [];
+      (res as any).comorbidities ||= [];
       res.family_advice ||= "";
       res.recommendation ||= "";
       // Merge previously-entered lab/instr results so doctor's input isn't lost
@@ -292,6 +299,7 @@ const AppPage = () => {
       recommendation: result.recommendation.trim(),
       family_advice: result.family_advice.trim(),
       differentials: result.differentials,
+      comorbidities: result.comorbidities || [],
       prescriptions: result.prescriptions
         .map((p) => ({
           name: p.name.trim(), dosage: p.dosage.trim(), frequency: p.frequency.trim(),
