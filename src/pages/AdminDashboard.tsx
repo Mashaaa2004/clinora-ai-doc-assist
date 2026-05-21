@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Crown, Loader2, LogOut, Save, Search, Shield, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Crown, Loader2, LogOut, RefreshCw, Save, Search, Shield, Trash2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,7 +38,7 @@ type Sub = {
 
 const AdminDashboard = () => {
   const { isAdmin, loading, signOut, user } = useAuth();
-  const [tab, setTab] = useState<"requests" | "users" | "subs" | "settings">("requests");
+  const [tab, setTab] = useState<"requests" | "users" | "subs" | "settings" | "maintenance">("requests");
   const [adminAllowed, setAdminAllowed] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -101,6 +101,7 @@ const AdminDashboard = () => {
             ["users", "Фойдаланувчилар"],
             ["subs", "Фаол обуналар"],
             ["settings", "Созламалар"],
+            ["maintenance", "Тозалаш"],
           ] as const).map(([k, label]) => (
             <button
               key={k}
@@ -119,6 +120,7 @@ const AdminDashboard = () => {
         {tab === "users" && <UsersPanel />}
         {tab === "subs" && <SubsPanel />}
         {tab === "settings" && <SettingsPanel />}
+        {tab === "maintenance" && <MaintenancePanel />}
       </main>
     </div>
   );
