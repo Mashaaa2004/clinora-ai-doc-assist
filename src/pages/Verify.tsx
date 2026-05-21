@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, AlertTriangle, Loader2, Printer } from "lucide-react";
 import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,8 @@ type Consultation = {
 
 const Verify = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const autoPrint = searchParams.get("print") === "1";
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Consultation | null>(null);
   const [doctor, setDoctor] = useState<any>(null);
@@ -51,6 +53,13 @@ const Verify = () => {
       setLoading(false);
     })();
   }, [id]);
+
+  useEffect(() => {
+    if (!loading && data && autoPrint) {
+      const t = setTimeout(() => window.print(), 600);
+      return () => clearTimeout(t);
+    }
+  }, [loading, data, autoPrint]);
 
   if (loading) {
     return (
