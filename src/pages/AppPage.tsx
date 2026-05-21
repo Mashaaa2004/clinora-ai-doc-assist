@@ -54,6 +54,11 @@ type Differential = {
   probability: "high" | "medium" | "low";
   reasoning: string;
 };
+type Comorbidity = {
+  name: string;
+  risk_level: "high" | "medium" | "low";
+  reasoning: string;
+};
 
 type AnalysisResult = {
   symptoms: string[];
@@ -62,6 +67,7 @@ type AnalysisResult = {
   lab_tests: LabTest[];
   instrumental_tests: InstrTest[];
   differentials: Differential[];
+  comorbidities: Comorbidity[];
   family_advice: string;
 };
 
@@ -234,6 +240,7 @@ const AppPage = () => {
       res.lab_tests ||= [];
       res.instrumental_tests ||= [];
       res.differentials ||= [];
+      (res as any).comorbidities ||= [];
       res.family_advice ||= "";
       res.recommendation ||= "";
       // Merge previously-entered lab/instr results so doctor's input isn't lost
@@ -292,6 +299,7 @@ const AppPage = () => {
       recommendation: result.recommendation.trim(),
       family_advice: result.family_advice.trim(),
       differentials: result.differentials,
+      comorbidities: result.comorbidities || [],
       prescriptions: result.prescriptions
         .map((p) => ({
           name: p.name.trim(), dosage: p.dosage.trim(), frequency: p.frequency.trim(),
@@ -378,6 +386,9 @@ const AppPage = () => {
     const instrHtml = result.instrumental_tests.length
       ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${result.instrumental_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
 
+    const comorbHtml = (result.comorbidities && result.comorbidities.length)
+      ? `<ul class="bul">${result.comorbidities.map((c) => `<li><strong>${esc(c.name)}</strong> <span style="color:#92400e;font-size:8.5px;text-transform:uppercase">[${esc(c.risk_level)}]</span> — <span style="color:#6b7280">${esc(c.reasoning)}</span></li>`).join("")}</ul>` : "";
+
     const rxHtml = result.prescriptions.length
       ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("rx.name")}</th><th>${L("rx.dosage")}</th><th>${L("rx.frequency")}</th><th>${L("rx.duration")}</th><th>${L("rx.notes")}</th></tr></thead><tbody>${result.prescriptions.map((p, i) => `<tr><td>${i + 1}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.dosage)}</td><td>${esc(p.frequency)}</td><td>${esc(p.duration)}</td><td>${esc(p.notes || "—")}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">—</p>`;
 
@@ -449,6 +460,8 @@ const AppPage = () => {
 
   <h2 class="section">${L("sec.diagnosis")}</h2>
   <div><span class="dx-pill">${esc(chosen?.name || "—")}</span></div>
+
+  ${comorbHtml ? `<h2 class="section">${L("sec.comorbid")}</h2>${comorbHtml}` : ""}
 
   <h2 class="section">${L("sec.recommendation")}</h2>
   <p class="body">${esc(result.recommendation || "—")}</p>
@@ -717,6 +730,26 @@ const AppPage = () => {
                 })}
               </div>
             </div>
+            {result.comorbidities && result.comorbidities.length > 0 && (
+              <div className={cardCls}>
+                <h3 className={labelCls}><Brain className="h-4 w-4 text-warning" /> {t("sec.comorbid")}</h3>
+                <p className="text-xs text-muted-foreground mb-2">{t("sec.comorbidHint")}</p>
+                <div className="space-y-2">
+                  {result.comorbidities.map((c, i) => {
+                    const rc = c.risk_level === "high" ? "bg-destructive/15 text-destructive" : c.risk_level === "medium" ? "bg-warning/15 text-warning" : "bg-primary/15 text-primary";
+                    return (
+                      <div key={i} className="rounded-xl border border-warning/30 bg-warning/5 p-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-sm">{c.name}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${rc}`}>{c.risk_level}</span>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground italic">{c.reasoning}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div className="flex gap-3">
               <Button onClick={() => goToStep(3)} variant="outline" size="lg" className="rounded-2xl">{t("common.back")}</Button>
               <Button onClick={() => goToStep(5)} size="lg" className="flex-1 rounded-2xl" style={{ background: "var(--gradient-primary)" }}>{t("common.next")}</Button>
