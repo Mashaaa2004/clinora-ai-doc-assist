@@ -725,6 +725,26 @@ const AppPage = () => {
                 })}
               </div>
             </div>
+            {result.comorbidities && result.comorbidities.length > 0 && (
+              <div className={cardCls}>
+                <h3 className={labelCls}><Brain className="h-4 w-4 text-warning" /> {t("sec.comorbid")}</h3>
+                <p className="text-xs text-muted-foreground mb-2">{t("sec.comorbidHint")}</p>
+                <div className="space-y-2">
+                  {result.comorbidities.map((c, i) => {
+                    const rc = c.risk_level === "high" ? "bg-destructive/15 text-destructive" : c.risk_level === "medium" ? "bg-warning/15 text-warning" : "bg-primary/15 text-primary";
+                    return (
+                      <div key={i} className="rounded-xl border border-warning/30 bg-warning/5 p-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-sm">{c.name}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${rc}`}>{c.risk_level}</span>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground italic">{c.reasoning}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div className="flex gap-3">
               <Button onClick={() => goToStep(3)} variant="outline" size="lg" className="rounded-2xl">{t("common.back")}</Button>
               <Button onClick={() => goToStep(5)} size="lg" className="flex-1 rounded-2xl" style={{ background: "var(--gradient-primary)" }}>{t("common.next")}</Button>
