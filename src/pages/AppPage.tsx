@@ -518,7 +518,7 @@ const AppPage = () => {
   };
 
   // ---- UI ----
-  const cardCls = "rounded-3xl border border-border bg-card p-6 shadow-md";
+  const cardCls = "paper-section p-5 md:p-6 mb-4";
   const labelCls = "mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-primary";
 
   const Stepper = () => (
@@ -547,7 +547,7 @@ const AppPage = () => {
   );
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--gradient-soft)" }}>
+    <div className="min-h-screen bg-mesh">
       {showGuide && (
         <GuideModal onClose={(dontShow) => {
           setShowGuide(false);
@@ -583,8 +583,29 @@ const AppPage = () => {
         </div>
       </header>
 
-      <main className="container max-w-2xl py-8 md:py-12">
-        <Stepper />
+      <main className="container py-6 md:py-10">
+        <div className="paper-a4">
+          <div className="paper-letterhead flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ background: "var(--gradient-primary)" }}>
+                <Stethoscope className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div className="leading-tight">
+                <div className="font-display text-lg font-bold">Clinora AI</div>
+                <div className="text-[11px] text-slate-500">
+                  {profile?.full_name ? `Dr. ${profile.full_name}` : "—"}
+                  {profile?.specialty ? ` · ${profile.specialty}` : ""}
+                </div>
+              </div>
+            </div>
+            <div className="text-right text-[11px] leading-tight text-slate-600">
+              {profile?.hospital && <div className="font-semibold text-slate-800">{profile.hospital}</div>}
+              {profile?.hospital_phone && <div>{profile.hospital_phone}</div>}
+              <div>{new Date().toLocaleDateString(DATE_LOCALE[lang])}</div>
+            </div>
+          </div>
+
+          <Stepper />
 
         {/* STEP 1: Complaints */}
         {step === 1 && (
@@ -830,6 +851,7 @@ const AppPage = () => {
         )}
 
         <p className="mt-8 text-center text-xs text-muted-foreground">⚕️ {t("status.aiNote")}</p>
+        </div>
       </main>
       <SupportFooter />
     </div>
