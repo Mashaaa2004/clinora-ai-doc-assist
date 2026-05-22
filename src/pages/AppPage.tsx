@@ -38,6 +38,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import GuideModal from "@/components/GuideModal";
 import SupportFooter from "@/components/SupportFooter";
 import QRCode from "qrcode";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Prescription = {
   name: string;
@@ -58,6 +59,8 @@ type Comorbidity = {
   name: string;
   risk_level: "high" | "medium" | "low";
   reasoning: string;
+  specialist?: string;
+  referral_note?: string;
 };
 
 type AnalysisResult = {
@@ -92,6 +95,7 @@ const AppPage = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [chosenIdx, setChosenIdx] = useState<number>(0);
   const [confirmed, setConfirmed] = useState(false);
+  const [selectedComorb, setSelectedComorb] = useState<number[]>([]);
   const [supported, setSupported] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
   const [consultationId, setConsultationId] = useState<string | null>(null);
@@ -116,6 +120,7 @@ const AppPage = () => {
         if (typeof p.chosenIdx === "number") setChosenIdx(p.chosenIdx);
         if (typeof p.step === "number") setStep(p.step);
         if (p.confirmed) setConfirmed(true);
+        if (Array.isArray(p.selectedComorb)) setSelectedComorb(p.selectedComorb);
       } catch {}
     }
   }, []);
@@ -159,7 +164,7 @@ const AppPage = () => {
     return () => { try { recognition.stop(); } catch {} };
   }, [lang]);
 
-  const persist = (extra?: Partial<{ result: AnalysisResult | null; chosenIdx: number; step: Step; confirmed: boolean; patientName: string; transcript: string }>) => {
+  const persist = (extra?: Partial<{ result: AnalysisResult | null; chosenIdx: number; step: Step; confirmed: boolean; patientName: string; transcript: string; selectedComorb: number[] }>) => {
     const data = {
       transcript,
       patientName,
@@ -167,6 +172,7 @@ const AppPage = () => {
       chosenIdx,
       step,
       confirmed,
+      selectedComorb,
       ...extra,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -256,11 +262,12 @@ const AppPage = () => {
       }
       setResult(res);
       setChosenIdx(0);
+      setSelectedComorb([]);
       setConfirmed(false);
       // Move to step 2 (lab)
       const nextStep: Step = 2;
       setStep(nextStep);
-      persist({ result: res, chosenIdx: 0, step: nextStep, confirmed: false });
+      persist({ result: res, chosenIdx: 0, step: nextStep, confirmed: false, selectedComorb: [] });
       toast.success("AI: " + (res.differentials?.length || 0) + " diagnoses + " + (res.lab_tests?.length || 0) + " labs");
     } catch (e) {
       console.error(e); toast.error(t("err.failed"));
@@ -281,6 +288,7 @@ const AppPage = () => {
   const handleClear = () => {
     setStep(1); setTranscript(""); setPatientName("");
     setResult(null); setChosenIdx(0); setConfirmed(false);
+    setSelectedComorb([]);
     setConsultationId(null);
     baseTranscriptRef.current = "";
     localStorage.removeItem(STORAGE_KEY);
