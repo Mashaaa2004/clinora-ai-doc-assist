@@ -394,8 +394,9 @@ const AppPage = () => {
     const instrHtml = result.instrumental_tests.length
       ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${result.instrumental_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
 
-    const comorbHtml = (result.comorbidities && result.comorbidities.length)
-      ? `<ul class="bul">${result.comorbidities.map((c) => `<li><strong>${esc(c.name)}</strong> <span style="color:#92400e;font-size:8.5px;text-transform:uppercase">[${esc(c.risk_level)}]</span> — <span style="color:#6b7280">${esc(c.reasoning)}</span></li>`).join("")}</ul>` : "";
+    const referrals = (result.comorbidities || []).filter((_, i) => selectedComorb.includes(i));
+    const comorbHtml = referrals.length
+      ? `<table class="rx"><thead><tr><th style="width:28%">${lang === "ru" ? "Специалист" : lang === "en" ? "Specialist" : "Мутахассис"}</th><th style="width:28%">${lang === "ru" ? "По поводу" : lang === "en" ? "Reason" : "Сабаб (касаллик)"}</th><th>${lang === "ru" ? "Направление" : lang === "en" ? "Referral note" : "Йўналтириш изоҳи"}</th></tr></thead><tbody>${referrals.map((c) => `<tr><td><strong>${esc(c.specialist || "—")}</strong></td><td>${esc(c.name)} <span style="color:#92400e;font-size:8px;text-transform:uppercase">[${esc(c.risk_level)}]</span></td><td>${esc(c.referral_note || c.reasoning || "—")}</td></tr>`).join("")}</tbody></table>` : "";
 
     const rxHtml = result.prescriptions.length
       ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("rx.name")}</th><th>${L("rx.dosage")}</th><th>${L("rx.frequency")}</th><th>${L("rx.duration")}</th><th>${L("rx.notes")}</th></tr></thead><tbody>${result.prescriptions.map((p, i) => `<tr><td>${i + 1}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.dosage)}</td><td>${esc(p.frequency)}</td><td>${esc(p.duration)}</td><td>${esc(p.notes || "—")}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">—</p>`;
@@ -469,7 +470,7 @@ const AppPage = () => {
   <h2 class="section">${L("sec.diagnosis")}</h2>
   <div><span class="dx-pill">${esc(chosen?.name || "—")}</span></div>
 
-  ${comorbHtml ? `<h2 class="section">${L("sec.comorbid")}</h2>${comorbHtml}` : ""}
+  ${comorbHtml ? `<h2 class="section">${L("sec.referrals")}</h2>${comorbHtml}` : ""}
 
   <h2 class="section">${L("sec.recommendation")}</h2>
   <p class="body">${esc(result.recommendation || "—")}</p>
