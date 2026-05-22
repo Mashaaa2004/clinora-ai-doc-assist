@@ -785,18 +785,45 @@ const AppPage = () => {
             {result.comorbidities && result.comorbidities.length > 0 && (
               <div className={cardCls}>
                 <h3 className={labelCls}><Brain className="h-4 w-4 text-warning" /> {t("sec.comorbid")}</h3>
-                <p className="text-xs text-muted-foreground mb-2">{t("sec.comorbidHint")}</p>
+                <p className="text-xs text-muted-foreground mb-3">{t("sec.referralsHint")}</p>
                 <div className="space-y-2">
                   {result.comorbidities.map((c, i) => {
                     const rc = c.risk_level === "high" ? "bg-destructive/15 text-destructive" : c.risk_level === "medium" ? "bg-warning/15 text-warning" : "bg-primary/15 text-primary";
+                    const checked = selectedComorb.includes(i);
                     return (
-                      <div key={i} className="rounded-xl border border-warning/30 bg-warning/5 p-3">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-sm">{c.name}</span>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${rc}`}>{c.risk_level}</span>
+                      <label
+                        key={i}
+                        className={`flex gap-3 rounded-xl border p-3 cursor-pointer transition-all ${checked ? "border-success bg-success/5 shadow-sm" : "border-warning/30 bg-warning/5 hover:border-warning/60"}`}
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => {
+                            const next = v
+                              ? [...selectedComorb, i].sort((a, b) => a - b)
+                              : selectedComorb.filter((x) => x !== i);
+                            setSelectedComorb(next);
+                            persist({ selectedComorb: next });
+                          }}
+                          className="mt-0.5"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm">{c.name}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${rc}`}>{c.risk_level}</span>
+                            {c.specialist && (
+                              <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-semibold">
+                                → {c.specialist}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground italic">{c.reasoning}</p>
+                          {c.referral_note && (
+                            <p className="mt-1.5 text-xs text-foreground/80">
+                              <span className="font-semibold text-primary">{t("comorbid.refer")}:</span> {c.referral_note}
+                            </p>
+                          )}
                         </div>
-                        <p className="mt-1 text-xs text-muted-foreground italic">{c.reasoning}</p>
-                      </div>
+                      </label>
                     );
                   })}
                 </div>
