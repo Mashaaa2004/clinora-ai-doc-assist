@@ -38,6 +38,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import GuideModal from "@/components/GuideModal";
 import SupportFooter from "@/components/SupportFooter";
 import QRCode from "qrcode";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Prescription = {
   name: string;
@@ -58,6 +59,8 @@ type Comorbidity = {
   name: string;
   risk_level: "high" | "medium" | "low";
   reasoning: string;
+  specialist?: string;
+  referral_note?: string;
 };
 
 type AnalysisResult = {
@@ -92,6 +95,7 @@ const AppPage = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [chosenIdx, setChosenIdx] = useState<number>(0);
   const [confirmed, setConfirmed] = useState(false);
+  const [selectedComorb, setSelectedComorb] = useState<number[]>([]);
   const [supported, setSupported] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
   const [consultationId, setConsultationId] = useState<string | null>(null);
@@ -116,6 +120,7 @@ const AppPage = () => {
         if (typeof p.chosenIdx === "number") setChosenIdx(p.chosenIdx);
         if (typeof p.step === "number") setStep(p.step);
         if (p.confirmed) setConfirmed(true);
+        if (Array.isArray(p.selectedComorb)) setSelectedComorb(p.selectedComorb);
       } catch {}
     }
   }, []);
@@ -159,7 +164,7 @@ const AppPage = () => {
     return () => { try { recognition.stop(); } catch {} };
   }, [lang]);
 
-  const persist = (extra?: Partial<{ result: AnalysisResult | null; chosenIdx: number; step: Step; confirmed: boolean; patientName: string; transcript: string }>) => {
+  const persist = (extra?: Partial<{ result: AnalysisResult | null; chosenIdx: number; step: Step; confirmed: boolean; patientName: string; transcript: string; selectedComorb: number[] }>) => {
     const data = {
       transcript,
       patientName,
@@ -167,6 +172,7 @@ const AppPage = () => {
       chosenIdx,
       step,
       confirmed,
+      selectedComorb,
       ...extra,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -256,11 +262,12 @@ const AppPage = () => {
       }
       setResult(res);
       setChosenIdx(0);
+      setSelectedComorb([]);
       setConfirmed(false);
       // Move to step 2 (lab)
       const nextStep: Step = 2;
       setStep(nextStep);
-      persist({ result: res, chosenIdx: 0, step: nextStep, confirmed: false });
+      persist({ result: res, chosenIdx: 0, step: nextStep, confirmed: false, selectedComorb: [] });
       toast.success("AI: " + (res.differentials?.length || 0) + " diagnoses + " + (res.lab_tests?.length || 0) + " labs");
     } catch (e) {
       console.error(e); toast.error(t("err.failed"));
@@ -281,6 +288,7 @@ const AppPage = () => {
   const handleClear = () => {
     setStep(1); setTranscript(""); setPatientName("");
     setResult(null); setChosenIdx(0); setConfirmed(false);
+    setSelectedComorb([]);
     setConsultationId(null);
     baseTranscriptRef.current = "";
     localStorage.removeItem(STORAGE_KEY);
@@ -386,8 +394,9 @@ const AppPage = () => {
     const instrHtml = result.instrumental_tests.length
       ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${result.instrumental_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
 
-    const comorbHtml = (result.comorbidities && result.comorbidities.length)
-      ? `<ul class="bul">${result.comorbidities.map((c) => `<li><strong>${esc(c.name)}</strong> <span style="color:#92400e;font-size:8.5px;text-transform:uppercase">[${esc(c.risk_level)}]</span> — <span style="color:#6b7280">${esc(c.reasoning)}</span></li>`).join("")}</ul>` : "";
+    const referrals = (result.comorbidities || []).filter((_, i) => selectedComorb.includes(i));
+    const comorbHtml = referrals.length
+      ? `<table class="rx"><thead><tr><th style="width:28%">${lang === "ru" ? "Специалист" : lang === "en" ? "Specialist" : "Мутахассис"}</th><th style="width:28%">${lang === "ru" ? "По поводу" : lang === "en" ? "Reason" : "Сабаб (касаллик)"}</th><th>${lang === "ru" ? "Направление" : lang === "en" ? "Referral note" : "Йўналтириш изоҳи"}</th></tr></thead><tbody>${referrals.map((c) => `<tr><td><strong>${esc(c.specialist || "—")}</strong></td><td>${esc(c.name)} <span style="color:#92400e;font-size:8px;text-transform:uppercase">[${esc(c.risk_level)}]</span></td><td>${esc(c.referral_note || c.reasoning || "—")}</td></tr>`).join("")}</tbody></table>` : "";
 
     const rxHtml = result.prescriptions.length
       ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("rx.name")}</th><th>${L("rx.dosage")}</th><th>${L("rx.frequency")}</th><th>${L("rx.duration")}</th><th>${L("rx.notes")}</th></tr></thead><tbody>${result.prescriptions.map((p, i) => `<tr><td>${i + 1}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.dosage)}</td><td>${esc(p.frequency)}</td><td>${esc(p.duration)}</td><td>${esc(p.notes || "—")}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">—</p>`;
@@ -461,7 +470,7 @@ const AppPage = () => {
   <h2 class="section">${L("sec.diagnosis")}</h2>
   <div><span class="dx-pill">${esc(chosen?.name || "—")}</span></div>
 
-  ${comorbHtml ? `<h2 class="section">${L("sec.comorbid")}</h2>${comorbHtml}` : ""}
+  ${comorbHtml ? `<h2 class="section">${L("sec.referrals")}</h2>${comorbHtml}` : ""}
 
   <h2 class="section">${L("sec.recommendation")}</h2>
   <p class="body">${esc(result.recommendation || "—")}</p>
@@ -777,18 +786,45 @@ const AppPage = () => {
             {result.comorbidities && result.comorbidities.length > 0 && (
               <div className={cardCls}>
                 <h3 className={labelCls}><Brain className="h-4 w-4 text-warning" /> {t("sec.comorbid")}</h3>
-                <p className="text-xs text-muted-foreground mb-2">{t("sec.comorbidHint")}</p>
+                <p className="text-xs text-muted-foreground mb-3">{t("sec.referralsHint")}</p>
                 <div className="space-y-2">
                   {result.comorbidities.map((c, i) => {
                     const rc = c.risk_level === "high" ? "bg-destructive/15 text-destructive" : c.risk_level === "medium" ? "bg-warning/15 text-warning" : "bg-primary/15 text-primary";
+                    const checked = selectedComorb.includes(i);
                     return (
-                      <div key={i} className="rounded-xl border border-warning/30 bg-warning/5 p-3">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-sm">{c.name}</span>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${rc}`}>{c.risk_level}</span>
+                      <label
+                        key={i}
+                        className={`flex gap-3 rounded-xl border p-3 cursor-pointer transition-all ${checked ? "border-success bg-success/5 shadow-sm" : "border-warning/30 bg-warning/5 hover:border-warning/60"}`}
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => {
+                            const next = v
+                              ? [...selectedComorb, i].sort((a, b) => a - b)
+                              : selectedComorb.filter((x) => x !== i);
+                            setSelectedComorb(next);
+                            persist({ selectedComorb: next });
+                          }}
+                          className="mt-0.5"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm">{c.name}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${rc}`}>{c.risk_level}</span>
+                            {c.specialist && (
+                              <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-semibold">
+                                → {c.specialist}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground italic">{c.reasoning}</p>
+                          {c.referral_note && (
+                            <p className="mt-1.5 text-xs text-foreground/80">
+                              <span className="font-semibold text-primary">{t("comorbid.refer")}:</span> {c.referral_note}
+                            </p>
+                          )}
                         </div>
-                        <p className="mt-1 text-xs text-muted-foreground italic">{c.reasoning}</p>
-                      </div>
+                      </label>
                     );
                   })}
                 </div>

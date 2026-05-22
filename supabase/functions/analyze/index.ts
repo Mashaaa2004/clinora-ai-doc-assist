@@ -60,7 +60,7 @@ Your task — return ONE structured analysis containing:
 - lab_tests: recommended laboratory tests (with reason). If lab results are already provided, include them with their result filled in and add new ones only if necessary.
 - instrumental_tests: recommended instrumental/apparatus exams (US, ECG, X-ray, MRI, CT, EEG, etc.) with reason. Same rule for already-provided results.
 - differentials: EXACTLY 3 most likely differential diagnoses ordered by probability, each with: name, probability ("high"/"medium"/"low"), short reasoning (2-3 sentences) tying it to the symptoms AND any lab/instrumental findings. ALWAYS prioritize the available laboratory and instrumental results when reasoning — they outweigh subjective complaints.
-- comorbidities: 2-4 possible CONCOMITANT or HIDDEN related conditions that could co-exist or develop alongside the main symptoms (purpose: EARLY DETECTION). These are NOT differentials — they are diseases the doctor should screen for. Each item: name, risk_level ("high"/"medium"/"low"), reasoning (1-2 sentences explaining the link to the symptoms / lab / instrumental data).
+- comorbidities: EXACTLY 3 possible CONCOMITANT or HIDDEN related conditions that could co-exist or develop alongside the main symptoms (purpose: EARLY DETECTION). These are NOT differentials — they are diseases the doctor should screen for. Each item MUST include: name, risk_level ("high"/"medium"/"low"), reasoning (1-2 sentences linking to symptoms / lab / instrumental data), specialist (the medical specialty the patient should be referred to — e.g. "Кардиолог", "Эндокринолог", "Невропатолог"), referral_note (1 short sentence the primary doctor can include when referring the patient to that specialist).
 - recommendation: treatment plan (lifestyle, regimen, follow-up) for the MOST LIKELY diagnosis (the first differential). The doctor may switch to another diagnosis afterwards.
 - prescriptions: tentative drug prescriptions for the MOST LIKELY diagnosis. The doctor will review and approve.
 - family_advice: a SHORT, concise note (MAX 3 sentences, ~40-50 words total) for the patient's family in plain language. Cover only: (1) what the patient has (one sentence), (2) the most important home-care action(s), (3) when to call emergency. No filler, no greetings, no emotional preamble.
@@ -176,17 +176,19 @@ Return the result via the structured tool only.`;
                   },
                   comorbidities: {
                     type: "array",
-                    description: "2-4 possible concomitant/hidden related conditions to screen for (early detection). NOT differentials.",
-                    minItems: 2,
-                    maxItems: 4,
+                    description: "Exactly 3 possible concomitant/hidden related conditions to screen for. Each includes the specialist to refer the patient to and a short referral note.",
+                    minItems: 3,
+                    maxItems: 3,
                     items: {
                       type: "object",
                       properties: {
                         name: { type: "string", description: "Concomitant condition name" },
                         risk_level: { type: "string", enum: ["high", "medium", "low"] },
                         reasoning: { type: "string", description: "1-2 sentence link to symptoms / findings" },
+                        specialist: { type: "string", description: "Medical specialty to refer the patient to (e.g. Кардиолог, Эндокринолог)" },
+                        referral_note: { type: "string", description: "Short 1-sentence referral note from the primary doctor to that specialist" },
                       },
-                      required: ["name", "risk_level", "reasoning"],
+                      required: ["name", "risk_level", "reasoning", "specialist", "referral_note"],
                       additionalProperties: false,
                     },
                   },
