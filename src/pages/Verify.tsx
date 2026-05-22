@@ -23,7 +23,9 @@ type Consultation = {
 const Verify = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
-  const autoPrint = searchParams.get("print") === "1";
+  // Backward compatibility: eski QR kodlar `?print=1` parametrisiz yaratilgan.
+  // Default: avtomatik print yoqilgan. Faqat `?print=0` bo'lsa o'chiriladi.
+  const autoPrint = searchParams.get("print") !== "0";
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Consultation | null>(null);
   const [doctor, setDoctor] = useState<any>(null);
