@@ -1,9 +1,12 @@
-export type Lang = "uz" | "ru" | "en";
+export type Lang = "uz" | "ru" | "en" | "kk" | "ky" | "tr";
 
 export const LANG_LABELS: Record<Lang, string> = {
   uz: "O'zbek",
   ru: "Русский",
   en: "English",
+  kk: "Қазақша",
+  ky: "Кыргызча",
+  tr: "Türkçe",
 };
 
 type Dict = Record<string, string>;
