@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 type Consultation = {
   id: string;
   patient_name: string;
+  patient_code?: string;
   diagnosis: string;
   chosen_diagnosis?: string;
   recommendation: string;
@@ -36,7 +37,7 @@ const HistoryPage = () => {
     setLoading(true);
     let query = supabase
       .from("consultations")
-      .select("id,user_id,patient_name,diagnosis,chosen_diagnosis,recommendation,symptoms,prescriptions,lab_tests,instrumental_tests,family_advice,created_at")
+      .select("id,user_id,patient_name,patient_code,diagnosis,chosen_diagnosis,recommendation,symptoms,prescriptions,lab_tests,instrumental_tests,family_advice,created_at")
       .order("created_at", { ascending: false });
     if (scope === "mine") query = query.eq("user_id", user.id);
     if (!isPro) query = query.limit(10);
@@ -76,6 +77,7 @@ const HistoryPage = () => {
   const filtered = items.filter((x) =>
     !q.trim() ||
     x.patient_name.toLowerCase().includes(q.toLowerCase()) ||
+    (x.patient_code || "").toLowerCase().includes(q.toLowerCase()) ||
     x.diagnosis.toLowerCase().includes(q.toLowerCase()),
   );
 
@@ -133,7 +135,7 @@ const HistoryPage = () => {
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Бемор ёки ташхис бўйича қидириш..."
+              placeholder="Бемор, ID ёки ташхис бўйича қидириш..."
               className="rounded-xl pl-9"
             />
           </div>
@@ -175,7 +177,8 @@ const HistoryPage = () => {
                       <div className="min-w-0">
                         <div className="font-medium truncate">{x.patient_name || "Бемор"}</div>
                         <div className="text-xs text-muted-foreground truncate">
-                          {x.diagnosis || "—"} · {new Date(x.created_at).toLocaleDateString("ru-RU")}
+                          {x.patient_code ? <span className="font-mono text-primary">{x.patient_code}</span> : null}
+                          {x.patient_code ? " · " : ""}{x.diagnosis || "—"} · {new Date(x.created_at).toLocaleDateString("ru-RU")}
                           {scope === "all" && doctorNames[x.user_id] ? ` · ${doctorNames[x.user_id]}` : ""}
                         </div>
                       </div>
