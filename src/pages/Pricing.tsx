@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import SupportFooter from "@/components/SupportFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useT } from "@/i18n/LanguageContext";
+import { DATE_LOCALE } from "@/i18n/translations";
 
 type Settings = {
   card_number: string;
@@ -14,15 +16,15 @@ type Settings = {
   pro_price_monthly: number;
 };
 
-const DURATIONS = [
-  { months: 1, label: "1 ой" },
-  { months: 3, label: "3 ой" },
-  { months: 6, label: "6 ой" },
-  { months: 12, label: "1 йил" },
-];
-
 const PricingPage = () => {
   const { user, isPro, proExpiresAt } = useAuth();
+  const { t, lang } = useT();
+  const DURATIONS = [
+    { months: 1, label: t("pr.m1") },
+    { months: 3, label: t("pr.m3") },
+    { months: 6, label: t("pr.m6") },
+    { months: 12, label: t("pr.m12") },
+  ];
   const [settings, setSettings] = useState<Settings | null>(null);
   const [duration, setDuration] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -37,11 +39,11 @@ const PricingPage = () => {
   }, []);
 
   const price = (settings?.pro_price_monthly ?? 250000) * duration;
-  const fmt = (n: number) => n.toLocaleString("ru-RU") + " сўм";
+  const fmt = (n: number) => n.toLocaleString(DATE_LOCALE[lang]) + " " + t("pr.suffix");
 
   const copy = (txt: string) => {
     navigator.clipboard.writeText(txt);
-    toast.success("Нусхаланди");
+    toast.success(t("pr.copied"));
   };
 
   const submitRequest = async () => {
@@ -55,10 +57,10 @@ const PricingPage = () => {
     });
     setBusy(false);
     if (error) {
-      toast.error("Сўров юборилмади");
+      toast.error(t("pr.reqFail"));
       return;
     }
-    toast.success("Сўров юборилди! Админ тўловни тасдиқлагач Pro фаоллашади.");
+    toast.success(t("pr.reqSent"));
   };
 
   const tg = settings?.telegram_support || "@clinora_support";
@@ -69,13 +71,13 @@ const PricingPage = () => {
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
         <div className="container flex h-16 items-center justify-between">
           <Link to="/app" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> Орқага
+            <ArrowLeft className="h-4 w-4" /> {t("common.back")}
           </Link>
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg shadow-md" style={{ background: "var(--gradient-primary)" }}>
               <Stethoscope className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="text-sm font-semibold">Тарифлар</span>
+            <span className="text-sm font-semibold">{t("pr.tariffs")}</span>
           </div>
         </div>
       </header>
@@ -83,17 +85,17 @@ const PricingPage = () => {
       <main className="container max-w-4xl py-10 md:py-14 flex-1">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
-            <Sparkles className="h-3.5 w-3.5 text-primary" /> Шифокорлар учун
+            <Sparkles className="h-3.5 w-3.5 text-primary" /> {t("pr.badge")}
           </div>
           <h1 className="mt-4 text-3xl md:text-4xl font-bold tracking-tight">
-            Pro тарифга ўтинг
+            {t("pr.heroT")}
           </h1>
           <p className="mt-3 text-muted-foreground">
-            Касалларингизни кўпроқ ва тезроқ юритиш учун барча имкониятлар
+            {t("pr.heroD")}
           </p>
           {isPro && proExpiresAt && (
             <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-success/10 px-4 py-1.5 text-sm font-semibold text-success">
-              <Crown className="h-4 w-4" /> PRO фаол · {new Date(proExpiresAt).toLocaleDateString("ru-RU")} гача
+              <Crown className="h-4 w-4" /> {t("pr.active")} · {new Date(proExpiresAt).toLocaleDateString(DATE_LOCALE[lang])} {t("pr.until")}
             </div>
           )}
         </div>
@@ -105,7 +107,7 @@ const PricingPage = () => {
             style={{ boxShadow: "var(--shadow-glow)" }}
           >
             <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-              Машҳур
+              {t("pr.popular")}
             </span>
             <h3 className="text-xl font-semibold">Pro</h3>
             <div className="mt-2 flex items-baseline gap-1">
@@ -132,12 +134,12 @@ const PricingPage = () => {
 
             <ul className="mt-5 space-y-2 text-sm">
               {[
-                "Чексиз AI таҳлил",
-                "Чексиз PDF юклаш",
-                "Беморлар тарихи (чексиз)",
-                "Аналитика панели",
-                "Профиль расми ва PRO белги",
-                "Тезкор саппорт",
+                t("pr.f1"),
+                t("pr.f2"),
+                t("pr.f3"),
+                t("pr.f4"),
+                t("pr.f5"),
+                t("pr.f6"),
               ].map((f) => (
                 <li key={f} className="flex items-start gap-2">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
@@ -148,7 +150,7 @@ const PricingPage = () => {
 
             {settings && (
               <div className="mt-5 rounded-2xl border border-border bg-muted/30 p-4">
-                <div className="text-xs font-semibold uppercase text-muted-foreground">Тўлов учун карта</div>
+                <div className="text-xs font-semibold uppercase text-muted-foreground">{t("pr.cardTitle")}</div>
                 <button
                   onClick={() => copy(settings.card_number)}
                   className="mt-1.5 flex w-full items-center justify-between rounded-lg bg-background p-2.5 font-mono text-sm hover:bg-muted"
@@ -158,7 +160,7 @@ const PricingPage = () => {
                 </button>
                 <div className="mt-1.5 text-xs text-muted-foreground">{settings.card_holder}</div>
                 <div className="mt-3 text-xs text-muted-foreground">
-                  Тўловни амалга оширгач, чек суратини Telegram саппортга юборинг ва "Сўров юбориш" тугмасини босинг.
+                  {t("pr.cardHint")}
                 </div>
               </div>
             )}
@@ -171,7 +173,7 @@ const PricingPage = () => {
                 size="lg"
                 style={{ background: "var(--gradient-primary)" }}
               >
-                Сўров юбориш
+                {t("pr.submitReq")}
               </Button>
               <Button
                 onClick={() => window.open(tgLink, "_blank")}
@@ -179,25 +181,25 @@ const PricingPage = () => {
                 size="lg"
                 className="rounded-2xl"
               >
-                <Send className="h-4 w-4" /> Чек юбориш
+                <Send className="h-4 w-4" /> {t("pr.sendReceipt")}
               </Button>
             </div>
           </div>
 
           {/* CLINIC */}
           <div className="rounded-3xl border border-border bg-card p-6 shadow-md md:p-8">
-            <h3 className="text-xl font-semibold">Клиника (Шартномавий)</h3>
+            <h3 className="text-xl font-semibold">{t("pr.clinicTitle")}</h3>
             <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-3xl font-bold">Шартнома</span>
+              <span className="text-3xl font-bold">{t("pr.clinicPrice")}</span>
             </div>
             <ul className="mt-5 space-y-2 text-sm">
               {[
-                "Барча Pro имкониятлар",
-                "Кўп шифокорлик аккаунт",
-                "Клиника учун брендинг",
-                "Шифоxона аналитикаси",
-                "Бошқарув тизими",
-                "Шахсий менежер",
+                t("pr.cf1"),
+                t("pr.cf2"),
+                t("pr.cf3"),
+                t("pr.cf4"),
+                t("pr.cf5"),
+                t("pr.cf6"),
               ].map((f) => (
                 <li key={f} className="flex items-start gap-2">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
@@ -206,7 +208,7 @@ const PricingPage = () => {
               ))}
             </ul>
             <div className="mt-6 rounded-2xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-              Клиника учун шартнома тузиш учун Telegram саппорт билан боғланинг — нархи ва шартлари ҳақида биз гаплашамиз.
+              {t("pr.clinicDesc")}
             </div>
             <Button
               onClick={() => window.open(tgLink, "_blank")}
@@ -214,7 +216,7 @@ const PricingPage = () => {
               size="lg"
               className="mt-5 w-full rounded-2xl"
             >
-              <Send className="h-4 w-4" /> Боғланиш
+              <Send className="h-4 w-4" /> {t("pr.contact")}
             </Button>
           </div>
         </div>
@@ -222,7 +224,7 @@ const PricingPage = () => {
         <div className="mt-10 mx-auto max-w-2xl rounded-3xl border border-border bg-card p-6 text-center shadow-sm">
           <Crown className="mx-auto h-6 w-6 text-primary" />
           <p className="mt-2 text-sm text-muted-foreground">
-            Тўлов қабул қилингач, админ Pro тарифингизни 31 кун (1 ой), 3, 6 ёки 12 ойга фаоллаштиради. Муддат тугагач Pro автоматик тўхтайди.
+            {t("pr.footerNote")}
           </p>
         </div>
       </main>

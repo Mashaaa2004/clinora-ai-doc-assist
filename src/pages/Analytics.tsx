@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Award, Building2, Crown, FileCheck2, Stethoscope, TrendingUp, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useT } from "@/i18n/LanguageContext";
+import { DATE_LOCALE } from "@/i18n/translations";
 
 type Stats = {
   doctors: number;
@@ -14,6 +16,7 @@ type Stats = {
 };
 
 const Analytics = () => {
+  const { t, lang } = useT();
   const [s, setS] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -40,7 +43,7 @@ const Analytics = () => {
 
         const counter = new Map<string, number>();
         (logs ?? []).forEach((l) => {
-          const k = (l.hospital || "Номаълум").trim() || "Номаълум";
+          const k = (l.hospital || t("common.unknown")).trim() || t("common.unknown");
           counter.set(k, (counter.get(k) ?? 0) + 1);
         });
         const topHospitals = [...counter.entries()]
@@ -83,9 +86,9 @@ const Analytics = () => {
         <div className="container flex h-16 items-center justify-between">
           <Link to="/app" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
-            Орқага
+            {t("common.back")}
           </Link>
-          <span className="font-semibold">Аналитика</span>
+          <span className="font-semibold">{t("an.title")}</span>
           <div className="w-16" />
         </div>
       </header>
@@ -96,14 +99,14 @@ const Analytics = () => {
         ) : (
           <>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              <StatCard icon={<Stethoscope className="h-5 w-5" />} label="Шифокорлар" value={s.doctors} />
-              <StatCard icon={<Building2 className="h-5 w-5" />} label="Касалхоналар" value={s.hospitals} />
-              <StatCard icon={<FileCheck2 className="h-5 w-5" />} label="Жами рецептлар" value={s.prescriptions} />
-              <StatCard icon={<TrendingUp className="h-5 w-5" />} label="Охирги 7 кун" value={s.last7d} />
+              <StatCard icon={<Stethoscope className="h-5 w-5" />} label={t("an.doctors")} value={s.doctors} />
+              <StatCard icon={<Building2 className="h-5 w-5" />} label={t("an.hospitals")} value={s.hospitals} />
+              <StatCard icon={<FileCheck2 className="h-5 w-5" />} label={t("an.scripts")} value={s.prescriptions} />
+              <StatCard icon={<TrendingUp className="h-5 w-5" />} label={t("an.last7d")} value={s.last7d} />
             </div>
 
             <section className="mt-6 rounded-3xl border border-border bg-card p-6 shadow-md">
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-primary">Энг фаол касалхоналар</h2>
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-primary">{t("an.topHospitals")}</h2>
               {s.topHospitals.length ? (
                 <ul className="space-y-3">
                   {s.topHospitals.map((h) => {
@@ -123,7 +126,7 @@ const Analytics = () => {
                   })}
                 </ul>
               ) : (
-                <p className="text-sm text-muted-foreground">Ҳали маълумот йўқ</p>
+                <p className="text-sm text-muted-foreground">{t("an.noData")}</p>
               )}
             </section>
 
@@ -131,7 +134,7 @@ const Analytics = () => {
               <div className="mb-4 flex items-center gap-2">
                 <Award className="h-4 w-4 text-primary" />
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">
-                  Энг кўп бемор кўрган шифокорлар
+                  {t("an.topDoctors")}
                 </h2>
               </div>
               {s.topDoctors.length ? (
@@ -159,41 +162,41 @@ const Analytics = () => {
                       </div>
                       <div className="shrink-0 text-right">
                         <div className="text-lg font-bold text-primary">{d.count}</div>
-                        <div className="text-[10px] text-muted-foreground">бемор</div>
+                        <div className="text-[10px] text-muted-foreground">{t("an.patients")}</div>
                       </div>
                     </li>
                   ))}
                 </ol>
               ) : (
-                <p className="text-sm text-muted-foreground">Ҳали маълумот йўқ</p>
+                <p className="text-sm text-muted-foreground">{t("an.noData")}</p>
               )}
             </section>
 
             <section className="mt-6 rounded-3xl border border-border bg-card p-6 shadow-md">
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-primary">Сўнгги рецептлар</h2>
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-primary">{t("an.recent")}</h2>
               {s.recent.length ? (
                 <div className="divide-y divide-border">
                   {s.recent.map((r, i) => (
                     <div key={i} className="flex items-center justify-between gap-3 py-3 text-sm">
                       <div className="min-w-0">
-                        <div className="truncate font-medium text-foreground">{r.patient_name || "Бемор"}</div>
+                        <div className="truncate font-medium text-foreground">{r.patient_name || t("common.patient")}</div>
                         <div className="truncate text-xs text-muted-foreground">
-                          {r.doctor_name || "Шифокор"} · {r.hospital || "—"}
+                          {r.doctor_name || t("common.doctor")} · {r.hospital || "—"}
                         </div>
                       </div>
                       <span className="shrink-0 text-xs text-muted-foreground">
-                        {new Date(r.created_at).toLocaleString("ru-RU")}
+                        {new Date(r.created_at).toLocaleString(DATE_LOCALE[lang])}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Ҳали рецептлар йўқ</p>
+                <p className="text-sm text-muted-foreground">{t("an.noRx")}</p>
               )}
             </section>
 
             <p className="mt-6 text-center text-xs text-muted-foreground">
-              Барча рақамлар реал маълумотлар асосида янгиланиб туради
+              {t("an.realtime")}
             </p>
           </>
         )}
