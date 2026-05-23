@@ -26,6 +26,10 @@ const ProfilePage = () => {
     hospital: "",
     hospital_phone: "",
     hospital_address: "",
+    doctor_instagram: "",
+    doctor_telegram: "",
+    clinic_instagram: "",
+    clinic_telegram: "",
   });
 
   useEffect(() => {
@@ -38,6 +42,10 @@ const ProfilePage = () => {
         hospital: profile.hospital || "",
         hospital_phone: profile.hospital_phone || "",
         hospital_address: profile.hospital_address || "",
+        doctor_instagram: (profile as any).doctor_instagram || "",
+        doctor_telegram: (profile as any).doctor_telegram || "",
+        clinic_instagram: (profile as any).clinic_instagram || "",
+        clinic_telegram: (profile as any).clinic_telegram || "",
       });
     }
   }, [profile]);
