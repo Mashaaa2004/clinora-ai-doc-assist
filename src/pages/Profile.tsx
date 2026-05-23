@@ -298,6 +298,22 @@ const ProfilePage = () => {
                 <Label>Манзил</Label>
                 <Input value={form.hospital_address} onChange={(e) => set("hospital_address", e.target.value)} placeholder="Тошкент ш., Чилонзор" className="mt-1 rounded-xl" />
               </div>
+              <div>
+                <Label>Шифокор Instagram</Label>
+                <Input value={form.doctor_instagram} onChange={(e) => set("doctor_instagram", e.target.value)} placeholder="@doctor_username" className="mt-1 rounded-xl" />
+              </div>
+              <div>
+                <Label>Шифокор Telegram</Label>
+                <Input value={form.doctor_telegram} onChange={(e) => set("doctor_telegram", e.target.value)} placeholder="@doctor_tg" className="mt-1 rounded-xl" />
+              </div>
+              <div>
+                <Label>Клиника Instagram</Label>
+                <Input value={form.clinic_instagram} onChange={(e) => set("clinic_instagram", e.target.value)} placeholder="@clinic_username" className="mt-1 rounded-xl" />
+              </div>
+              <div>
+                <Label>Клиника Telegram канали</Label>
+                <Input value={form.clinic_telegram} onChange={(e) => set("clinic_telegram", e.target.value)} placeholder="@clinic_channel" className="mt-1 rounded-xl" />
+              </div>
             </div>
 
             <Button type="submit" disabled={busy} size="lg" className="mt-2 w-full rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
