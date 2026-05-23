@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, Crown, Loader2, Save, Stethoscope } from "lucide-react";
+import { ArrowLeft, Camera, Crown, Loader2, Save, Stethoscope, BarChart3, CalendarDays, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,10 @@ const ProfilePage = () => {
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [monthly, setMonthly] = useState<{ month: string; label: string; count: number }[]>([]);
+  const [reportLoading, setReportLoading] = useState(true);
+  const [reportTotals, setReportTotals] = useState({ thisMonth: 0, total: 0, avgPerMonth: 0 });
+  const docPrefix = user ? user.id.replace(/-/g, "").slice(0, 4).toUpperCase() : "";
   const [form, setForm] = useState({
     full_name: "",
     specialty: "",
@@ -37,6 +41,43 @@ const ProfilePage = () => {
       });
     }
   }, [profile]);
+
+  // Load doctor's own monthly patient stats (last 6 months).
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      setReportLoading(true);
+      const now = new Date();
+      const from = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      const { data } = await supabase
+        .from("consultations")
+        .select("created_at")
+        .eq("user_id", user.id)
+        .gte("created_at", from.toISOString())
+        .order("created_at", { ascending: true })
+        .limit(5000);
+      const buckets: { month: string; label: string; count: number }[] = [];
+      const MONTHS_UZ = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        buckets.push({ month: key, label: `${MONTHS_UZ[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`, count: 0 });
+      }
+      let total = 0;
+      (data || []).forEach((r: any) => {
+        const d = new Date(r.created_at);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        const b = buckets.find((x) => x.month === key);
+        if (b) b.count++;
+        total++;
+      });
+      const thisMonth = buckets[buckets.length - 1]?.count || 0;
+      const avg = Math.round(total / 6);
+      setMonthly(buckets);
+      setReportTotals({ thisMonth, total, avgPerMonth: avg });
+      setReportLoading(false);
+    })();
+  }, [user]);
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -104,6 +145,66 @@ const ProfilePage = () => {
       </header>
 
       <main className="container max-w-2xl py-8 md:py-12">
+        {/* Doctor's own monthly report */}
+        <div className="mb-6 rounded-3xl border border-border bg-card p-6 shadow-md">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl text-primary-foreground shadow-md" style={{ background: "var(--gradient-primary)" }}>
+                <BarChart3 className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">Менинг ойлик ҳисоботим</h2>
+                <p className="text-xs text-muted-foreground">Фақат сиз қабул қилган беморлар бўйича</p>
+              </div>
+            </div>
+            {docPrefix && (
+              <div className="text-right">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Шифокор ID</div>
+                <div className="font-mono text-sm font-bold text-primary tracking-wider">{docPrefix}</div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-2xl border border-border bg-background/60 p-3">
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground"><CalendarDays className="h-3 w-3" /> Шу ой</div>
+              <div className="mt-1 text-2xl font-bold text-primary">{reportTotals.thisMonth}</div>
+            </div>
+            <div className="rounded-2xl border border-border bg-background/60 p-3">
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground"><Users className="h-3 w-3" /> 6 ой жами</div>
+              <div className="mt-1 text-2xl font-bold">{reportTotals.total}</div>
+            </div>
+            <div className="rounded-2xl border border-border bg-background/60 p-3">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Ўртача / ой</div>
+              <div className="mt-1 text-2xl font-bold">{reportTotals.avgPerMonth}</div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            {reportLoading ? (
+              <div className="flex h-24 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : (
+              <div className="flex h-28 items-end gap-2">
+                {monthly.map((m) => {
+                  const max = Math.max(1, ...monthly.map((x) => x.count));
+                  const h = Math.max(6, (m.count / max) * 100);
+                  return (
+                    <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
+                      <div className="text-[10px] font-semibold text-foreground">{m.count}</div>
+                      <div className="w-full rounded-t-lg transition-all" style={{ height: `${h}%`, background: "var(--gradient-primary)" }} />
+                      <div className="text-[10px] text-muted-foreground">{m.label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            Ҳар бир бемор учун автоматик тарзда такрорланмас ID берилади. Сизнинг ID префиксингиз: <span className="font-mono font-semibold text-primary">{docPrefix}-…</span>
+          </p>
+        </div>
+
         <div className="rounded-3xl border border-border bg-card p-6 shadow-md md:p-8">
           <div className="flex flex-col items-center gap-3 pb-6 border-b border-border">
             <div className="relative">

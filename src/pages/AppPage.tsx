@@ -99,6 +99,7 @@ const AppPage = () => {
   const [supported, setSupported] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
   const [consultationId, setConsultationId] = useState<string | null>(null);
+  const [patientCode, setPatientCode] = useState<string>("");
 
   const recognitionRef = useRef<any>(null);
   const baseTranscriptRef = useRef("");
@@ -290,6 +291,7 @@ const AppPage = () => {
     setResult(null); setChosenIdx(0); setConfirmed(false);
     setSelectedComorb([]);
     setConsultationId(null);
+    setPatientCode("");
     baseTranscriptRef.current = "";
     localStorage.removeItem(STORAGE_KEY);
   };
@@ -336,9 +338,21 @@ const AppPage = () => {
         symptoms_count: cleaned.symptoms.length,
         prescriptions_count: cleaned.prescriptions.length,
       });
+      // Generate a unique, human-readable patient code.
+      // Format: {DOCTOR_PREFIX}-{YYYYMMDD}-{XXXX}
+      //   DOCTOR_PREFIX = first 4 hex chars of doctor's user_id (uppercased)
+      //   so every patient code begins with the same prefix for that doctor,
+      //   making it easy to tell which doctor saw the patient.
+      const docPrefix = user.id.replace(/-/g, "").slice(0, 4).toUpperCase();
+      const d = new Date();
+      const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+      const rnd = Math.random().toString(36).slice(2, 6).toUpperCase();
+      const newCode = `${docPrefix}-${ymd}-${rnd}`;
+      setPatientCode(newCode);
       const { data: ins } = await supabase.from("consultations").insert({
         user_id: user.id,
         patient_name: patientName.trim() || "—",
+        patient_code: newCode,
         transcript,
         symptoms: cleaned.symptoms,
         diagnosis: chosen.name,
@@ -458,6 +472,7 @@ const AppPage = () => {
   </div>
   <div class="meta">
     <div class="row"><div class="label">${L("sec.patient")}</div><div class="val">${esc(pn)}</div></div>
+    ${patientCode ? `<div class="row"><div class="label">${lang === "ru" ? "Код пациента" : lang === "en" ? "Patient ID" : "Бемор ID"}</div><div class="val" style="font-family:'JetBrains Mono',ui-monospace,monospace;letter-spacing:.5px;color:#2176eb">${esc(patientCode)}</div></div>` : ""}
     <div class="row"><div class="label">${lang === "ru" ? "Дата" : lang === "en" ? "Date" : "Сана"}</div><div class="val">${esc(dateStr)}</div></div>
   </div>
 
@@ -894,6 +909,11 @@ const AppPage = () => {
                   <div className="flex-1">
                     <h3 className="font-semibold">{t("status.confirmed")}</h3>
                     <p className="text-sm text-muted-foreground">{t("status.patient")}: <span className="font-medium text-foreground">{patientName || "—"}</span></p>
+                    {patientCode && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        ID: <span className="font-mono font-semibold text-primary tracking-wider">{patientCode}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row">

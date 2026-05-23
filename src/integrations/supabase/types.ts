@@ -25,6 +25,7 @@ export type Database = {
           instrumental_tests: Json
           lab_tests: Json
           language: string
+          patient_code: string
           patient_name: string
           prescriptions: Json
           recommendation: string
@@ -43,6 +44,7 @@ export type Database = {
           instrumental_tests?: Json
           lab_tests?: Json
           language?: string
+          patient_code?: string
           patient_name?: string
           prescriptions?: Json
           recommendation?: string
@@ -61,6 +63,7 @@ export type Database = {
           instrumental_tests?: Json
           lab_tests?: Json
           language?: string
+          patient_code?: string
           patient_name?: string
           prescriptions?: Json
           recommendation?: string
