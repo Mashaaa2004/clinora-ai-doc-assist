@@ -145,6 +145,66 @@ const ProfilePage = () => {
       </header>
 
       <main className="container max-w-2xl py-8 md:py-12">
+        {/* Doctor's own monthly report */}
+        <div className="mb-6 rounded-3xl border border-border bg-card p-6 shadow-md">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl text-primary-foreground shadow-md" style={{ background: "var(--gradient-primary)" }}>
+                <BarChart3 className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">Менинг ойлик ҳисоботим</h2>
+                <p className="text-xs text-muted-foreground">Фақат сиз қабул қилган беморлар бўйича</p>
+              </div>
+            </div>
+            {docPrefix && (
+              <div className="text-right">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Шифокор ID</div>
+                <div className="font-mono text-sm font-bold text-primary tracking-wider">{docPrefix}</div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-2xl border border-border bg-background/60 p-3">
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground"><CalendarDays className="h-3 w-3" /> Шу ой</div>
+              <div className="mt-1 text-2xl font-bold text-primary">{reportTotals.thisMonth}</div>
+            </div>
+            <div className="rounded-2xl border border-border bg-background/60 p-3">
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground"><Users className="h-3 w-3" /> 6 ой жами</div>
+              <div className="mt-1 text-2xl font-bold">{reportTotals.total}</div>
+            </div>
+            <div className="rounded-2xl border border-border bg-background/60 p-3">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Ўртача / ой</div>
+              <div className="mt-1 text-2xl font-bold">{reportTotals.avgPerMonth}</div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            {reportLoading ? (
+              <div className="flex h-24 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : (
+              <div className="flex h-28 items-end gap-2">
+                {monthly.map((m) => {
+                  const max = Math.max(1, ...monthly.map((x) => x.count));
+                  const h = Math.max(6, (m.count / max) * 100);
+                  return (
+                    <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
+                      <div className="text-[10px] font-semibold text-foreground">{m.count}</div>
+                      <div className="w-full rounded-t-lg transition-all" style={{ height: `${h}%`, background: "var(--gradient-primary)" }} />
+                      <div className="text-[10px] text-muted-foreground">{m.label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            Ҳар бир бемор учун автоматик тарзда такрорланмас ID берилади. Сизнинг ID префиксингиз: <span className="font-mono font-semibold text-primary">{docPrefix}-…</span>
+          </p>
+        </div>
+
         <div className="rounded-3xl border border-border bg-card p-6 shadow-md md:p-8">
           <div className="flex flex-col items-center gap-3 pb-6 border-b border-border">
             <div className="relative">
