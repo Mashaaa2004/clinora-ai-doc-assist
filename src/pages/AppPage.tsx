@@ -291,6 +291,7 @@ const AppPage = () => {
     setResult(null); setChosenIdx(0); setConfirmed(false);
     setSelectedComorb([]);
     setConsultationId(null);
+    setPatientCode("");
     baseTranscriptRef.current = "";
     localStorage.removeItem(STORAGE_KEY);
   };
