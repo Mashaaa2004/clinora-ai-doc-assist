@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/i18n/LanguageContext";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import {
   Activity,
   Brain,
@@ -45,6 +47,7 @@ const MedicalBackdrop = () => (
 );
 
 const Index = () => {
+  const { t } = useT();
   return (
     <div className="relative min-h-screen bg-mesh text-foreground overflow-hidden">
       {/* Animated mesh + grain layer */}
@@ -64,11 +67,14 @@ const Index = () => {
             </div>
             <span className="text-xl font-bold tracking-tight">Clinora AI</span>
           </div>
-          <Link to="/auth">
-            <Button size="sm" className="shine rounded-full px-6 h-10 text-primary-foreground font-semibold" style={{ background: "var(--gradient-primary)" }}>
-              Кириш
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <Link to="/auth">
+              <Button size="sm" className="shine rounded-full px-6 h-10 text-primary-foreground font-semibold" style={{ background: "var(--gradient-primary)" }}>
+                {t("idx.signin")}
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -78,14 +84,14 @@ const Index = () => {
           <div className="mx-auto max-w-3xl text-center animate-fade-up">
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-white/60 px-5 py-2 text-sm font-semibold text-primary backdrop-blur-md shadow-sm">
               <Sparkles className="h-4 w-4" />
-              Шифокорлар учун AI ёрдамчи
+              {t("idx.badge")}
             </div>
             <h1 className="text-balance text-5xl font-bold tracking-tight md:text-7xl leading-[1.05]">
-              Clinora AI —{" "}
-              <span className="text-gradient-primary">шифокорлар учун ақлли ёрдамчи</span>
+              {t("idx.heroTitle")}{" "}
+              <span className="text-gradient-primary">{t("idx.heroSpan")}</span>
             </h1>
             <p className="mx-auto mt-8 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground md:text-2xl">
-              30 сонияда бемор суҳбатидан симптомлар, ташхис ва тавсияларни автоматик тарзда олинг.
+              {t("idx.heroDesc")}
             </p>
             <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link to="/auth">
@@ -95,10 +101,10 @@ const Index = () => {
                   style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
                 >
                   <Zap className="mr-2 h-5 w-5" />
-                  Синаб кўриш
+                  {t("idx.try")}
                 </Button>
               </Link>
-              <span className="text-base text-muted-foreground font-medium">Бепул • Шифокорлар учун</span>
+              <span className="text-base text-muted-foreground font-medium">{t("idx.free")}</span>
             </div>
           </div>
         </div>
@@ -111,18 +117,18 @@ const Index = () => {
             <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 ring-1 ring-destructive/30 animate-float">
               <Clock className="h-7 w-7 text-destructive" />
             </div>
-            <h3 className="mb-3 text-2xl md:text-3xl font-bold">Муаммо</h3>
+            <h3 className="mb-3 text-2xl md:text-3xl font-bold">{t("idx.problemT")}</h3>
             <p className="text-lg leading-relaxed text-muted-foreground">
-              Узун навбатлар, вақт етишмаслиги ва ҳужжатлаштириш юки шифокорни асосий ишидан чалғитади.
+              {t("idx.problemD")}
             </p>
           </div>
           <div className="glass-card card-tilt rounded-3xl p-9">
             <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/30 animate-float" style={{ animationDelay: "1.5s" }}>
               <Brain className="h-7 w-7 text-primary" />
             </div>
-            <h3 className="mb-3 text-2xl md:text-3xl font-bold">Ечим</h3>
+            <h3 className="mb-3 text-2xl md:text-3xl font-bold">{t("idx.solutionT")}</h3>
             <p className="text-lg leading-relaxed text-muted-foreground">
-              AI ёрдамида бемор суҳбатини ёзинг, бир неча сонияда симптомлар ва дастлабки таҳлилни олинг.
+              {t("idx.solutionD")}
             </p>
           </div>
         </div>
@@ -132,13 +138,13 @@ const Index = () => {
       <section className="container relative pb-20 md:pb-28">
         <div className="mx-auto max-w-5xl">
           <h2 className="mb-14 text-center text-4xl font-bold tracking-tight md:text-6xl">
-            <span className="text-gradient-primary">Афзалликлар</span>
+            <span className="text-gradient-primary">{t("idx.benefitsT")}</span>
           </h2>
           <div className="grid gap-6 md:grid-cols-3">
             {[
-              { icon: Zap, title: "Тезлик", text: "30 сонияда тайёр таҳлил" },
-              { icon: Activity, title: "Аниқлик", text: "Энг сўнгги AI моделлари асосида" },
-              { icon: Heart, title: "Кам стресс", text: "Ҳужжат юкини камайтиради" },
+              { icon: Zap, title: t("idx.b1T"), text: t("idx.b1D") },
+              { icon: Activity, title: t("idx.b2T"), text: t("idx.b2D") },
+              { icon: Heart, title: t("idx.b3T"), text: t("idx.b3D") },
             ].map(({ icon: Icon, title, text }, i) => (
               <div
                 key={title}
@@ -162,9 +168,9 @@ const Index = () => {
       {/* CTA */}
       <section className="container relative pb-24">
         <div className="glass-card card-tilt mx-auto max-w-3xl overflow-hidden rounded-[2rem] p-14 text-center">
-          <h2 className="text-4xl font-bold md:text-5xl">Ҳозироқ синаб кўринг</h2>
+          <h2 className="text-4xl font-bold md:text-5xl">{t("idx.ctaT")}</h2>
           <p className="mt-5 text-xl text-muted-foreground">
-            Микрофонни ёқинг, бемор билан суҳбатлашинг — қолганини AI бажаради.
+            {t("idx.ctaD")}
           </p>
           <Link to="/auth" className="mt-10 inline-block">
             <Button
@@ -172,7 +178,7 @@ const Index = () => {
               className="shine rounded-full px-12 py-7 text-lg font-semibold text-primary-foreground"
               style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
             >
-              Бошлаш
+              {t("idx.ctaBtn")}
             </Button>
           </Link>
         </div>
@@ -182,7 +188,7 @@ const Index = () => {
         <div className="container flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground md:flex-row">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-primary" />
-            <span>Бу AI фақат ёрдамчи, якуний қарор шифокорга тегишли</span>
+            <span>{t("status.aiNote")}</span>
           </div>
           <div className="flex items-center gap-2">
             <a
