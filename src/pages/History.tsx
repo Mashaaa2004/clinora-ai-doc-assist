@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Activity, ArrowLeft, FileText, FlaskConical, HeartHandshake, Loader2, Search, Stethoscope, Trash2, User, Users } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Activity, ArrowLeft, Copy, FileText, FlaskConical, HeartHandshake, Loader2, Search, Stethoscope, Trash2, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -28,6 +28,7 @@ type Consultation = {
 const HistoryPage = () => {
   const { user, isPro } = useAuth();
   const { t, lang } = useT();
+  const navigate = useNavigate();
   const [items, setItems] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
