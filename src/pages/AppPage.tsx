@@ -338,9 +338,21 @@ const AppPage = () => {
         symptoms_count: cleaned.symptoms.length,
         prescriptions_count: cleaned.prescriptions.length,
       });
+      // Generate a unique, human-readable patient code.
+      // Format: {DOCTOR_PREFIX}-{YYYYMMDD}-{XXXX}
+      //   DOCTOR_PREFIX = first 4 hex chars of doctor's user_id (uppercased)
+      //   so every patient code begins with the same prefix for that doctor,
+      //   making it easy to tell which doctor saw the patient.
+      const docPrefix = user.id.replace(/-/g, "").slice(0, 4).toUpperCase();
+      const d = new Date();
+      const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+      const rnd = Math.random().toString(36).slice(2, 6).toUpperCase();
+      const newCode = `${docPrefix}-${ymd}-${rnd}`;
+      setPatientCode(newCode);
       const { data: ins } = await supabase.from("consultations").insert({
         user_id: user.id,
         patient_name: patientName.trim() || "—",
+        patient_code: newCode,
         transcript,
         symptoms: cleaned.symptoms,
         diagnosis: chosen.name,
