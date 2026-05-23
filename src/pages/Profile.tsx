@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, Crown, Loader2, Save, Stethoscope } from "lucide-react";
+import { ArrowLeft, Camera, Crown, Loader2, Save, Stethoscope, BarChart3, CalendarDays, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,10 @@ const ProfilePage = () => {
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [monthly, setMonthly] = useState<{ month: string; label: string; count: number }[]>([]);
+  const [reportLoading, setReportLoading] = useState(true);
+  const [reportTotals, setReportTotals] = useState({ thisMonth: 0, total: 0, avgPerMonth: 0 });
+  const docPrefix = user ? user.id.replace(/-/g, "").slice(0, 4).toUpperCase() : "";
   const [form, setForm] = useState({
     full_name: "",
     specialty: "",
@@ -37,6 +41,43 @@ const ProfilePage = () => {
       });
     }
   }, [profile]);
+
+  // Load doctor's own monthly patient stats (last 6 months).
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      setReportLoading(true);
+      const now = new Date();
+      const from = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      const { data } = await supabase
+        .from("consultations")
+        .select("created_at")
+        .eq("user_id", user.id)
+        .gte("created_at", from.toISOString())
+        .order("created_at", { ascending: true })
+        .limit(5000);
+      const buckets: { month: string; label: string; count: number }[] = [];
+      const MONTHS_UZ = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        buckets.push({ month: key, label: `${MONTHS_UZ[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`, count: 0 });
+      }
+      let total = 0;
+      (data || []).forEach((r: any) => {
+        const d = new Date(r.created_at);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        const b = buckets.find((x) => x.month === key);
+        if (b) b.count++;
+        total++;
+      });
+      const thisMonth = buckets[buckets.length - 1]?.count || 0;
+      const avg = Math.round(total / 6);
+      setMonthly(buckets);
+      setReportTotals({ thisMonth, total, avgPerMonth: avg });
+      setReportLoading(false);
+    })();
+  }, [user]);
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
