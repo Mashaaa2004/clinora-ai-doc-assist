@@ -12,6 +12,7 @@ import {
   HeartHandshake,
   History as HistoryIcon,
   HelpCircle,
+  ShieldCheck,
   Loader2,
   LogOut,
   Mic,
@@ -36,6 +37,7 @@ import { useT } from "@/i18n/LanguageContext";
 import { SR_LOCALE, DATE_LOCALE } from "@/i18n/translations";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import GuideModal from "@/components/GuideModal";
+import { OPEN_LEGAL_EVENT } from "@/components/LegalConsentModal";
 import SupportFooter from "@/components/SupportFooter";
 import QRCode from "qrcode";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -619,6 +621,10 @@ const AppPage = () => {
             <Button variant="ghost" size="sm" className="rounded-full" onClick={() => setShowGuide(true)}>
               <HelpCircle className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">{t("nav.guide")}</span>
+            </Button>
+            <Button variant="ghost" size="sm" className="rounded-full" onClick={() => window.dispatchEvent(new Event(OPEN_LEGAL_EVENT))} title="Legal & Privacy">
+              <ShieldCheck className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden md:inline">Legal</span>
             </Button>
             <LanguageSwitcher />
             <Link to="/history"><Button variant="ghost" size="sm" className="rounded-full"><HistoryIcon className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">{t("nav.history")}</span></Button></Link>
