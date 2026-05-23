@@ -909,6 +909,11 @@ const AppPage = () => {
                   <div className="flex-1">
                     <h3 className="font-semibold">{t("status.confirmed")}</h3>
                     <p className="text-sm text-muted-foreground">{t("status.patient")}: <span className="font-medium text-foreground">{patientName || "—"}</span></p>
+                    {patientCode && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        ID: <span className="font-mono font-semibold text-primary tracking-wider">{patientCode}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row">
