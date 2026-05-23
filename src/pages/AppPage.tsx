@@ -110,6 +110,21 @@ const AppPage = () => {
   useEffect(() => {
     if (!localStorage.getItem(GUIDE_KEY)) setShowGuide(true);
 
+    // Check for copied consultation from history
+    const copyData = sessionStorage.getItem("clinora:copy-consultation");
+    if (copyData) {
+      try {
+        const parsed = JSON.parse(copyData);
+        if (parsed.patientName) setPatientName(parsed.patientName);
+        if (parsed.transcript) {
+          setTranscript(parsed.transcript);
+          baseTranscriptRef.current = parsed.transcript;
+        }
+        sessionStorage.removeItem("clinora:copy-consultation");
+        toast.success(t("hist.copied"));
+      } catch {}
+    }
+
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
