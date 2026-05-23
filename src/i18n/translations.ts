@@ -823,6 +823,7 @@ const EXTRA: Record<Lang, Dict> = {
     "hist.reason": "Сабаб:",
     "hist.result": "Натижа:",
     "hist.doctorPrefix": "Др.",
+    "hist.copied": "Нусха олинди — ишлаш учун App'га юборилди",
 
     // Analytics
     "an.title": "Аналитика",
