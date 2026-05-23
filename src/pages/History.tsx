@@ -78,6 +78,25 @@ const HistoryPage = () => {
     toast.success(t("hist.delOk"));
   };
 
+  const copy = (x: Consultation) => {
+    const summary = [
+      x.patient_name ? `${x.patient_name}` : "",
+      x.symptoms?.length ? `${t("hist.symptoms")}: ${x.symptoms.join(", ")}` : "",
+      x.chosen_diagnosis || x.diagnosis ? `${t("hist.diagnosis")}: ${x.chosen_diagnosis || x.diagnosis}` : "",
+      x.recommendation ? `${t("hist.recommendation")}: ${x.recommendation}` : "",
+      x.prescriptions?.length ? `${t("hist.rx")}: ${x.prescriptions.map((p) => p.name).join(", ")}` : "",
+      x.lab_tests?.length ? `${t("hist.labs")}: ${x.lab_tests.map((l) => l.name).join(", ")}` : "",
+      x.instrumental_tests?.length ? `${t("hist.instr")}: ${x.instrumental_tests.map((i) => i.name).join(", ")}` : "",
+    ].filter(Boolean).join("\n\n");
+
+    sessionStorage.setItem("clinora:copy-consultation", JSON.stringify({
+      patientName: x.patient_name,
+      transcript: summary,
+    }));
+    navigate("/app");
+    toast.success(t("hist.copied"));
+  };
+
   const filtered = items.filter((x) =>
     !q.trim() ||
     x.patient_name.toLowerCase().includes(q.toLowerCase()) ||
