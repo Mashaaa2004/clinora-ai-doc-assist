@@ -295,11 +295,16 @@ const HistoryPage = () => {
                           {t("hist.acceptedBy")} <b>{doctorNames[x.user_id]}</b>
                         </div>
                       )}
-                      <div className="pt-2 flex justify-end">
+                      <div className="pt-2 flex justify-end gap-2">
                         {isMine && (
-                          <Button variant="outline" size="sm" onClick={() => remove(x.id)} className="rounded-xl text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" /> {t("common.delete")}
-                          </Button>
+                          <>
+                            <Button variant="outline" size="sm" onClick={() => copy(x)} className="rounded-xl">
+                              <Copy className="mr-2 h-4 w-4" /> {t("common.copy")}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => remove(x.id)} className="rounded-xl text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" /> {t("common.delete")}
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
