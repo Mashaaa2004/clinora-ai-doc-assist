@@ -387,6 +387,11 @@ const AppPage = () => {
     const hosp = profile?.hospital?.trim() || "";
     const hospPhone = profile?.hospital_phone?.trim() || "";
     const hospAddr = profile?.hospital_address?.trim() || "";
+    const docIg = (profile as any)?.doctor_instagram?.trim() || "";
+    const docTg = (profile as any)?.doctor_telegram?.trim() || "";
+    const clinicIg = (profile as any)?.clinic_instagram?.trim() || "";
+    const clinicTg = (profile as any)?.clinic_telegram?.trim() || "";
+    const at = (s: string) => (s.startsWith("@") || s.startsWith("http") ? s : "@" + s);
 
     // QR encodes a real, scannable verification URL that opens the public verify page.
     const origin = window.location.origin;
