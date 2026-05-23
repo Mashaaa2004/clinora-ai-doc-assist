@@ -715,6 +715,7 @@ const EXTRA: Record<Lang, Dict> = {
     "common.patient": "Бемор",
     "common.doctor": "Шифокор",
     "common.unknown": "Номаълум",
+    "common.copy": "Нусха олиш",
 
     // Index (landing)
     "idx.signin": "Кириш",
