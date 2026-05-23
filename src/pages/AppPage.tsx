@@ -472,6 +472,7 @@ const AppPage = () => {
   </div>
   <div class="meta">
     <div class="row"><div class="label">${L("sec.patient")}</div><div class="val">${esc(pn)}</div></div>
+    ${patientCode ? `<div class="row"><div class="label">${lang === "ru" ? "Код пациента" : lang === "en" ? "Patient ID" : "Бемор ID"}</div><div class="val" style="font-family:'JetBrains Mono',ui-monospace,monospace;letter-spacing:.5px;color:#2176eb">${esc(patientCode)}</div></div>` : ""}
     <div class="row"><div class="label">${lang === "ru" ? "Дата" : lang === "en" ? "Date" : "Сана"}</div><div class="val">${esc(dateStr)}</div></div>
   </div>
 
