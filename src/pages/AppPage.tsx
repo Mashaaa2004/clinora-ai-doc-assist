@@ -508,6 +508,8 @@ const AppPage = () => {
       ${specialty ? `<div class="spec">${esc(specialty)}</div>` : ""}
       ${docPhone ? `<div class="contact">☎ ${esc(docPhone)}</div>` : ""}
       ${workHours ? `<div class="contact">🕒 ${esc(workHours)}</div>` : ""}
+      ${docIg ? `<div class="contact">📷 ${esc(at(docIg))}</div>` : ""}
+      ${docTg ? `<div class="contact">✈ ${esc(at(docTg))}</div>` : ""}
     </div>
     <div class="qr-pair">
       ${qrAppUrl ? `<div class="qr-block"><img src="${qrAppUrl}" alt="App QR"/>${L("pdf.qrApp")}</div>` : ""}
