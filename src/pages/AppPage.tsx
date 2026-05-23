@@ -99,6 +99,7 @@ const AppPage = () => {
   const [supported, setSupported] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
   const [consultationId, setConsultationId] = useState<string | null>(null);
+  const [patientCode, setPatientCode] = useState<string>("");
 
   const recognitionRef = useRef<any>(null);
   const baseTranscriptRef = useRef("");
