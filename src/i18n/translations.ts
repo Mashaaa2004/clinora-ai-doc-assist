@@ -715,6 +715,7 @@ const EXTRA: Record<Lang, Dict> = {
     "common.patient": "Бемор",
     "common.doctor": "Шифокор",
     "common.unknown": "Номаълум",
+    "common.copy": "Нусха олиш",
 
     // Index (landing)
     "idx.signin": "Кириш",
@@ -822,6 +823,7 @@ const EXTRA: Record<Lang, Dict> = {
     "hist.reason": "Сабаб:",
     "hist.result": "Натижа:",
     "hist.doctorPrefix": "Др.",
+    "hist.copied": "Нусха олинди — ишлаш учун App'га юборилди",
 
     // Analytics
     "an.title": "Аналитика",
@@ -876,6 +878,7 @@ const EXTRA: Record<Lang, Dict> = {
     "common.patient": "Пациент",
     "common.doctor": "Врач",
     "common.unknown": "Неизвестно",
+    "common.copy": "Копировать",
 
     "idx.signin": "Войти",
     "idx.badge": "AI-помощник для врачей",
@@ -979,6 +982,7 @@ const EXTRA: Record<Lang, Dict> = {
     "hist.reason": "Причина:",
     "hist.result": "Результат:",
     "hist.doctorPrefix": "Др.",
+    "hist.copied": "Скопировано — отправлено в App для работы",
 
     "an.title": "Аналитика",
     "an.doctors": "Врачи",
@@ -1031,6 +1035,7 @@ const EXTRA: Record<Lang, Dict> = {
     "common.patient": "Patient",
     "common.doctor": "Doctor",
     "common.unknown": "Unknown",
+    "common.copy": "Copy",
 
     "idx.signin": "Sign in",
     "idx.badge": "AI assistant for doctors",
@@ -1134,6 +1139,7 @@ const EXTRA: Record<Lang, Dict> = {
     "hist.reason": "Reason:",
     "hist.result": "Result:",
     "hist.doctorPrefix": "Dr.",
+    "hist.copied": "Copied — sent to App for editing",
 
     "an.title": "Analytics",
     "an.doctors": "Doctors",
@@ -1186,6 +1192,7 @@ const EXTRA: Record<Lang, Dict> = {
     "common.patient": "Пациент",
     "common.doctor": "Дәрігер",
     "common.unknown": "Белгісіз",
+    "common.copy": "Көшіру",
 
     "idx.signin": "Кіру",
     "idx.badge": "Дәрігерлерге арналған AI көмекшісі",
@@ -1289,6 +1296,7 @@ const EXTRA: Record<Lang, Dict> = {
     "hist.reason": "Себебі:",
     "hist.result": "Нәтиже:",
     "hist.doctorPrefix": "Др.",
+    "hist.copied": "Көшірілді — өңдеу үшін App-қа жіберілді",
 
     "an.title": "Аналитика",
     "an.doctors": "Дәрігерлер",
@@ -1341,6 +1349,7 @@ const EXTRA: Record<Lang, Dict> = {
     "common.patient": "Бейтап",
     "common.doctor": "Дарыгер",
     "common.unknown": "Белгисиз",
+    "common.copy": "Көчүрүү",
 
     "idx.signin": "Кирүү",
     "idx.badge": "Дарыгерлер үчүн AI жардамчы",
@@ -1444,6 +1453,7 @@ const EXTRA: Record<Lang, Dict> = {
     "hist.reason": "Себеби:",
     "hist.result": "Натыйжа:",
     "hist.doctorPrefix": "Др.",
+    "hist.copied": "Көчүрүлдү — иштөө үчүн App'ка жиберилди",
 
     "an.title": "Аналитика",
     "an.doctors": "Дарыгерлер",
@@ -1496,6 +1506,7 @@ const EXTRA: Record<Lang, Dict> = {
     "common.patient": "Hasta",
     "common.doctor": "Doktor",
     "common.unknown": "Bilinmiyor",
+    "common.copy": "Kopyala",
 
     "idx.signin": "Giriş",
     "idx.badge": "Doktorlar için AI asistan",
@@ -1599,6 +1610,7 @@ const EXTRA: Record<Lang, Dict> = {
     "hist.reason": "Sebep:",
     "hist.result": "Sonuç:",
     "hist.doctorPrefix": "Dr.",
+    "hist.copied": "Kopyalandı — düzenleme için App'e gönderildi",
 
     "an.title": "Analitik",
     "an.doctors": "Doktorlar",

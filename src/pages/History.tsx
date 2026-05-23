@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Activity, ArrowLeft, FileText, FlaskConical, HeartHandshake, Loader2, Search, Stethoscope, Trash2, User, Users } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Activity, ArrowLeft, Copy, FileText, FlaskConical, HeartHandshake, Loader2, Search, Stethoscope, Trash2, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -28,6 +28,7 @@ type Consultation = {
 const HistoryPage = () => {
   const { user, isPro } = useAuth();
   const { t, lang } = useT();
+  const navigate = useNavigate();
   const [items, setItems] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -75,6 +76,25 @@ const HistoryPage = () => {
     if (error) { toast.error(t("hist.delErr")); return; }
     setItems((prev) => prev.filter((x) => x.id !== id));
     toast.success(t("hist.delOk"));
+  };
+
+  const copy = (x: Consultation) => {
+    const summary = [
+      x.patient_name ? `${x.patient_name}` : "",
+      x.symptoms?.length ? `${t("hist.symptoms")}: ${x.symptoms.join(", ")}` : "",
+      x.chosen_diagnosis || x.diagnosis ? `${t("hist.diagnosis")}: ${x.chosen_diagnosis || x.diagnosis}` : "",
+      x.recommendation ? `${t("hist.recommendation")}: ${x.recommendation}` : "",
+      x.prescriptions?.length ? `${t("hist.rx")}: ${x.prescriptions.map((p) => p.name).join(", ")}` : "",
+      x.lab_tests?.length ? `${t("hist.labs")}: ${x.lab_tests.map((l) => l.name).join(", ")}` : "",
+      x.instrumental_tests?.length ? `${t("hist.instr")}: ${x.instrumental_tests.map((i) => i.name).join(", ")}` : "",
+    ].filter(Boolean).join("\n\n");
+
+    sessionStorage.setItem("clinora:copy-consultation", JSON.stringify({
+      patientName: x.patient_name,
+      transcript: summary,
+    }));
+    navigate("/app");
+    toast.success(t("hist.copied"));
   };
 
   const filtered = items.filter((x) =>
@@ -275,11 +295,16 @@ const HistoryPage = () => {
                           {t("hist.acceptedBy")} <b>{doctorNames[x.user_id]}</b>
                         </div>
                       )}
-                      <div className="pt-2 flex justify-end">
+                      <div className="pt-2 flex justify-end gap-2">
                         {isMine && (
-                          <Button variant="outline" size="sm" onClick={() => remove(x.id)} className="rounded-xl text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" /> {t("common.delete")}
-                          </Button>
+                          <>
+                            <Button variant="outline" size="sm" onClick={() => copy(x)} className="rounded-xl">
+                              <Copy className="mr-2 h-4 w-4" /> {t("common.copy")}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => remove(x.id)} className="rounded-xl text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" /> {t("common.delete")}
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
