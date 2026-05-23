@@ -5,12 +5,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type Lang = "uz" | "ru" | "en";
+type Lang = "uz" | "ru" | "en" | "kk" | "ky" | "tr";
 
 const LANG_INSTRUCTION: Record<Lang, string> = {
-  uz: "Жавобни ҳамиша КИРИЛЛ ўзбек тилида қайтаринг.",
-  ru: "Всегда возвращайте ответ на русском языке.",
-  en: "Always return the response in English.",
+  uz: "Жавобни ҳамиша КИРИЛЛ ўзбек тилида қайтаринг. Барча майдонлар (симптомлар, тавсиялар, рецептлар, текширувлар, ташхислар, оила учун маслаҳат) кирилл ўзбек тилида бўлсин.",
+  ru: "Всегда возвращайте ответ ПОЛНОСТЬЮ на русском языке. Все поля (симптомы, рекомендации, рецепты, обследования, диагнозы, советы семье) должны быть на русском.",
+  en: "Always return the response ENTIRELY in English. All fields (symptoms, recommendations, prescriptions, tests, diagnoses, family advice) must be in English.",
+  kk: "Жауапты ҮНЕМІ қазақ тілінде (кирилл жазуы) қайтарыңыз. Барлық өрістер (симптомдар, ұсыныстар, рецепттер, тексерулер, диагноздар, отбасыға кеңес) қазақ тілінде болуы тиіс.",
+  ky: "Жоопту ДАЙЫМА кыргыз тилинде (кирилл жазуу) кайтарыңыз. Бардык талаалар (симптомдор, сунуштар, рецепттер, текшерүүлөр, диагноздор, үй-бүлөгө кеңеш) кыргыз тилинде болушу керек.",
+  tr: "Yanıtı HER ZAMAN tamamen Türkçe olarak döndürün. Tüm alanlar (semptomlar, öneriler, reçeteler, tetkikler, tanılar, aile için tavsiye) Türkçe olmalıdır.",
 };
 
 const LABELS: Record<Lang, { history: string; today: string; analyze: string }> = {
@@ -28,6 +31,21 @@ const LABELS: Record<Lang, { history: string; today: string; analyze: string }> 
     history: "PATIENT'S PREVIOUS VISIT HISTORY",
     today: "TODAY'S COMPLAINTS AND CONVERSATION",
     analyze: "Analyze both blocks medically.",
+  },
+  kk: {
+    history: "ПАЦИЕНТТІҢ АЛДЫҢҒЫ ҚАБЫЛДАУ ТАРИХЫ",
+    today: "БҮГІНГІ ШАҒЫМДАР ЖӘНЕ ӘҢГІМЕ",
+    analyze: "Екеуін де ескере отырып, медициналық тұрғыдан талдаңыз.",
+  },
+  ky: {
+    history: "БЕЙТАПТЫН МУРУНКУ КАБЫЛ АЛУУ ТАРЫХЫ",
+    today: "БҮГҮНКҮ АРЫЗ ЖАНА СҮЙЛӨШҮҮ",
+    analyze: "Экөөнү тең эске алып, медициналык жактан талдаңыз.",
+  },
+  tr: {
+    history: "HASTANIN ÖNCEKİ ZİYARET GEÇMİŞİ",
+    today: "BUGÜNKÜ ŞİKAYETLER VE GÖRÜŞME",
+    analyze: "İkisini de dikkate alarak tıbbi olarak analiz edin.",
   },
 };
 
@@ -48,7 +66,7 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const lang: Lang = language === "ru" || language === "en" ? language : "uz";
+    const lang: Lang = ["uz", "ru", "en", "kk", "ky", "tr"].includes(language) ? language : "uz";
     const langInstr = LANG_INSTRUCTION[lang];
     const labels = LABELS[lang];
 
