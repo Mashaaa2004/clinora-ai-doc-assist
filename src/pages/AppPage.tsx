@@ -387,6 +387,11 @@ const AppPage = () => {
     const hosp = profile?.hospital?.trim() || "";
     const hospPhone = profile?.hospital_phone?.trim() || "";
     const hospAddr = profile?.hospital_address?.trim() || "";
+    const docIg = (profile as any)?.doctor_instagram?.trim() || "";
+    const docTg = (profile as any)?.doctor_telegram?.trim() || "";
+    const clinicIg = (profile as any)?.clinic_instagram?.trim() || "";
+    const clinicTg = (profile as any)?.clinic_telegram?.trim() || "";
+    const at = (s: string) => (s.startsWith("@") || s.startsWith("http") ? s : "@" + s);
 
     // QR encodes a real, scannable verification URL that opens the public verify page.
     const origin = window.location.origin;
@@ -470,7 +475,7 @@ const AppPage = () => {
 <div class="page">
   <div class="header">
     <div class="brand"><div class="logo">C</div><div><h1>Clinora AI</h1><p>${L("pdf.title")}</p></div></div>
-    <div class="clinic"><div class="clinic-name">${esc(hosp || "—")}</div>${hospAddr ? `<div>${esc(hospAddr)}</div>` : ""}${hospPhone ? `<div>☎ ${esc(hospPhone)}</div>` : ""}</div>
+    <div class="clinic"><div class="clinic-name">${esc(hosp || "—")}</div>${hospAddr ? `<div>${esc(hospAddr)}</div>` : ""}${hospPhone ? `<div>☎ ${esc(hospPhone)}</div>` : ""}${clinicIg ? `<div>📷 ${esc(at(clinicIg))}</div>` : ""}${clinicTg ? `<div>✈ ${esc(at(clinicTg))}</div>` : ""}</div>
   </div>
   <div class="meta">
     <div class="row"><div class="label">${L("sec.patient")}</div><div class="val">${esc(pn)}</div></div>
@@ -503,6 +508,8 @@ const AppPage = () => {
       ${specialty ? `<div class="spec">${esc(specialty)}</div>` : ""}
       ${docPhone ? `<div class="contact">☎ ${esc(docPhone)}</div>` : ""}
       ${workHours ? `<div class="contact">🕒 ${esc(workHours)}</div>` : ""}
+      ${docIg ? `<div class="contact">📷 ${esc(at(docIg))}</div>` : ""}
+      ${docTg ? `<div class="contact">✈ ${esc(at(docTg))}</div>` : ""}
     </div>
     <div class="qr-pair">
       ${qrAppUrl ? `<div class="qr-block"><img src="${qrAppUrl}" alt="App QR"/>${L("pdf.qrApp")}</div>` : ""}

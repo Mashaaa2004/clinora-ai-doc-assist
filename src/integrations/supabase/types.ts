@@ -170,7 +170,11 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string
+          clinic_instagram: string
+          clinic_telegram: string
           created_at: string
+          doctor_instagram: string
+          doctor_telegram: string
           full_name: string
           hospital: string
           hospital_address: string
@@ -184,7 +188,11 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string
+          clinic_instagram?: string
+          clinic_telegram?: string
           created_at?: string
+          doctor_instagram?: string
+          doctor_telegram?: string
           full_name?: string
           hospital?: string
           hospital_address?: string
@@ -198,7 +206,11 @@ export type Database = {
         }
         Update: {
           avatar_url?: string
+          clinic_instagram?: string
+          clinic_telegram?: string
           created_at?: string
+          doctor_instagram?: string
+          doctor_telegram?: string
           full_name?: string
           hospital?: string
           hospital_address?: string

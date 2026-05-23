@@ -26,6 +26,10 @@ const ProfilePage = () => {
     hospital: "",
     hospital_phone: "",
     hospital_address: "",
+    doctor_instagram: "",
+    doctor_telegram: "",
+    clinic_instagram: "",
+    clinic_telegram: "",
   });
 
   useEffect(() => {
@@ -38,6 +42,10 @@ const ProfilePage = () => {
         hospital: profile.hospital || "",
         hospital_phone: profile.hospital_phone || "",
         hospital_address: profile.hospital_address || "",
+        doctor_instagram: (profile as any).doctor_instagram || "",
+        doctor_telegram: (profile as any).doctor_telegram || "",
+        clinic_instagram: (profile as any).clinic_instagram || "",
+        clinic_telegram: (profile as any).clinic_telegram || "",
       });
     }
   }, [profile]);
@@ -289,6 +297,22 @@ const ProfilePage = () => {
               <div>
                 <Label>Манзил</Label>
                 <Input value={form.hospital_address} onChange={(e) => set("hospital_address", e.target.value)} placeholder="Тошкент ш., Чилонзор" className="mt-1 rounded-xl" />
+              </div>
+              <div>
+                <Label>Шифокор Instagram</Label>
+                <Input value={form.doctor_instagram} onChange={(e) => set("doctor_instagram", e.target.value)} placeholder="@doctor_username" className="mt-1 rounded-xl" />
+              </div>
+              <div>
+                <Label>Шифокор Telegram</Label>
+                <Input value={form.doctor_telegram} onChange={(e) => set("doctor_telegram", e.target.value)} placeholder="@doctor_tg" className="mt-1 rounded-xl" />
+              </div>
+              <div>
+                <Label>Клиника Instagram</Label>
+                <Input value={form.clinic_instagram} onChange={(e) => set("clinic_instagram", e.target.value)} placeholder="@clinic_username" className="mt-1 rounded-xl" />
+              </div>
+              <div>
+                <Label>Клиника Telegram канали</Label>
+                <Input value={form.clinic_telegram} onChange={(e) => set("clinic_telegram", e.target.value)} placeholder="@clinic_channel" className="mt-1 rounded-xl" />
               </div>
             </div>
 
