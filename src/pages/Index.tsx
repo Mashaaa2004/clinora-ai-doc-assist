@@ -78,6 +78,7 @@ const Index = () => {
         </div>
       </header>
 
+      <main>
       {/* Hero */}
       <section className="relative">
         <div className="container py-20 md:py-28">
@@ -117,7 +118,7 @@ const Index = () => {
             <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 ring-1 ring-destructive/30 animate-float">
               <Clock className="h-7 w-7 text-destructive" />
             </div>
-            <h3 className="mb-3 text-2xl md:text-3xl font-bold">{t("idx.problemT")}</h3>
+            <h2 className="mb-3 text-2xl md:text-3xl font-bold">{t("idx.problemT")}</h2>
             <p className="text-lg leading-relaxed text-muted-foreground">
               {t("idx.problemD")}
             </p>
@@ -126,7 +127,7 @@ const Index = () => {
             <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/30 animate-float" style={{ animationDelay: "1.5s" }}>
               <Brain className="h-7 w-7 text-primary" />
             </div>
-            <h3 className="mb-3 text-2xl md:text-3xl font-bold">{t("idx.solutionT")}</h3>
+            <h2 className="mb-3 text-2xl md:text-3xl font-bold">{t("idx.solutionT")}</h2>
             <p className="text-lg leading-relaxed text-muted-foreground">
               {t("idx.solutionD")}
             </p>
