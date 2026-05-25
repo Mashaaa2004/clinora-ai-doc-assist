@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useT } from "@/i18n/LanguageContext";
 import { DATE_LOCALE } from "@/i18n/translations";
+import { Helmet } from "react-helmet-async";
 
 type Settings = {
   card_number: string;

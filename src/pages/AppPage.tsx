@@ -39,6 +39,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import GuideModal from "@/components/GuideModal";
 import { OPEN_LEGAL_EVENT } from "@/components/LegalConsentModal";
 import SupportFooter from "@/components/SupportFooter";
+import { Helmet } from "react-helmet-async";
 import QRCode from "qrcode";
 import { Checkbox } from "@/components/ui/checkbox";
 

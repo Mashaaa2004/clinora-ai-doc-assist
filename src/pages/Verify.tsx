@@ -3,6 +3,7 @@ import { useParams, Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, AlertTriangle, Loader2, Printer } from "lucide-react";
 import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
+import { Helmet } from "react-helmet-async";
 
 type Consultation = {
   id: string;

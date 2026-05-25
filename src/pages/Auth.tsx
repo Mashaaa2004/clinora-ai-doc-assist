@@ -10,6 +10,7 @@ import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
 import { useT } from "@/i18n/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { Helmet } from "react-helmet-async";
 
 const AuthPage = () => {
   const navigate = useNavigate();

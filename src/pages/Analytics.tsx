@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Building2, FileCheck2, Stethoscope, TrendingUp, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/i18n/LanguageContext";
+import { Helmet } from "react-helmet-async";
 
 type Stats = {
   doctors: number;
