@@ -101,6 +101,8 @@ const Verify = () => {
         <meta property="og:url" content={`https://clinora-ai-doc-assist.lovable.app/verify/${id}`} />
       </Helmet>
       <div className="min-h-screen bg-muted/30 py-6 print:bg-white print:py-0">
+      <main>
+      <h1 className="sr-only">Bemor tavsiyanomasi va tashxis hujjati</h1>
       <style>{`
         @media print {
           .no-print { display: none !important; }
@@ -219,8 +221,8 @@ const Verify = () => {
             </div>
           )}
           <div className="flex gap-3">
-            {qrApp && <div className="text-center text-[8px] text-muted-foreground"><img src={qrApp} alt="App" className="mx-auto h-16 w-16" />Clinora AI platformasi</div>}
-            {qrVerify && <div className="text-center text-[8px] text-muted-foreground"><img src={qrVerify} alt="Verify" className="mx-auto h-16 w-16" />Hujjatni tekshirish</div>}
+            {qrApp && <div className="text-center text-[8px] text-muted-foreground"><img src={qrApp} alt="Clinora AI platformasi QR kodi" className="mx-auto h-16 w-16" />Clinora AI platformasi</div>}
+            {qrVerify && <div className="text-center text-[8px] text-muted-foreground"><img src={qrVerify} alt="Hujjatni tekshirish QR kodi" className="mx-auto h-16 w-16" />Hujjatni tekshirish</div>}
           </div>
           <div className="w-[140px] text-center text-[9px] text-muted-foreground">
             <div className="mb-1 h-5 border-b border-[#111827]" />Imzo / muhr
@@ -232,6 +234,7 @@ const Verify = () => {
           <div className="italic">⚕ Hujjat Clinora AI yordamida tayyorlangan va shifokor tomonidan tasdiqlangan.</div>
         </div>
       </div>
+      </main>
     </div>
     </>
   );
