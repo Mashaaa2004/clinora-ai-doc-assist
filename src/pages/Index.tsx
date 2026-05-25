@@ -184,6 +184,7 @@ const Index = () => {
           </Link>
         </div>
       </section>
+      </main>
 
       <footer className="relative border-t border-border/60 py-8 backdrop-blur-sm bg-background/60">
         <div className="container flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground md:flex-row">
