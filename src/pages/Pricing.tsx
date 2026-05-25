@@ -241,6 +241,7 @@ const PricingPage = () => {
 
       <SupportFooter />
     </div>
+    </>
   );
 };
 

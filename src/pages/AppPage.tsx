@@ -972,6 +972,7 @@ const AppPage = () => {
       </main>
       <SupportFooter />
     </div>
+    </>
   );
 };
 

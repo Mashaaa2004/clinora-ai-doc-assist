@@ -233,6 +233,7 @@ const Verify = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

@@ -294,6 +294,7 @@ const HistoryPage = () => {
         </div>
       </main>
     </div>
+    </>
   );
 };
 
