@@ -155,7 +155,7 @@ const CONTENT: Record<Lang, LegalContent> = {
 };
 
 const LegalConsentModal = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { lang } = useT();
   const c = CONTENT[lang] ?? CONTENT.uz;
   const [open, setOpen] = useState(false);
@@ -184,8 +184,82 @@ const LegalConsentModal = () => {
 
   const allChecked = doctorAgreed && patientAgreed && responsibility;
 
-  const accept = () => {
+  const generatePdf = async () => {
+    try {
+      const { jsPDF } = await import("jspdf");
+      const now = new Date();
+      const dateStr = now.toLocaleString();
+      const sig = profile?.full_name || user?.email || "—";
+      const html = `
+        <div style="font-family: Arial, Helvetica, sans-serif; width: 680px; padding: 28px; color: #111; line-height: 1.55;">
+          <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #2563eb;padding-bottom:10px;margin-bottom:16px;">
+            <div style="font-size:20px;font-weight:700;color:#2563eb;">Clinora AI</div>
+            <div style="font-size:11px;color:#666;">${dateStr}</div>
+          </div>
+          <h1 style="font-size:18px;margin:0 0 12px;">${c.title}</h1>
+          <div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:16px;background:#f9fafb;font-size:12px;">
+            <div><b>ID:</b> ${user?.id ?? "—"}</div>
+            <div><b>Email:</b> ${user?.email ?? "—"}</div>
+            <div><b>F.I.O / Full name:</b> ${profile?.full_name || "—"}</div>
+            <div><b>Specialty:</b> ${profile?.specialty || "—"}</div>
+            <div><b>Clinic / Hospital:</b> ${profile?.hospital || "—"}</div>
+            <div><b>Phone:</b> ${profile?.phone || "—"}</div>
+            <div><b>Address:</b> ${profile?.hospital_address || "—"}</div>
+          </div>
+          <div style="font-size:12px;color:#444;margin-bottom:14px;">${c.intro}</div>
+          ${[
+            [c.s1Title, c.s1],
+            [c.s2Title, c.s2],
+            [c.s3Title, c.s3],
+            [c.s4Title, c.s4],
+            [c.s5Title, c.s5Intro],
+            [c.s6Title, c.s6],
+          ]
+            .map(
+              ([t, p]) =>
+                `<div style="margin-bottom:10px;"><div style="font-size:13px;font-weight:700;margin-bottom:2px;">${t}</div><div style="font-size:12px;color:#333;">${p}</div></div>`,
+            )
+            .join("")}
+          <div style="margin-top:18px;border-top:1px dashed #cbd5e1;padding-top:12px;font-size:12px;">
+            <div style="margin-bottom:4px;">☑ ${c.cb1}</div>
+            <div style="margin-bottom:4px;">☑ ${c.cb2}</div>
+            <div style="margin-bottom:4px;">☑ ${c.cb3}</div>
+          </div>
+          <div style="margin-top:22px;display:flex;justify-content:space-between;align-items:end;font-size:12px;">
+            <div>
+              <div style="color:#666;">Electronic signature</div>
+              <div style="font-weight:700;font-size:14px;border-top:1px solid #111;padding-top:4px;margin-top:18px;min-width:220px;">${sig}</div>
+            </div>
+            <div style="text-align:right;color:#666;">
+              <div>Signed at</div>
+              <div style="font-weight:600;color:#111;">${dateStr}</div>
+            </div>
+          </div>
+        </div>`;
+      const container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.left = "-10000px";
+      container.style.top = "0";
+      container.innerHTML = html;
+      document.body.appendChild(container);
+      const pdf = new jsPDF({ unit: "pt", format: "a4" });
+      await pdf.html(container.firstElementChild as HTMLElement, {
+        callback: (doc) => {
+          doc.save(`Clinora_Legal_Consent_${now.toISOString().slice(0, 10)}.pdf`);
+          document.body.removeChild(container);
+        },
+        margin: [20, 20, 20, 20],
+        autoPaging: "text",
+        html2canvas: { scale: 0.72, useCORS: true },
+      });
+    } catch (e) {
+      console.error("Legal PDF generation failed", e);
+    }
+  };
+
+  const accept = async () => {
     if (!allChecked) return;
+    const alreadySigned = user ? !!localStorage.getItem(STORAGE_PREFIX + user.id) : false;
     if (user) {
       localStorage.setItem(
         STORAGE_PREFIX + user.id,
@@ -194,55 +268,58 @@ const LegalConsentModal = () => {
     }
     setForced(false);
     setOpen(false);
+    if (!alreadySigned) {
+      await generatePdf();
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o && forced) { setForced(false); setOpen(false); } }}>
       <DialogContent
-        className="max-w-2xl"
+        className="w-[calc(100vw-1.5rem)] max-w-2xl p-4 sm:p-6 rounded-2xl max-h-[92vh] overflow-y-auto"
         onPointerDownOutside={(e) => { if (!forced) e.preventDefault(); }}
         onEscapeKeyDown={(e) => { if (!forced) e.preventDefault(); }}
       >
         <DialogHeader>
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/30">
-            <ShieldCheck className="h-6 w-6 text-primary" />
+          <div className="mx-auto mb-2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/30">
+            <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
           </div>
-          <DialogTitle className="text-center text-2xl">{c.title}</DialogTitle>
-          <DialogDescription className="text-center">{c.intro}</DialogDescription>
+          <DialogTitle className="text-center text-base sm:text-2xl leading-tight">{c.title}</DialogTitle>
+          <DialogDescription className="text-center text-xs sm:text-sm">{c.intro}</DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[45vh] rounded-md border bg-muted/30 p-4 text-sm leading-relaxed">
-          <div className="space-y-5">
+        <ScrollArea className="max-h-[38vh] sm:max-h-[45vh] rounded-md border bg-muted/30 p-3 sm:p-4 text-xs sm:text-sm leading-relaxed">
+          <div className="space-y-4 sm:space-y-5">
             <section>
-              <div className="mb-1 flex items-center gap-2 font-semibold">
+              <div className="mb-1 flex items-center gap-2 font-semibold text-sm">
                 <FileText className="h-4 w-4 text-primary" /> {c.s1Title}
               </div>
               <p className="text-muted-foreground">{c.s1}</p>
             </section>
 
             <section>
-              <div className="mb-1 flex items-center gap-2 font-semibold text-destructive">
+              <div className="mb-1 flex items-center gap-2 font-semibold text-destructive text-sm">
                 <AlertTriangle className="h-4 w-4" /> {c.s2Title}
               </div>
               <p className="text-muted-foreground">{c.s2}</p>
             </section>
 
             <section>
-              <div className="mb-1 flex items-center gap-2 font-semibold">
+              <div className="mb-1 flex items-center gap-2 font-semibold text-sm">
                 <Lock className="h-4 w-4 text-primary" /> {c.s3Title}
               </div>
               <p className="text-muted-foreground">{c.s3}</p>
             </section>
 
             <section>
-              <div className="mb-1 flex items-center gap-2 font-semibold">
+              <div className="mb-1 flex items-center gap-2 font-semibold text-sm">
                 <Cpu className="h-4 w-4 text-primary" /> {c.s4Title}
               </div>
               <p className="text-muted-foreground">{c.s4}</p>
             </section>
 
             <section>
-              <div className="mb-1 flex items-center gap-2 font-semibold">
+              <div className="mb-1 flex items-center gap-2 font-semibold text-sm">
                 <Scale className="h-4 w-4 text-primary" /> {c.s5Title}
               </div>
               <p className="text-muted-foreground">{c.s5Intro}</p>
@@ -254,7 +331,7 @@ const LegalConsentModal = () => {
             </section>
 
             <section>
-              <div className="mb-1 flex items-center gap-2 font-semibold">
+              <div className="mb-1 flex items-center gap-2 font-semibold text-sm">
                 <ShieldCheck className="h-4 w-4 text-primary" /> {c.s6Title}
               </div>
               <p className="text-muted-foreground">{c.s6}</p>
@@ -262,20 +339,20 @@ const LegalConsentModal = () => {
           </div>
         </ScrollArea>
 
-        <div className="space-y-3 pt-2">
-          <label className="flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-3 hover:bg-accent/40">
+        <div className="space-y-2 sm:space-y-3 pt-2">
+          <label className="flex cursor-pointer items-start gap-2.5 sm:gap-3 rounded-lg border bg-card p-2.5 sm:p-3 hover:bg-accent/40">
             <Checkbox checked={doctorAgreed} onCheckedChange={(v) => setDoctorAgreed(v === true)} className="mt-0.5" />
-            <span className="text-sm">{c.cb1}</span>
+            <span className="text-xs sm:text-sm leading-snug">{c.cb1}</span>
           </label>
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-3 hover:bg-accent/40">
+          <label className="flex cursor-pointer items-start gap-2.5 sm:gap-3 rounded-lg border bg-card p-2.5 sm:p-3 hover:bg-accent/40">
             <Checkbox checked={patientAgreed} onCheckedChange={(v) => setPatientAgreed(v === true)} className="mt-0.5" />
-            <span className="text-sm">{c.cb2}</span>
+            <span className="text-xs sm:text-sm leading-snug">{c.cb2}</span>
           </label>
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-3 hover:bg-accent/40">
+          <label className="flex cursor-pointer items-start gap-2.5 sm:gap-3 rounded-lg border bg-card p-2.5 sm:p-3 hover:bg-accent/40">
             <Checkbox checked={responsibility} onCheckedChange={(v) => setResponsibility(v === true)} className="mt-0.5" />
-            <span className="text-sm">{c.cb3}</span>
+            <span className="text-xs sm:text-sm leading-snug">{c.cb3}</span>
           </label>
         </div>
 
@@ -283,7 +360,7 @@ const LegalConsentModal = () => {
           <Button
             disabled={!allChecked}
             onClick={accept}
-            className="w-full"
+            className="w-full text-sm sm:text-base"
             style={{ background: "var(--gradient-primary)" }}
           >
             {c.accept}
