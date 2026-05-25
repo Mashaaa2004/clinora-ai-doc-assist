@@ -751,7 +751,7 @@ const AppPage = () => {
                   <div key={i} className="rounded-2xl border border-border/70 bg-background/60 p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs font-medium text-muted-foreground">№ {i + 1}</span>
-                      <Button variant="ghost" size="icon" onClick={() => update((r) => ({ ...r, lab_tests: r.lab_tests.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" aria-label="Remove lab test" onClick={() => update((r) => ({ ...r, lab_tests: r.lab_tests.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button>
                     </div>
                     <div className="space-y-2">
                       <Input value={l.name} onChange={(e) => update((r) => ({ ...r, lab_tests: r.lab_tests.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x) }))} className="rounded-xl" placeholder={t("lab.name")} />
@@ -784,7 +784,7 @@ const AppPage = () => {
                   <div key={i} className="rounded-2xl border border-border/70 bg-background/60 p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs font-medium text-muted-foreground">№ {i + 1}</span>
-                      <Button variant="ghost" size="icon" onClick={() => update((r) => ({ ...r, instrumental_tests: r.instrumental_tests.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" aria-label="Remove test" onClick={() => update((r) => ({ ...r, instrumental_tests: r.instrumental_tests.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button>
                     </div>
                     <div className="space-y-2">
                       <Input value={l.name} onChange={(e) => update((r) => ({ ...r, instrumental_tests: r.instrumental_tests.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x) }))} className="rounded-xl" placeholder="УЗИ / ЭКГ / МРТ ..." />
@@ -915,7 +915,7 @@ const AppPage = () => {
               <div className="space-y-3">
                 {result.prescriptions.map((p, i) => (
                   <div key={i} className="rounded-2xl border border-border/70 bg-background/60 p-4">
-                    <div className="mb-3 flex items-center justify-between"><span className="text-xs font-medium text-muted-foreground">№ {i + 1}</span><Button variant="ghost" size="icon" onClick={() => update((r) => ({ ...r, prescriptions: r.prescriptions.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button></div>
+                    <div className="mb-3 flex items-center justify-between"><span className="text-xs font-medium text-muted-foreground">№ {i + 1}</span><Button variant="ghost" size="icon" aria-label="Remove prescription" onClick={() => update((r) => ({ ...r, prescriptions: r.prescriptions.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button></div>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <div className="sm:col-span-2"><label className="mb-1 block text-xs text-muted-foreground">{t("rx.name")}</label><Input value={p.name} onChange={(e) => update((r) => ({ ...r, prescriptions: r.prescriptions.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x) }))} className="rounded-xl" /></div>
                       <div><label className="mb-1 block text-xs text-muted-foreground">{t("rx.dosage")}</label><Input value={p.dosage} onChange={(e) => update((r) => ({ ...r, prescriptions: r.prescriptions.map((x, idx) => idx === i ? { ...x, dosage: e.target.value } : x) }))} className="rounded-xl" /></div>
