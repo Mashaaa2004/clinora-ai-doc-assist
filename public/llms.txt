@@ -1,0 +1,17 @@
+# Clinora AI
+
+> AI yordamida shifokorlar uchun bemor suhbatidan simptomlar, tashxis va tavsiyalar olish platformasi.
+
+## Asosiy sahifalar
+
+- [Bosh sahifa](/): AI yordamchi shifokor platformasi haqida umumiy ma'lumot
+- [Narxlar](/pricing): Obuna tariflari va to'lov rejasi
+- [Tekshirish](/verify/:id): Bemor tavsiyanomasi va tashxisni tekshirish
+
+## Platforma imkoniyatlari
+
+- 30 soniyada bemor suhbatidan simptomlar va tashxis
+- Laboratoriya va instrument tekshiruvlar tavsiyasi
+- Differensial tashxislar ro'yxati
+- Shifokor tasdig'idan keyin retsept va tavsiyalar
+- Ko'p tilli qo'llab-quvvatlash (O'zbek, Rus, Ingliz)

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Building2, FileCheck2, Stethoscope, TrendingUp, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/i18n/LanguageContext";
+import { Helmet } from "react-helmet-async";
 
 type Stats = {
   doctors: number;
@@ -37,7 +38,16 @@ const Analytics = () => {
   }, []);
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--gradient-soft)" }}>
+    <>
+      <Helmet>
+        <title>Statistika — Clinora AI</title>
+        <meta name="description" content="Shaxsiy shifokor statistikasi: bemorlar soni, konsultatsiyalar va faollik." />
+        <link rel="canonical" href="https://clinora-ai-doc-assist.lovable.app/analytics" />
+        <meta property="og:title" content="Statistika — Clinora AI" />
+        <meta property="og:description" content="Shaxsiy shifokor statistikasi va faollik ko'rsatkichlari." />
+        <meta property="og:url" content="https://clinora-ai-doc-assist.lovable.app/analytics" />
+      </Helmet>
+      <div className="min-h-screen" style={{ background: "var(--gradient-soft)" }}>
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
         <div className="container flex h-16 items-center justify-between">
           <Link to="/app" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -93,6 +103,7 @@ const Analytics = () => {
         )}
       </main>
     </div>
+    </>
   );
 };
 

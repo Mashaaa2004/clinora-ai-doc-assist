@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://clinora-ai-doc-assist.lovable.app/sitemap.xml
