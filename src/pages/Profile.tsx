@@ -234,7 +234,7 @@ const ProfilePage = () => {
                 style={{ borderColor: isPro ? "hsl(var(--primary))" : "hsl(var(--border))" }}
               >
                 {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt={t("pf.title")} className="h-full w-full object-cover" />
+                  <img src={profile.avatar_url} alt={`${form.full_name || "Shifokor"} profil rasmi`} className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-muted text-2xl font-semibold text-muted-foreground">
                     {(form.full_name || "?").charAt(0)}
@@ -243,6 +243,7 @@ const ProfilePage = () => {
               </div>
               <button
                 type="button"
+                aria-label="Profil rasmini yuklash"
                 disabled={!isPro || uploading}
                 onClick={() => fileRef.current?.click()}
                 className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full text-primary-foreground shadow-md disabled:opacity-50"
