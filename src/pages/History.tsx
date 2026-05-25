@@ -170,7 +170,7 @@ const HistoryPage = () => {
                         <div className="text-xs text-muted-foreground truncate">
                           {x.patient_code ? <span className="font-mono text-primary">{x.patient_code}</span> : null}
                           {x.patient_code ? " · " : ""}{x.diagnosis || "—"} · {new Date(x.created_at).toLocaleDateString(DATE_LOCALE[lang])}
-                          {scope === "all" && doctorNames[x.user_id] ? ` · ${doctorNames[x.user_id]}` : ""}
+                          {doctorNames[x.user_id] ? ` · ${doctorNames[x.user_id]}` : ""}
                         </div>
                       </div>
                     </div>
@@ -258,7 +258,7 @@ const HistoryPage = () => {
                           <p className="rounded-xl bg-warning/10 p-3 text-sm whitespace-pre-wrap">{x.family_advice}</p>
                         </div>
                       )}
-                      {scope === "all" && doctorNames[x.user_id] && (
+                      {doctorNames[x.user_id] && (
                         <div className="text-xs text-muted-foreground">
                           {t("hist.acceptedBy")} <b>{doctorNames[x.user_id]}</b>
                         </div>
