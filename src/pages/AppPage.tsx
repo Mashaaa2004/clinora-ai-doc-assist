@@ -669,6 +669,7 @@ const AppPage = () => {
       </header>
 
       <main className="container py-6 md:py-10 relative">
+        <h1 className="sr-only">Clinora AI — Konsultatsiya</h1>
         <div className="paper-a4">
           <div className="paper-letterhead flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -709,6 +710,7 @@ const AppPage = () => {
 
             <div className="flex flex-col items-center text-center">
               <button onClick={toggleRecording} disabled={!supported}
+                aria-label={isRecording ? t("rec.recording") : t("rec.start")}
                 className="relative flex h-20 w-20 items-center justify-center rounded-full shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50"
                 style={{ background: isRecording ? "hsl(var(--destructive))" : "var(--gradient-primary)" }}>
                 {isRecording && <span className="absolute inset-0 rounded-full animate-pulse-ring" style={{ background: "hsl(var(--destructive) / 0.4)" }} />}
@@ -728,7 +730,7 @@ const AppPage = () => {
               <Button onClick={runAnalysis} disabled={isAnalyzing || !transcript.trim()} size="lg" className="flex-1 rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
                 {isAnalyzing ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t("act.analyzing")}</> : <><Sparkles className="mr-2 h-5 w-5" /> {t("act.suggestLabs")}</>}
               </Button>
-              <Button onClick={handleClear} variant="outline" size="lg" className="rounded-2xl" disabled={isAnalyzing || (!transcript && !result)}>
+              <Button onClick={handleClear} variant="outline" size="lg" aria-label={t("common.clear") || "Clear"} className="rounded-2xl" disabled={isAnalyzing || (!transcript && !result)}>
                 <Trash2 className="h-5 w-5" />
               </Button>
             </div>
