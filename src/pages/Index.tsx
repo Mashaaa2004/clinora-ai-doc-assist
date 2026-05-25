@@ -63,7 +63,7 @@ const Index = () => {
               className="flex h-11 w-11 items-center justify-center rounded-2xl shadow-lg animate-glow-pulse"
               style={{ background: "var(--gradient-primary)" }}
             >
-              <Stethoscope className="h-5.5 w-5.5 text-primary-foreground" />
+              <span className="font-display text-lg font-extrabold leading-none text-primary-foreground">C</span>
             </div>
             <span className="text-xl font-bold tracking-tight">Clinora AI</span>
           </div>

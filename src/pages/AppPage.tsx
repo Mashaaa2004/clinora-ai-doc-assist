@@ -630,7 +630,7 @@ const AppPage = () => {
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg shadow-md" style={{ background: "var(--gradient-primary)" }}>
-              <Stethoscope className="h-4 w-4 text-primary-foreground" />
+              <span className="font-display text-sm font-extrabold leading-none text-primary-foreground">C</span>
             </div>
             <div className="leading-tight">
               <div className="text-sm font-semibold text-foreground">Clinora AI</div>
@@ -663,7 +663,7 @@ const AppPage = () => {
           <div className="paper-letterhead flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ background: "var(--gradient-primary)" }}>
-                <Stethoscope className="h-5 w-5 text-primary-foreground" />
+                <span className="font-display text-base font-extrabold leading-none text-primary-foreground">C</span>
               </div>
               <div className="leading-tight">
                 <div className="font-display text-lg font-bold">Clinora AI</div>

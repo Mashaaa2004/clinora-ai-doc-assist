@@ -79,7 +79,7 @@ const AuthPage = () => {
           <div className="mb-4 flex justify-end"><LanguageSwitcher /></div>
           <Link to="/" className="mb-8 flex items-center justify-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
-              <Stethoscope className="h-5 w-5 text-primary-foreground" />
+              <span className="font-display text-base font-extrabold leading-none text-primary-foreground">C</span>
             </div>
             <span className="text-xl font-semibold">Clinora AI</span>
           </Link>

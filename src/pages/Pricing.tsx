@@ -75,7 +75,7 @@ const PricingPage = () => {
           </Link>
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg shadow-md" style={{ background: "var(--gradient-primary)" }}>
-              <Stethoscope className="h-4 w-4 text-primary-foreground" />
+              <span className="font-display text-sm font-extrabold leading-none text-primary-foreground">C</span>
             </div>
             <span className="text-sm font-semibold">{t("pr.tariffs")}</span>
           </div>
