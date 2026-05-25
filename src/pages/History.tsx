@@ -33,8 +33,8 @@ const HistoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
-  const [scope, setScope] = useState<"mine" | "all">("mine");
-  const [doctorNames, setDoctorNames] = useState<Record<string, string>>({});
+  const scope: "mine" = "mine";
+  const doctorNames: Record<string, string> = {};
 
   const load = async () => {
     if (!user) return;
@@ -43,7 +43,7 @@ const HistoryPage = () => {
       .from("consultations")
       .select("id,user_id,patient_name,patient_code,diagnosis,chosen_diagnosis,recommendation,symptoms,prescriptions,lab_tests,instrumental_tests,family_advice,created_at")
       .order("created_at", { ascending: false });
-    if (scope === "mine") query = query.eq("user_id", user.id);
+    query = query.eq("user_id", user.id);
     if (!isPro) query = query.limit(10);
     const { data, error } = await query;
     setLoading(false);
@@ -53,22 +53,9 @@ const HistoryPage = () => {
     }
     const list = (data ?? []) as any as Consultation[];
     setItems(list);
-    // Load doctor names for shared view
-    if (scope === "all" && list.length) {
-      const ids = Array.from(new Set(list.map((x) => x.user_id)));
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("user_id,full_name,hospital")
-        .in("user_id", ids);
-      const map: Record<string, string> = {};
-      (profs || []).forEach((p: any) => {
-        map[p.user_id] = p.full_name ? `${t("hist.doctorPrefix")} ${p.full_name}${p.hospital ? ` · ${p.hospital}` : ""}` : t("common.doctor");
-      });
-      setDoctorNames(map);
-    }
   };
 
-  useEffect(() => { load(); }, [user, isPro, scope, lang]);
+  useEffect(() => { load(); }, [user, isPro, lang]);
 
   const remove = async (id: string) => {
     if (!confirm(t("hist.confirmDel"))) return;
@@ -126,31 +113,12 @@ const HistoryPage = () => {
             <div>
               <h1 className="text-2xl font-semibold">{t("hist.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                {scope === "mine" ? t("hist.descMine") : t("hist.descAll")}
+                {t("hist.descMine")}
               </p>
             </div>
             <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
               {items.length}
             </span>
-          </div>
-
-          <div className="mt-4 flex gap-2">
-            <Button
-              variant={scope === "mine" ? "default" : "outline"}
-              size="sm"
-              className="rounded-xl"
-              onClick={() => setScope("mine")}
-            >
-              <User className="mr-2 h-4 w-4" /> {t("hist.mine")}
-            </Button>
-            <Button
-              variant={scope === "all" ? "default" : "outline"}
-              size="sm"
-              className="rounded-xl"
-              onClick={() => setScope("all")}
-            >
-              <Users className="mr-2 h-4 w-4" /> {t("hist.all")}
-            </Button>
           </div>
 
           <div className="mt-5 relative">
