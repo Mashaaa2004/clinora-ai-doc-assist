@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Building2, FileCheck2, Stethoscope, TrendingUp, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/i18n/LanguageContext";
-import { DATE_LOCALE } from "@/i18n/translations";
 
 type Stats = {
   doctors: number;
