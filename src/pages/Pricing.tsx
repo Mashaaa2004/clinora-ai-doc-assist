@@ -119,7 +119,7 @@ const PricingPage = () => {
             <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
               {t("pr.popular")}
             </span>
-            <h3 className="text-xl font-semibold">Pro</h3>
+            <h2 className="text-xl font-semibold">Pro</h2>
             <div className="mt-2 flex items-baseline gap-1">
               <span className="text-3xl font-bold">{fmt(price)}</span>
               <span className="text-sm text-muted-foreground">/ {DURATIONS.find((d) => d.months === duration)?.label}</span>
@@ -198,7 +198,7 @@ const PricingPage = () => {
 
           {/* CLINIC */}
           <div className="rounded-3xl border border-border bg-card p-6 shadow-md md:p-8">
-            <h3 className="text-xl font-semibold">{t("pr.clinicTitle")}</h3>
+            <h2 className="text-xl font-semibold">{t("pr.clinicTitle")}</h2>
             <div className="mt-2 flex items-baseline gap-1">
               <span className="text-3xl font-bold">{t("pr.clinicPrice")}</span>
             </div>

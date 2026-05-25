@@ -60,6 +60,7 @@ const Analytics = () => {
       </header>
 
       <main className="container max-w-4xl py-8 md:py-12">
+        <h1 className="sr-only">{t("an.title")}</h1>
         {loading || !s ? (
           <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
         ) : (

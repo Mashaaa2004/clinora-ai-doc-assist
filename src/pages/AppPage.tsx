@@ -669,6 +669,7 @@ const AppPage = () => {
       </header>
 
       <main className="container py-6 md:py-10 relative">
+        <h1 className="sr-only">Clinora AI — Konsultatsiya</h1>
         <div className="paper-a4">
           <div className="paper-letterhead flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -709,6 +710,7 @@ const AppPage = () => {
 
             <div className="flex flex-col items-center text-center">
               <button onClick={toggleRecording} disabled={!supported}
+                aria-label={isRecording ? t("rec.recording") : t("rec.start")}
                 className="relative flex h-20 w-20 items-center justify-center rounded-full shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50"
                 style={{ background: isRecording ? "hsl(var(--destructive))" : "var(--gradient-primary)" }}>
                 {isRecording && <span className="absolute inset-0 rounded-full animate-pulse-ring" style={{ background: "hsl(var(--destructive) / 0.4)" }} />}
@@ -728,7 +730,7 @@ const AppPage = () => {
               <Button onClick={runAnalysis} disabled={isAnalyzing || !transcript.trim()} size="lg" className="flex-1 rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
                 {isAnalyzing ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t("act.analyzing")}</> : <><Sparkles className="mr-2 h-5 w-5" /> {t("act.suggestLabs")}</>}
               </Button>
-              <Button onClick={handleClear} variant="outline" size="lg" className="rounded-2xl" disabled={isAnalyzing || (!transcript && !result)}>
+              <Button onClick={handleClear} variant="outline" size="lg" aria-label={t("common.clear") || "Clear"} className="rounded-2xl" disabled={isAnalyzing || (!transcript && !result)}>
                 <Trash2 className="h-5 w-5" />
               </Button>
             </div>
@@ -749,7 +751,7 @@ const AppPage = () => {
                   <div key={i} className="rounded-2xl border border-border/70 bg-background/60 p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs font-medium text-muted-foreground">№ {i + 1}</span>
-                      <Button variant="ghost" size="icon" onClick={() => update((r) => ({ ...r, lab_tests: r.lab_tests.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" aria-label="Remove lab test" onClick={() => update((r) => ({ ...r, lab_tests: r.lab_tests.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button>
                     </div>
                     <div className="space-y-2">
                       <Input value={l.name} onChange={(e) => update((r) => ({ ...r, lab_tests: r.lab_tests.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x) }))} className="rounded-xl" placeholder={t("lab.name")} />
@@ -782,7 +784,7 @@ const AppPage = () => {
                   <div key={i} className="rounded-2xl border border-border/70 bg-background/60 p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs font-medium text-muted-foreground">№ {i + 1}</span>
-                      <Button variant="ghost" size="icon" onClick={() => update((r) => ({ ...r, instrumental_tests: r.instrumental_tests.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" aria-label="Remove test" onClick={() => update((r) => ({ ...r, instrumental_tests: r.instrumental_tests.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button>
                     </div>
                     <div className="space-y-2">
                       <Input value={l.name} onChange={(e) => update((r) => ({ ...r, instrumental_tests: r.instrumental_tests.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x) }))} className="rounded-xl" placeholder="УЗИ / ЭКГ / МРТ ..." />
@@ -913,7 +915,7 @@ const AppPage = () => {
               <div className="space-y-3">
                 {result.prescriptions.map((p, i) => (
                   <div key={i} className="rounded-2xl border border-border/70 bg-background/60 p-4">
-                    <div className="mb-3 flex items-center justify-between"><span className="text-xs font-medium text-muted-foreground">№ {i + 1}</span><Button variant="ghost" size="icon" onClick={() => update((r) => ({ ...r, prescriptions: r.prescriptions.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button></div>
+                    <div className="mb-3 flex items-center justify-between"><span className="text-xs font-medium text-muted-foreground">№ {i + 1}</span><Button variant="ghost" size="icon" aria-label="Remove prescription" onClick={() => update((r) => ({ ...r, prescriptions: r.prescriptions.filter((_, x) => x !== i) }))} className="h-7 w-7"><X className="h-4 w-4" /></Button></div>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <div className="sm:col-span-2"><label className="mb-1 block text-xs text-muted-foreground">{t("rx.name")}</label><Input value={p.name} onChange={(e) => update((r) => ({ ...r, prescriptions: r.prescriptions.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x) }))} className="rounded-xl" /></div>
                       <div><label className="mb-1 block text-xs text-muted-foreground">{t("rx.dosage")}</label><Input value={p.dosage} onChange={(e) => update((r) => ({ ...r, prescriptions: r.prescriptions.map((x, idx) => idx === i ? { ...x, dosage: e.target.value } : x) }))} className="rounded-xl" /></div>
