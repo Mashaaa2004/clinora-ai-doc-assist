@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ShieldCheck, Scale, Lock, Cpu, AlertTriangle, FileText } from "lucide-react";
 
 const STORAGE_PREFIX = "clinora.legal.consent.v1.";
+const PDF_PREFIX = "clinora.legal.pdf.v1.";
 export const OPEN_LEGAL_EVENT = "clinora:open-legal";
 
 type LegalContent = {
@@ -29,6 +30,11 @@ type LegalContent = {
   s6Title: string; s6: string;
   cb1: string; cb2: string; cb3: string;
   accept: string;
+  partiesTitle: string;
+  partyPlatform: string;
+  partyDoctor: string;
+  downloadSigned: string;
+  regenerate: string;
 };
 
 const CONTENT: Record<Lang, LegalContent> = {
