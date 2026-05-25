@@ -436,7 +436,7 @@ const LegalConsentModal = () => {
           </label>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex flex-col gap-2 sm:flex-col sm:space-x-0">
           <Button
             disabled={!allChecked}
             onClick={accept}
@@ -445,6 +445,28 @@ const LegalConsentModal = () => {
           >
             {c.accept}
           </Button>
+          {hasSavedPdf && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={downloadSaved}
+              disabled={generating}
+              className="w-full text-xs sm:text-sm"
+            >
+              {c.downloadSigned}
+            </Button>
+          )}
+          {!hasSavedPdf && user && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => generatePdf(true)}
+              disabled={generating}
+              className="w-full text-xs sm:text-sm"
+            >
+              {c.regenerate}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
