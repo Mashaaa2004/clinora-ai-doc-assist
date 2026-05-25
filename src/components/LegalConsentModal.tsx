@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ShieldCheck, Scale, Lock, Cpu, AlertTriangle, FileText } from "lucide-react";
 
 const STORAGE_PREFIX = "clinora.legal.consent.v1.";
+const PDF_PREFIX = "clinora.legal.pdf.v1.";
 export const OPEN_LEGAL_EVENT = "clinora:open-legal";
 
 type LegalContent = {
@@ -29,11 +30,16 @@ type LegalContent = {
   s6Title: string; s6: string;
   cb1: string; cb2: string; cb3: string;
   accept: string;
+  partiesTitle: string;
+  partyPlatform: string;
+  partyDoctor: string;
+  downloadSigned: string;
+  regenerate: string;
 };
 
 const CONTENT: Record<Lang, LegalContent> = {
   uz: {
-    title: "Clinora AI — Foydalanish shartlari va maxfiylik",
+    title: "Clinora AI — Ikki tomonlama shartnoma (Platforma va Shifokor)",
     intro: "Platformadan foydalanishni boshlashdan oldin quyidagi shartlar bilan tanishing va tasdiqlang.",
     s1Title: "Platforma haqida",
     s1: "Clinora AI — shifokorlar faoliyatiga yordam beruvchi sun'iy intellekt asosidagi klinik yordamchi platforma hisoblanadi. Platforma simptomlarni tahlil qilish, ehtimoliy tashxis variantlarini shakllantirish, laborator va instrumental tekshiruvlarni tavsiya qilish hamda klinik hujjatlarni avtomatlashtirish uchun mo'ljallangan.",
@@ -51,9 +57,14 @@ const CONTENT: Record<Lang, LegalContent> = {
     cb2: "Har bir suhbatdan oldin bemordan AI ishlatilishi va ma'lumotlari qayta ishlanishiga informatsion rozilik olishga majburman.",
     cb3: "Yakuniy tashxis, retsept va davolash qarorlari uchun to'liq javobgarlikni o'z zimmamga olaman.",
     accept: "Roziman va davom etaman",
+    partiesTitle: "Shartnoma tomonlari",
+    partyPlatform: "1-tomon: Clinora AI platformasi",
+    partyDoctor: "2-tomon: Shifokor",
+    downloadSigned: "Imzolangan shartnomani yuklab olish (PDF)",
+    regenerate: "Shartnomani qayta yaratish",
   },
   ru: {
-    title: "Clinora AI — Условия использования и конфиденциальность",
+    title: "Clinora AI — Двусторонний договор (Платформа и Врач)",
     intro: "Перед началом работы ознакомьтесь с условиями и подтвердите согласие.",
     s1Title: "О платформе",
     s1: "Clinora AI — клинический ИИ-ассистент для врачей: анализ симптомов, предложение диагнозов, рекомендации по лабораторным и инструментальным исследованиям, автоматизация клинической документации.",
@@ -71,9 +82,14 @@ const CONTENT: Record<Lang, LegalContent> = {
     cb2: "Перед каждой консультацией обязуюсь получать у пациента информированное согласие на использование ИИ и обработку данных.",
     cb3: "Принимаю полную ответственность за итоговый диагноз, рецепт и решения о лечении.",
     accept: "Согласен и продолжить",
+    partiesTitle: "Стороны договора",
+    partyPlatform: "Сторона 1: Платформа Clinora AI",
+    partyDoctor: "Сторона 2: Врач",
+    downloadSigned: "Скачать подписанный договор (PDF)",
+    regenerate: "Сгенерировать договор заново",
   },
   en: {
-    title: "Clinora AI — Terms of Use and Privacy",
+    title: "Clinora AI — Bilateral Agreement (Platform and Doctor)",
     intro: "Please review and accept the terms before using the platform.",
     s1Title: "About the platform",
     s1: "Clinora AI is an AI-based clinical assistant for doctors: symptom analysis, suggesting differential diagnoses, recommending lab and instrumental exams, and automating clinical documentation.",
@@ -91,9 +107,14 @@ const CONTENT: Record<Lang, LegalContent> = {
     cb2: "Before each consultation I will obtain the patient's informed consent for AI use and data processing.",
     cb3: "I take full responsibility for the final diagnosis, prescription and treatment decisions.",
     accept: "I agree and continue",
+    partiesTitle: "Parties to the agreement",
+    partyPlatform: "Party 1: Clinora AI Platform",
+    partyDoctor: "Party 2: Doctor",
+    downloadSigned: "Download signed agreement (PDF)",
+    regenerate: "Regenerate agreement",
   },
   kk: {
-    title: "Clinora AI — Пайдалану шарттары және құпиялылық",
+    title: "Clinora AI — Екіжақты шарт (Платформа және Дәрігер)",
     intro: "Платформаны пайдалану алдында шарттармен танысып, растаңыз.",
     s1Title: "Платформа туралы",
     s1: "Clinora AI — дәрігерлерге арналған клиникалық ЖИ көмекшісі: симптомдарды талдау, мүмкін диагноздарды ұсыну, зертханалық және аспаптық зерттеулерді ұсыну, клиникалық құжаттаманы автоматтандыру.",
@@ -111,9 +132,14 @@ const CONTENT: Record<Lang, LegalContent> = {
     cb2: "Әр кеңес алдында пациенттен ЖИ қолдану мен деректерін өңдеуге ақпараттық келісім алуға міндеттенемін.",
     cb3: "Түпкілікті диагноз, рецепт және емдеу шешімдері үшін толық жауапкершілікті өзіме аламын.",
     accept: "Келісемін және жалғастырамын",
+    partiesTitle: "Шарт тараптары",
+    partyPlatform: "1-тарап: Clinora AI платформасы",
+    partyDoctor: "2-тарап: Дәрігер",
+    downloadSigned: "Қол қойылған шартты жүктеу (PDF)",
+    regenerate: "Шартты қайта жасау",
   },
   ky: {
-    title: "Clinora AI — Колдонуу шарттары жана купуялуулук",
+    title: "Clinora AI — Эки тараптуу келишим (Платформа жана Дарыгер)",
     intro: "Платформаны колдонуудан мурун шарттар менен таанышып, ырастаңыз.",
     s1Title: "Платформа жөнүндө",
     s1: "Clinora AI — дарыгерлер үчүн клиникалык ЖИ жардамчысы: симптомдорду талдоо, мүмкүн болгон диагноздорду сунуштоо, лабораториялык жана аспаптык изилдөөлөрдү сунуштоо, клиникалык документтерди автоматташтыруу.",
@@ -131,9 +157,14 @@ const CONTENT: Record<Lang, LegalContent> = {
     cb2: "Ар бир консультациядан мурун бейтаптан ЖИ колдонууга жана маалыматтарын иштетүүгө маалыматтык макулдук алууга милдеттенемин.",
     cb3: "Акыркы диагноз, рецепт жана дарылоо чечимдери үчүн толук жоопкерчиликти өзүмө алам.",
     accept: "Макулмун жана улантам",
+    partiesTitle: "Келишим тараптары",
+    partyPlatform: "1-тарап: Clinora AI платформасы",
+    partyDoctor: "2-тарап: Дарыгер",
+    downloadSigned: "Кол коюлган келишимди жүктөө (PDF)",
+    regenerate: "Келишимди кайра түзүү",
   },
   tr: {
-    title: "Clinora AI — Kullanım Koşulları ve Gizlilik",
+    title: "Clinora AI — İki Taraflı Sözleşme (Platform ve Hekim)",
     intro: "Platformu kullanmadan önce lütfen koşulları inceleyin ve onaylayın.",
     s1Title: "Platform hakkında",
     s1: "Clinora AI, doktorlar için yapay zekâ tabanlı klinik asistandır: semptom analizi, olası tanı önerileri, laboratuvar ve görüntüleme tetkik önerileri, klinik belgelerin otomasyonu.",
@@ -151,6 +182,11 @@ const CONTENT: Record<Lang, LegalContent> = {
     cb2: "Her görüşmeden önce hastadan YZ kullanımı ve veri işleme için bilgilendirilmiş onam almayı taahhüt ederim.",
     cb3: "Nihai tanı, reçete ve tedavi kararları için tam sorumluluğu üstlenirim.",
     accept: "Kabul ediyorum ve devam et",
+    partiesTitle: "Sözleşme tarafları",
+    partyPlatform: "Taraf 1: Clinora AI Platformu",
+    partyDoctor: "Taraf 2: Hekim",
+    downloadSigned: "İmzalı sözleşmeyi indir (PDF)",
+    regenerate: "Sözleşmeyi yeniden oluştur",
   },
 };
 
@@ -163,6 +199,13 @@ const LegalConsentModal = () => {
   const [doctorAgreed, setDoctorAgreed] = useState(false);
   const [patientAgreed, setPatientAgreed] = useState(false);
   const [responsibility, setResponsibility] = useState(false);
+  const [hasSavedPdf, setHasSavedPdf] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  useEffect(() => {
+    if (!user) { setHasSavedPdf(false); return; }
+    setHasSavedPdf(!!localStorage.getItem(PDF_PREFIX + user.id));
+  }, [user, open]);
 
   useEffect(() => {
     if (!user) return;
@@ -184,8 +227,9 @@ const LegalConsentModal = () => {
 
   const allChecked = doctorAgreed && patientAgreed && responsibility;
 
-  const generatePdf = async () => {
+  const generatePdf = async (persist = true) => {
     try {
+      setGenerating(true);
       const { jsPDF } = await import("jspdf");
       const now = new Date();
       const dateStr = now.toLocaleString();
@@ -197,6 +241,11 @@ const LegalConsentModal = () => {
             <div style="font-size:11px;color:#666;">${dateStr}</div>
           </div>
           <h1 style="font-size:18px;margin:0 0 12px;">${c.title}</h1>
+          <div style="border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:14px;background:#eff6ff;font-size:12px;">
+            <div style="font-weight:700;margin-bottom:6px;color:#1e3a8a;">${c.partiesTitle}</div>
+            <div style="margin-bottom:4px;"><b>${c.partyPlatform}</b> — Clinora AI, support: @clinora_support</div>
+            <div><b>${c.partyDoctor}</b> — ${profile?.full_name || "—"}${profile?.specialty ? ", " + profile.specialty : ""}${profile?.hospital ? ", " + profile.hospital : ""}</div>
+          </div>
           <div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:16px;background:#f9fafb;font-size:12px;">
             <div><b>ID:</b> ${user?.id ?? "—"}</div>
             <div><b>Email:</b> ${user?.email ?? "—"}</div>
@@ -243,9 +292,19 @@ const LegalConsentModal = () => {
       container.innerHTML = html;
       document.body.appendChild(container);
       const pdf = new jsPDF({ unit: "pt", format: "a4" });
+      const fileName = `Clinora_Legal_Consent_${now.toISOString().slice(0, 10)}.pdf`;
       await pdf.html(container.firstElementChild as HTMLElement, {
         callback: (doc) => {
-          doc.save(`Clinora_Legal_Consent_${now.toISOString().slice(0, 10)}.pdf`);
+          doc.save(fileName);
+          if (persist && user) {
+            try {
+              const dataUri = doc.output("datauristring");
+              localStorage.setItem(PDF_PREFIX + user.id, JSON.stringify({ data: dataUri, name: fileName, at: now.toISOString() }));
+              setHasSavedPdf(true);
+            } catch (err) {
+              console.warn("Could not persist signed PDF", err);
+            }
+          }
           document.body.removeChild(container);
         },
         margin: [20, 20, 20, 20],
@@ -254,6 +313,25 @@ const LegalConsentModal = () => {
       });
     } catch (e) {
       console.error("Legal PDF generation failed", e);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const downloadSaved = () => {
+    if (!user) return;
+    const raw = localStorage.getItem(PDF_PREFIX + user.id);
+    if (!raw) { generatePdf(true); return; }
+    try {
+      const { data, name } = JSON.parse(raw);
+      const a = document.createElement("a");
+      a.href = data;
+      a.download = name || "Clinora_Legal_Consent.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      generatePdf(true);
     }
   };
 
@@ -269,6 +347,8 @@ const LegalConsentModal = () => {
     setForced(false);
     setOpen(false);
     if (!alreadySigned) {
+      await generatePdf();
+    } else if (user && !localStorage.getItem(PDF_PREFIX + user.id)) {
       await generatePdf();
     }
   };
@@ -356,7 +436,7 @@ const LegalConsentModal = () => {
           </label>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex flex-col gap-2 sm:flex-col sm:space-x-0">
           <Button
             disabled={!allChecked}
             onClick={accept}
@@ -365,6 +445,28 @@ const LegalConsentModal = () => {
           >
             {c.accept}
           </Button>
+          {hasSavedPdf && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={downloadSaved}
+              disabled={generating}
+              className="w-full text-xs sm:text-sm"
+            >
+              {c.downloadSigned}
+            </Button>
+          )}
+          {!hasSavedPdf && user && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => generatePdf(true)}
+              disabled={generating}
+              className="w-full text-xs sm:text-sm"
+            >
+              {c.regenerate}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
