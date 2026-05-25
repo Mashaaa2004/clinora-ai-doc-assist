@@ -199,6 +199,13 @@ const LegalConsentModal = () => {
   const [doctorAgreed, setDoctorAgreed] = useState(false);
   const [patientAgreed, setPatientAgreed] = useState(false);
   const [responsibility, setResponsibility] = useState(false);
+  const [hasSavedPdf, setHasSavedPdf] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  useEffect(() => {
+    if (!user) { setHasSavedPdf(false); return; }
+    setHasSavedPdf(!!localStorage.getItem(PDF_PREFIX + user.id));
+  }, [user, open]);
 
   useEffect(() => {
     if (!user) return;
@@ -220,8 +227,9 @@ const LegalConsentModal = () => {
 
   const allChecked = doctorAgreed && patientAgreed && responsibility;
 
-  const generatePdf = async () => {
+  const generatePdf = async (persist = true) => {
     try {
+      setGenerating(true);
       const { jsPDF } = await import("jspdf");
       const now = new Date();
       const dateStr = now.toLocaleString();
@@ -233,6 +241,11 @@ const LegalConsentModal = () => {
             <div style="font-size:11px;color:#666;">${dateStr}</div>
           </div>
           <h1 style="font-size:18px;margin:0 0 12px;">${c.title}</h1>
+          <div style="border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:14px;background:#eff6ff;font-size:12px;">
+            <div style="font-weight:700;margin-bottom:6px;color:#1e3a8a;">${c.partiesTitle}</div>
+            <div style="margin-bottom:4px;"><b>${c.partyPlatform}</b> — Clinora AI, support: @clinora_support</div>
+            <div><b>${c.partyDoctor}</b> — ${profile?.full_name || "—"}${profile?.specialty ? ", " + profile.specialty : ""}${profile?.hospital ? ", " + profile.hospital : ""}</div>
+          </div>
           <div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:16px;background:#f9fafb;font-size:12px;">
             <div><b>ID:</b> ${user?.id ?? "—"}</div>
             <div><b>Email:</b> ${user?.email ?? "—"}</div>
@@ -279,9 +292,19 @@ const LegalConsentModal = () => {
       container.innerHTML = html;
       document.body.appendChild(container);
       const pdf = new jsPDF({ unit: "pt", format: "a4" });
+      const fileName = `Clinora_Legal_Consent_${now.toISOString().slice(0, 10)}.pdf`;
       await pdf.html(container.firstElementChild as HTMLElement, {
         callback: (doc) => {
-          doc.save(`Clinora_Legal_Consent_${now.toISOString().slice(0, 10)}.pdf`);
+          doc.save(fileName);
+          if (persist && user) {
+            try {
+              const dataUri = doc.output("datauristring");
+              localStorage.setItem(PDF_PREFIX + user.id, JSON.stringify({ data: dataUri, name: fileName, at: now.toISOString() }));
+              setHasSavedPdf(true);
+            } catch (err) {
+              console.warn("Could not persist signed PDF", err);
+            }
+          }
           document.body.removeChild(container);
         },
         margin: [20, 20, 20, 20],
@@ -290,6 +313,25 @@ const LegalConsentModal = () => {
       });
     } catch (e) {
       console.error("Legal PDF generation failed", e);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const downloadSaved = () => {
+    if (!user) return;
+    const raw = localStorage.getItem(PDF_PREFIX + user.id);
+    if (!raw) { generatePdf(true); return; }
+    try {
+      const { data, name } = JSON.parse(raw);
+      const a = document.createElement("a");
+      a.href = data;
+      a.download = name || "Clinora_Legal_Consent.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      generatePdf(true);
     }
   };
 
@@ -305,6 +347,8 @@ const LegalConsentModal = () => {
     setForced(false);
     setOpen(false);
     if (!alreadySigned) {
+      await generatePdf();
+    } else if (user && !localStorage.getItem(PDF_PREFIX + user.id)) {
       await generatePdf();
     }
   };
