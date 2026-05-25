@@ -91,7 +91,16 @@ const Verify = () => {
   const symptoms: any[] = Array.isArray(data.symptoms) ? data.symptoms : [];
 
   return (
-    <div className="min-h-screen bg-muted/30 py-6 print:bg-white print:py-0">
+    <>
+      <Helmet>
+        <title>Bemor Tavsiyanomasi — Clinora AI</title>
+        <meta name="description" content="Bemor tavsiyanomasi, tashxis va retseptni tekshirish. QR kod orqali tasdiqlangan tibbiy hujjat." />
+        <link rel="canonical" href={`https://clinora-ai-doc-assist.lovable.app/verify/${id}`} />
+        <meta property="og:title" content="Bemor Tavsiyanomasi — Clinora AI" />
+        <meta property="og:description" content="Bemor tavsiyanomasi va tashxisni tekshiring." />
+        <meta property="og:url" content={`https://clinora-ai-doc-assist.lovable.app/verify/${id}`} />
+      </Helmet>
+      <div className="min-h-screen bg-muted/30 py-6 print:bg-white print:py-0">
       <style>{`
         @media print {
           .no-print { display: none !important; }

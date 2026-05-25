@@ -93,7 +93,16 @@ const HistoryPage = () => {
   );
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--gradient-soft)" }}>
+    <>
+      <Helmet>
+        <title>Bemorlar Tarixi — Clinora AI</title>
+        <meta name="description" content="Oldingi bemor konsultatsiyalari, tashxislar va retseptlar tarixini ko'ring." />
+        <link rel="canonical" href="https://clinora-ai-doc-assist.lovable.app/history" />
+        <meta property="og:title" content="Bemorlar Tarixi — Clinora AI" />
+        <meta property="og:description" content="Oldingi bemor konsultatsiyalari va tashxislar tarixini ko'ring." />
+        <meta property="og:url" content="https://clinora-ai-doc-assist.lovable.app/history" />
+      </Helmet>
+      <div className="min-h-screen" style={{ background: "var(--gradient-soft)" }}>
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
         <div className="container flex h-16 items-center justify-between">
           <Link to="/app" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">

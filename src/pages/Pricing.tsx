@@ -68,7 +68,16 @@ const PricingPage = () => {
   const tgLink = `https://t.me/${tg.replace("@", "")}`;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "var(--gradient-soft)" }}>
+    <>
+      <Helmet>
+        <title>Narxlar va Obuna — Clinora AI</title>
+        <meta name="description" content="Clinora AI Pro obunasi — cheksiz bemor tahlili, to'liq tarix, statistika va premium imkoniyatlar." />
+        <link rel="canonical" href="https://clinora-ai-doc-assist.lovable.app/pricing" />
+        <meta property="og:title" content="Narxlar va Obuna — Clinora AI" />
+        <meta property="og:description" content="Clinora AI Pro obunasi — cheksiz bemor tahlili va premium imkoniyatlar." />
+        <meta property="og:url" content="https://clinora-ai-doc-assist.lovable.app/pricing" />
+      </Helmet>
+      <div className="min-h-screen flex flex-col" style={{ background: "var(--gradient-soft)" }}>
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
         <div className="container flex h-16 items-center justify-between">
           <Link to="/app" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">

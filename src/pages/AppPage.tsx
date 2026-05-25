@@ -617,7 +617,16 @@ const AppPage = () => {
   );
 
   return (
-    <div className="relative min-h-screen bg-mesh overflow-hidden">
+    <>
+      <Helmet>
+        <title>AI Yordamchi — Clinora AI</title>
+        <meta name="description" content="Bemor suhbatidan simptomlar, tashxis va tavsiyalarni AI yordamida oling. Shifokorlar uchun aqlli yordamchi." />
+        <link rel="canonical" href="https://clinora-ai-doc-assist.lovable.app/app" />
+        <meta property="og:title" content="AI Yordamchi — Clinora AI" />
+        <meta property="og:description" content="Bemor suhbatidan simptomlar va tashxisni AI yordamida oling." />
+        <meta property="og:url" content="https://clinora-ai-doc-assist.lovable.app/app" />
+      </Helmet>
+      <div className="relative min-h-screen bg-mesh overflow-hidden">
       <div className="bg-mesh-animated pointer-events-none absolute inset-0 -z-10" aria-hidden />
       <div className="absolute inset-0 -z-10"><MedicalBackdrop /></div>
       {showGuide && (

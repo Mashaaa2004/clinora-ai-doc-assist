@@ -74,7 +74,16 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--gradient-soft)" }}>
+    <>
+      <Helmet>
+        <title>Kirish / Ro'yxatdan o'tish — Clinora AI</title>
+        <meta name="description" content="Clinora AI platformasiga kirish yoki yangi hisob yaratish. Shifokorlar uchun AI yordamchi." />
+        <link rel="canonical" href="https://clinora-ai-doc-assist.lovable.app/auth" />
+        <meta property="og:title" content="Kirish / Ro'yxatdan o'tish — Clinora AI" />
+        <meta property="og:description" content="Clinora AI platformasiga kirish yoki yangi hisob yaratish." />
+        <meta property="og:url" content="https://clinora-ai-doc-assist.lovable.app/auth" />
+      </Helmet>
+      <div className="min-h-screen" style={{ background: "var(--gradient-soft)" }}>
       <div className="container flex min-h-screen items-center justify-center py-10">
         <div className="w-full max-w-md">
           <div className="mb-4 flex justify-end"><LanguageSwitcher /></div>
