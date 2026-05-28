@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      clinics: {
+        Row: {
+          address: string
+          created_at: string
+          id: string
+          is_active: boolean
+          languages_supported: string[]
+          name: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          languages_supported?: string[]
+          name: string
+          phone?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          languages_supported?: string[]
+          name?: string
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       consultations: {
         Row: {
           chosen_diagnosis: string
@@ -69,6 +102,51 @@ export type Database = {
           recommendation?: string
           symptoms?: Json
           transcript?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      patient_profiles: {
+        Row: {
+          allergies: string[]
+          blood_type: string
+          chronic_conditions: string[]
+          created_at: string
+          date_of_birth: string | null
+          full_name: string
+          gender: string
+          id: string
+          language: string
+          phone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allergies?: string[]
+          blood_type?: string
+          chronic_conditions?: string[]
+          created_at?: string
+          date_of_birth?: string | null
+          full_name?: string
+          gender?: string
+          id?: string
+          language?: string
+          phone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allergies?: string[]
+          blood_type?: string
+          chronic_conditions?: string[]
+          created_at?: string
+          date_of_birth?: string | null
+          full_name?: string
+          gender?: string
+          id?: string
+          language?: string
+          phone?: string
           updated_at?: string
           user_id?: string
         }
@@ -170,6 +248,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string
+          clinic_id: string | null
           clinic_instagram: string
           clinic_telegram: string
           created_at: string
@@ -188,6 +267,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string
+          clinic_id?: string | null
           clinic_instagram?: string
           clinic_telegram?: string
           created_at?: string
@@ -206,6 +286,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string
+          clinic_id?: string | null
           clinic_instagram?: string
           clinic_telegram?: string
           created_at?: string
@@ -222,7 +303,15 @@ export type Database = {
           user_id?: string
           work_hours?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
@@ -263,6 +352,59 @@ export type Database = {
         }
         Relationships: []
       }
+      symptom_reports: {
+        Row: {
+          ai_summary: string
+          ai_urgency: string
+          assigned_doctor_id: string | null
+          clinic_id: string
+          created_at: string
+          id: string
+          language: string
+          patient_id: string
+          recommended_specialization: string
+          status: string
+          symptoms: string
+          updated_at: string
+        }
+        Insert: {
+          ai_summary?: string
+          ai_urgency?: string
+          assigned_doctor_id?: string | null
+          clinic_id: string
+          created_at?: string
+          id?: string
+          language?: string
+          patient_id: string
+          recommended_specialization?: string
+          status?: string
+          symptoms?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_summary?: string
+          ai_urgency?: string
+          assigned_doctor_id?: string | null
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          language?: string
+          patient_id?: string
+          recommended_specialization?: string
+          status?: string
+          symptoms?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "symptom_reports_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -290,6 +432,10 @@ export type Database = {
     }
     Functions: {
       daily_usage_count: { Args: { _user_id: string }; Returns: number }
+      doctor_in_clinic: {
+        Args: { _clinic_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
