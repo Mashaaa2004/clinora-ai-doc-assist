@@ -494,6 +494,74 @@ const Empty = ({ text }: { text: string }) => (
   </div>
 );
 
+/* ============ CLINICS ============ */
+type Clinic = { id: string; name: string; address: string; phone: string; languages_supported: string[]; is_active: boolean; created_at: string };
+
+const ClinicsPanel = () => {
+  const [rows, setRows] = useState<Clinic[]>([]);
+  const [doctorsByClinic, setDoctorsByClinic] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("clinics").select("*").order("created_at", { ascending: false });
+    setRows((data as Clinic[]) ?? []);
+    const { data: profs } = await supabase.from("profiles").select("clinic_id").not("clinic_id", "is", null);
+    const counts: Record<string, number> = {};
+    (profs ?? []).forEach((p: any) => { if (p.clinic_id) counts[p.clinic_id] = (counts[p.clinic_id] || 0) + 1; });
+    setDoctorsByClinic(counts);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  if (loading) return <div className="py-12 text-center"><Loader2 className="inline h-6 w-6 animate-spin text-primary" /></div>;
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-4 text-sm">
+        <div className="flex items-start gap-2">
+          <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <div>
+            <div className="font-semibold text-foreground">Клиникаларни базада бошқариш</div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              Ҳозирча клиникалар қўшиш/таҳрирлаш фақат базадан амалга оширилади.
+              Кейинги версияда тўлиқ CRUD UI қўшилади. Шифокорни клиникага бириктириш учун <code className="rounded bg-muted px-1">profiles.clinic_id</code> майдонини ёзинг.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {rows.length === 0 ? (
+        <Empty text="Ҳали клиникалар йўқ" />
+      ) : rows.map((c) => (
+        <div key={c.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-primary" />
+                <span className="font-semibold">{c.name}</span>
+                {!c.is_active && <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">фаол эмас</span>}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">{c.address || "—"}{c.phone ? ` · ☎ ${c.phone}` : ""}</div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {(c.languages_supported || []).map((l) => (
+                  <span key={l} className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase">{l}</span>
+                ))}
+              </div>
+              <div className="mt-2 font-mono text-[10px] text-muted-foreground">id: {c.id}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-primary">{doctorsByClinic[c.id] ?? 0}</div>
+              <div className="text-[11px] text-muted-foreground">шифокор</div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 /* ============ MAINTENANCE ============ */
 const MaintenancePanel = () => {
   const [busy, setBusy] = useState<"reset" | "cache" | null>(null);
