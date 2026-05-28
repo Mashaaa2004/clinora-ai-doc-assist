@@ -18,6 +18,9 @@ type Ctx = {
   user: User | null;
   profile: Profile | null;
   isAdmin: boolean;
+  isPatient: boolean;
+  isDoctor: boolean;
+  role: "admin" | "doctor" | "patient" | null;
   isPro: boolean;
   proExpiresAt: string | null;
   loading: boolean;
@@ -33,6 +36,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isPatient, setIsPatient] = useState(false);
+  const [isDoctor, setIsDoctor] = useState(false);
+  const [role, setRole] = useState<"admin" | "doctor" | "patient" | null>(null);
   const [isPro, setIsPro] = useState(false);
   const [proExpiresAt, setProExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,6 +76,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .limit(1),
     ]);
     setIsAdmin((roles ?? []).some((r: any) => r.role === "admin"));
+    const rs = (roles ?? []).map((r: any) => r.role as string);
+    const admin = rs.includes("admin");
+    const patient = rs.includes("patient");
+    const doctor = rs.includes("doctor");
+    setIsPatient(patient);
+    setIsDoctor(doctor);
+    setRole(admin ? "admin" : patient ? "patient" : doctor ? "doctor" : null);
     const sub = subs?.[0];
     setIsPro(!!sub);
     setProExpiresAt(sub?.expires_at ?? null);
@@ -87,6 +100,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setProfile(null);
         setIsAdmin(false);
+        setIsPatient(false);
+        setIsDoctor(false);
+        setRole(null);
         setIsPro(false);
         setProExpiresAt(null);
       }
@@ -124,6 +140,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         profile,
         isAdmin,
+        isPatient,
+        isDoctor,
+        role,
         isPro,
         proExpiresAt,
         loading,
