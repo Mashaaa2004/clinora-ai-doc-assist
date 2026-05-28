@@ -301,7 +301,7 @@ export type Database = {
       platform_stats: { Args: never; Returns: Json }
     }
     Enums: {
-      app_role: "admin" | "doctor"
+      app_role: "admin" | "doctor" | "patient"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -429,7 +429,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "doctor"],
+      app_role: ["admin", "doctor", "patient"],
     },
   },
 } as const
