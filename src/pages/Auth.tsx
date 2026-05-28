@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Loader2, Mail, Phone, Stethoscope, Shield, User as UserIcon } from "lucide-react";
+import { Loader2, Mail, Stethoscope, Shield, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,10 +26,8 @@ const AuthPage = () => {
   const [hospital, setHospital] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // Patient phone-OTP state
+  // Patient extra state (email/password)
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
   const [pGender, setPGender] = useState("");
   const [pDob, setPDob] = useState("");
   const [pLang, setPLang] = useState("uz");
@@ -45,7 +43,30 @@ const AuthPage = () => {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "signup" && audience !== "admin") {
+      if (audience === "patient") {
+        if (mode === "signup") {
+          if (!fullName.trim()) { toast.error(t("auth.required")); setBusy(false); return; }
+          const { error } = await supabase.auth.signUp({
+            email, password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/patient`,
+              data: {
+                role: "patient",
+                full_name: fullName.trim(),
+                phone: phone.trim(),
+                gender: pGender,
+                language: pLang,
+                date_of_birth: pDob,
+              },
+            },
+          });
+          if (error) { toast.error(error.message); return; }
+          toast.success(t("auth.created"));
+        } else {
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) { toast.error(error.message); return; }
+        }
+      } else if (mode === "signup" && audience !== "admin") {
         if (!fullName.trim() || !hospital.trim()) {
           toast.error(t("auth.required"));
           setBusy(false);
@@ -74,49 +95,6 @@ const AuthPage = () => {
       redirect_uri: `${window.location.origin}/app`,
     });
     if (result.error) { toast.error(t("auth.googleFail")); setBusy(false); }
-  };
-
-  const normPhone = (p: string) => {
-    const x = p.trim().replace(/[\s-]/g, "");
-    return x.startsWith("+") ? x : `+${x}`;
-  };
-
-  const sendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phone.trim()) return;
-    if (mode === "signup" && !fullName.trim()) {
-      toast.error("Ism va familiyani kiriting"); return;
-    }
-    setBusy(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      phone: normPhone(phone),
-      options: {
-        data: {
-          role: "patient",
-          full_name: fullName.trim(),
-          gender: pGender,
-          language: pLang,
-          date_of_birth: pDob,
-        },
-      },
-    });
-    setBusy(false);
-    if (error) { toast.error(error.message); return; }
-    setOtpSent(true);
-    toast.success("SMS kod yuborildi");
-  };
-
-  const verifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    const { error } = await supabase.auth.verifyOtp({
-      phone: normPhone(phone),
-      token: otp.trim(),
-      type: "sms",
-    });
-    setBusy(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Tasdiqlandi");
   };
 
   return (
@@ -153,7 +131,7 @@ const AuthPage = () => {
                   <button
                     key={k}
                     type="button"
-                    onClick={() => { setAudience(k); setOtpSent(false); }}
+                    onClick={() => setAudience(k)}
                     className={
                       "flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-xs font-medium transition " +
                       (audience === k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")
@@ -168,18 +146,16 @@ const AuthPage = () => {
               {audience === "patient" ? (
                 <PatientAuthBlock
                   mode={mode}
-                  setMode={(m: any) => { setMode(m); setOtpSent(false); }}
+                  setMode={setMode}
+                  email={email} setEmail={setEmail}
+                  password={password} setPassword={setPassword}
                   phone={phone} setPhone={setPhone}
-                  otp={otp} setOtp={setOtp}
-                  otpSent={otpSent}
                   fullName={fullName} setFullName={setFullName}
                   pGender={pGender} setPGender={setPGender}
                   pDob={pDob} setPDob={setPDob}
                   pLang={pLang} setPLang={setPLang}
                   busy={busy}
-                  sendOtp={sendOtp}
-                  verifyOtp={verifyOtp}
-                  resetOtp={() => setOtpSent(false)}
+                  submit={submit}
                 />
               ) : (
                 <DoctorAdminAuthBlock
@@ -216,29 +192,29 @@ const PatientAuthBlock = (p: any) => (
       </button>
     </div>
 
-    {!p.otpSent ? (
-      <form onSubmit={p.sendOtp} className="space-y-3">
-        {p.mode === "signup" && (
-          <>
+    <form onSubmit={p.submit} className="space-y-3">
+      {p.mode === "signup" && (
+        <>
+          <div>
+            <Label htmlFor="pfn">Ism va familiya</Label>
+            <Input id="pfn" value={p.fullName} onChange={(e: any) => p.setFullName(e.target.value)} required className="rounded-xl mt-1" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label htmlFor="pfn">Ism va familiya</Label>
-              <Input id="pfn" value={p.fullName} onChange={(e: any) => p.setFullName(e.target.value)} required className="rounded-xl mt-1" />
+              <Label htmlFor="pdob">Tug'ilgan sana</Label>
+              <Input id="pdob" type="date" value={p.pDob} onChange={(e: any) => p.setPDob(e.target.value)} className="rounded-xl mt-1" />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor="pdob">Tug'ilgan sana</Label>
-                <Input id="pdob" type="date" value={p.pDob} onChange={(e: any) => p.setPDob(e.target.value)} className="rounded-xl mt-1" />
-              </div>
-              <div>
-                <Label htmlFor="pg">Jins</Label>
-                <select id="pg" value={p.pGender} onChange={(e) => p.setPGender(e.target.value)}
-                  className="mt-1 h-10 w-full rounded-xl border border-input bg-background px-3 text-sm">
-                  <option value="">—</option>
-                  <option value="male">Erkak</option>
-                  <option value="female">Ayol</option>
-                </select>
-              </div>
+            <div>
+              <Label htmlFor="pg">Jins</Label>
+              <select id="pg" value={p.pGender} onChange={(e) => p.setPGender(e.target.value)}
+                className="mt-1 h-10 w-full rounded-xl border border-input bg-background px-3 text-sm">
+                <option value="">—</option>
+                <option value="male">Erkak</option>
+                <option value="female">Ayol</option>
+              </select>
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
             <div>
               <Label htmlFor="plang">Til</Label>
               <select id="plang" value={p.pLang} onChange={(e) => p.setPLang(e.target.value)}
@@ -248,38 +224,27 @@ const PatientAuthBlock = (p: any) => (
                 <option value="en">English</option>
               </select>
             </div>
-          </>
-        )}
-        <div>
-          <Label htmlFor="pph">Telefon raqami</Label>
-          <Input id="pph" type="tel" value={p.phone} onChange={(e: any) => p.setPhone(e.target.value)}
-            placeholder="+998 90 123 45 67" required className="rounded-xl mt-1" />
-          <p className="mt-1 text-xs text-muted-foreground">Xalqaro format, masalan +998901234567</p>
-        </div>
-        <Button type="submit" disabled={p.busy} size="lg" className="w-full rounded-xl shadow-md"
-          style={{ background: "var(--gradient-primary)" }}>
-          {p.busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Phone className="mr-2 h-5 w-5" /> SMS kod yuborish</>}
-        </Button>
-      </form>
-    ) : (
-      <form onSubmit={p.verifyOtp} className="space-y-3">
-        <div className="rounded-xl bg-muted/40 px-3 py-2 text-sm">
-          Kod yuborildi: <span className="font-medium">{p.phone}</span>
-        </div>
-        <div>
-          <Label htmlFor="otp">SMS kod</Label>
-          <Input id="otp" inputMode="numeric" value={p.otp} onChange={(e: any) => p.setOtp(e.target.value)}
-            placeholder="6 raqamli kod" required className="rounded-xl mt-1 text-center text-lg tracking-widest" />
-        </div>
-        <Button type="submit" disabled={p.busy} size="lg" className="w-full rounded-xl shadow-md"
-          style={{ background: "var(--gradient-primary)" }}>
-          {p.busy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Tasdiqlash va kirish"}
-        </Button>
-        <button type="button" onClick={p.resetOtp} className="w-full text-center text-sm text-muted-foreground hover:text-primary">
-          ← Boshqa raqam
-        </button>
-      </form>
-    )}
+            <div>
+              <Label htmlFor="pph">Telefon (ixtiyoriy)</Label>
+              <Input id="pph" type="tel" value={p.phone} onChange={(e: any) => p.setPhone(e.target.value)}
+                placeholder="+998..." className="rounded-xl mt-1" />
+            </div>
+          </div>
+        </>
+      )}
+      <div>
+        <Label htmlFor="pem">Email</Label>
+        <Input id="pem" type="email" value={p.email} onChange={(e: any) => p.setEmail(e.target.value)} required className="rounded-xl mt-1" />
+      </div>
+      <div>
+        <Label htmlFor="ppw">Parol</Label>
+        <Input id="ppw" type="password" value={p.password} onChange={(e: any) => p.setPassword(e.target.value)} required minLength={6} className="rounded-xl mt-1" />
+      </div>
+      <Button type="submit" disabled={p.busy} size="lg" className="w-full rounded-xl shadow-md"
+        style={{ background: "var(--gradient-primary)" }}>
+        {p.busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Mail className="mr-2 h-5 w-5" /> {p.mode === "signin" ? "Kirish" : "Ro'yxatdan o'tish"}</>}
+      </Button>
+    </form>
   </div>
 );
 

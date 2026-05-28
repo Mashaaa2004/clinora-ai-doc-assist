@@ -26,6 +26,7 @@ import {
   User,
   X,
   Activity,
+  Inbox,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -660,6 +661,7 @@ const AppPage = () => {
             </Button>
             <LanguageSwitcher />
             <Link to="/history"><Button variant="ghost" size="sm" className="rounded-full"><HistoryIcon className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">{t("nav.history")}</span></Button></Link>
+            <Link to="/queue"><Button variant="ghost" size="sm" className="rounded-full"><Inbox className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">Navbat</span></Button></Link>
             <Link to="/profile"><Button variant="ghost" size="sm" className="rounded-full"><User className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.profile")}</span></Button></Link>
             <Link to="/analytics"><Button variant="ghost" size="sm" className="rounded-full"><BarChart3 className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.analytics")}</span></Button></Link>
             <Link to="/pricing"><Button variant="ghost" size="sm" className="rounded-full text-primary" style={isPro ? { background: "hsl(var(--primary) / 0.12)" } : undefined}><Crown className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{isPro ? "PRO" : t("nav.pro")}</span></Button></Link>
