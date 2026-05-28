@@ -17,6 +17,10 @@ import Pricing from "./pages/Pricing.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import Verify from "./pages/Verify.tsx";
+import PatientRoute from "@/components/PatientRoute";
+import PatientDashboard from "./pages/patient/PatientDashboard.tsx";
+import NewRequest from "./pages/patient/NewRequest.tsx";
+import MyRequests from "./pages/patient/MyRequests.tsx";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +43,9 @@ const App = () => (
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/verify/:id" element={<Verify />} />
+            <Route path="/patient" element={<PatientRoute><PatientDashboard /></PatientRoute>} />
+            <Route path="/patient/new" element={<PatientRoute><NewRequest /></PatientRoute>} />
+            <Route path="/patient/requests" element={<PatientRoute><MyRequests /></PatientRoute>} />
             <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
