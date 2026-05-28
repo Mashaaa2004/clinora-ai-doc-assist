@@ -21,6 +21,9 @@ import PatientRoute from "@/components/PatientRoute";
 import PatientDashboard from "./pages/patient/PatientDashboard.tsx";
 import NewRequest from "./pages/patient/NewRequest.tsx";
 import MyRequests from "./pages/patient/MyRequests.tsx";
+import PatientProfile from "./pages/patient/PatientProfile.tsx";
+import Notifications from "./pages/patient/Notifications.tsx";
+import Queue from "./pages/Queue.tsx";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +49,9 @@ const App = () => (
             <Route path="/patient" element={<PatientRoute><PatientDashboard /></PatientRoute>} />
             <Route path="/patient/new" element={<PatientRoute><NewRequest /></PatientRoute>} />
             <Route path="/patient/requests" element={<PatientRoute><MyRequests /></PatientRoute>} />
+            <Route path="/patient/profile" element={<PatientRoute><PatientProfile /></PatientRoute>} />
+            <Route path="/patient/notifications" element={<PatientRoute><Notifications /></PatientRoute>} />
+            <Route path="/queue" element={<ProtectedRoute><Queue /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
