@@ -436,6 +436,16 @@ export type Database = {
         Args: { _clinic_id: string; _user_id: string }
         Returns: boolean
       }
+      ensure_patient_account: {
+        Args: {
+          _date_of_birth?: string
+          _full_name?: string
+          _gender?: string
+          _language?: string
+          _phone?: string
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
