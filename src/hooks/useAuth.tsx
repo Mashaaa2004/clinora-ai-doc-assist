@@ -93,9 +93,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
+        setLoading(true);
         setTimeout(() => {
-          loadProfile(s.user.id);
-          loadStatus(s.user.id);
+          Promise.all([loadProfile(s.user.id), loadStatus(s.user.id)]).finally(() =>
+            setLoading(false),
+          );
         }, 0);
       } else {
         setProfile(null);
@@ -126,7 +128,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const refreshStatus = async () => {
-    if (user) await loadStatus(user.id);
+    const currentUser = user ?? (await supabase.auth.getUser()).data.user;
+    if (currentUser) await loadStatus(currentUser.id);
   };
 
   const signOut = async () => {
