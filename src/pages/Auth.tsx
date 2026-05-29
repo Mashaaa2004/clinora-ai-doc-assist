@@ -45,7 +45,7 @@ const AuthPage = () => {
       _phone: phone.trim(),
       _gender: pGender,
       _language: pLang,
-      _date_of_birth: pDob || null,
+      _date_of_birth: pDob || undefined,
     });
 
     if (error) throw error;
