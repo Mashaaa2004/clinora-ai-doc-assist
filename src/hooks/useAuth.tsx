@@ -63,8 +63,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  const loadStatus = async (uid: string) => {
-    const [{ data: roles }, { data: subs }] = await Promise.all([
+  const loadStatus = async (uid: string, metadata: User["user_metadata"] = {}) => {
+    const [{ data: fetchedRoles }, { data: subs }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", uid),
       supabase
         .from("subscriptions")
@@ -75,6 +75,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .order("expires_at", { ascending: false })
         .limit(1),
     ]);
+    let roles = fetchedRoles ?? [];
+
+    if (!roles.length && metadata?.role === "patient") {
+      await supabase.rpc("ensure_patient_account", {
+        _full_name: metadata.full_name ?? "",
+        _phone: metadata.phone ?? "",
+        _gender: metadata.gender ?? "",
+        _language: metadata.language ?? "uz",
+        _date_of_birth: metadata.date_of_birth || undefined,
+      });
+      const { data: recoveredRoles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", uid);
+      roles = recoveredRoles ?? roles;
+    }
+
     setIsAdmin((roles ?? []).some((r: any) => r.role === "admin"));
     const rs = (roles ?? []).map((r: any) => r.role as string);
     const admin = rs.includes("admin");
@@ -93,9 +110,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
+        setLoading(true);
         setTimeout(() => {
-          loadProfile(s.user.id);
-          loadStatus(s.user.id);
+          Promise.all([loadProfile(s.user.id), loadStatus(s.user.id, s.user.user_metadata)]).finally(() =>
+            setLoading(false),
+          );
         }, 0);
       } else {
         setProfile(null);
@@ -112,7 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user)
-        Promise.all([loadProfile(s.user.id), loadStatus(s.user.id)]).finally(() =>
+        Promise.all([loadProfile(s.user.id), loadStatus(s.user.id, s.user.user_metadata)]).finally(() =>
           setLoading(false),
         );
       else setLoading(false);
@@ -126,7 +145,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const refreshStatus = async () => {
-    if (user) await loadStatus(user.id);
+    const currentUser = user ?? (await supabase.auth.getUser()).data.user;
+    if (currentUser) await loadStatus(currentUser.id, currentUser.user_metadata);
   };
 
   const signOut = async () => {
