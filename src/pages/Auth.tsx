@@ -16,7 +16,7 @@ type Audience = "patient" | "doctor" | "admin";
 
 const AuthPage = () => {
   const navigate = useNavigate();
-  const { user, role, loading } = useAuth();
+  const { user, role, loading, refreshStatus } = useAuth();
   const { t } = useT();
   const [audience, setAudience] = useState<Audience>("patient");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -38,6 +38,20 @@ const AuthPage = () => {
     else if (role === "patient") navigate("/patient", { replace: true });
     else navigate("/app", { replace: true });
   }, [user, role, loading, navigate]);
+
+  const ensurePatientAccount = async () => {
+    const { error } = await supabase.rpc("ensure_patient_account", {
+      _full_name: fullName.trim(),
+      _phone: phone.trim(),
+      _gender: pGender,
+      _language: pLang,
+      _date_of_birth: pDob || null,
+    });
+
+    if (error) throw error;
+    await refreshStatus();
+    navigate("/patient", { replace: true });
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,10 +75,12 @@ const AuthPage = () => {
             },
           });
           if (error) { toast.error(error.message); return; }
+          await ensurePatientAccount();
           toast.success(t("auth.created"));
         } else {
           const { error } = await supabase.auth.signInWithPassword({ email, password });
           if (error) { toast.error(error.message); return; }
+          await ensurePatientAccount();
         }
       } else if (mode === "signup" && audience !== "admin") {
         if (!fullName.trim() || !hospital.trim()) {
