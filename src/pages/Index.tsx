@@ -49,13 +49,12 @@ const MedicalBackdrop = () => (
 const Index = () => {
   const { t } = useT();
   return (
-    <div className="relative min-h-screen bg-mesh text-foreground overflow-hidden">
-      {/* Animated mesh + grain layer */}
-      <div className="bg-mesh-animated pointer-events-none absolute inset-0 -z-10" aria-hidden />
-      {/* Aurora — northern lights */}
-      <div className="aurora -z-10" aria-hidden>
+    <div className="relative min-h-screen text-foreground overflow-hidden">
+      {/* Aurora — real northern lights backdrop */}
+      <div className="aurora fixed inset-0 -z-10" aria-hidden>
         <div className="aurora-band" />
         <div className="aurora-stars" />
+        <div className="aurora-veil" />
       </div>
       {/* Medical floating icons */}
       <div className="absolute inset-0 -z-10"><MedicalBackdrop /></div>
