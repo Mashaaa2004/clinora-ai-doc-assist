@@ -52,6 +52,11 @@ const Index = () => {
     <div className="relative min-h-screen bg-mesh text-foreground overflow-hidden">
       {/* Animated mesh + grain layer */}
       <div className="bg-mesh-animated pointer-events-none absolute inset-0 -z-10" aria-hidden />
+      {/* Aurora — northern lights */}
+      <div className="aurora -z-10" aria-hidden>
+        <div className="aurora-band" />
+        <div className="aurora-stars" />
+      </div>
       {/* Medical floating icons */}
       <div className="absolute inset-0 -z-10"><MedicalBackdrop /></div>
 

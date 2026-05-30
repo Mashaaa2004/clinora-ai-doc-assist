@@ -184,6 +184,70 @@
     animation: ecg-draw 4s linear infinite;
   }
 
+  /* Aurora — northern lights background */
+  .aurora {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .aurora::before,
+  .aurora::after,
+  .aurora > .aurora-band {
+    content: "";
+    position: absolute;
+    left: -20%;
+    right: -20%;
+    height: 65vh;
+    filter: blur(70px) saturate(140%);
+    mix-blend-mode: screen;
+    border-radius: 50%;
+    will-change: transform, opacity;
+  }
+  .aurora::before {
+    top: -15%;
+    background: conic-gradient(from 120deg at 50% 50%,
+      hsl(174 90% 60% / 0) 0deg,
+      hsl(174 90% 60% / 0.55) 60deg,
+      hsl(188 95% 65% / 0.65) 130deg,
+      hsl(200 95% 70% / 0.55) 200deg,
+      hsl(160 85% 60% / 0.50) 280deg,
+      hsl(174 90% 60% / 0) 360deg);
+    animation: aurora-drift-a 18s ease-in-out infinite alternate;
+  }
+  .aurora::after {
+    top: 15%;
+    height: 70vh;
+    background: conic-gradient(from 300deg at 50% 50%,
+      hsl(200 95% 70% / 0) 0deg,
+      hsl(188 95% 70% / 0.55) 80deg,
+      hsl(160 85% 65% / 0.55) 160deg,
+      hsl(220 90% 75% / 0.50) 240deg,
+      hsl(174 95% 65% / 0.55) 320deg,
+      hsl(200 95% 70% / 0) 360deg);
+    animation: aurora-drift-b 22s ease-in-out infinite alternate;
+  }
+  .aurora > .aurora-band {
+    bottom: -10%;
+    height: 55vh;
+    background:
+      radial-gradient(ellipse at 30% 50%, hsl(174 85% 60% / 0.5), transparent 60%),
+      radial-gradient(ellipse at 70% 50%, hsl(200 90% 70% / 0.5), transparent 60%);
+    animation: aurora-drift-c 26s ease-in-out infinite alternate;
+  }
+  .aurora-stars {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 12% 22%, hsl(0 0% 100% / 0.6), transparent 50%),
+      radial-gradient(1px 1px at 78% 14%, hsl(0 0% 100% / 0.5), transparent 50%),
+      radial-gradient(1px 1px at 35% 78%, hsl(0 0% 100% / 0.55), transparent 50%),
+      radial-gradient(1px 1px at 88% 64%, hsl(0 0% 100% / 0.45), transparent 50%),
+      radial-gradient(1px 1px at 56% 42%, hsl(0 0% 100% / 0.5), transparent 50%),
+      radial-gradient(1px 1px at 22% 58%, hsl(0 0% 100% / 0.45), transparent 50%);
+    animation: aurora-twinkle 6s ease-in-out infinite alternate;
+  }
+
   /* A4 paper sheet — doctor's desk feel */
   .paper-a4 {
     position: relative;
@@ -261,6 +325,25 @@
 @keyframes ecg-draw {
   0%   { stroke-dashoffset: 600; }
   100% { stroke-dashoffset: -600; }
+}
+@keyframes aurora-drift-a {
+  0%   { transform: translate3d(-6%, -2%, 0) rotate(-6deg) scale(1.05); opacity: 0.45; }
+  50%  { transform: translate3d(4%, 3%, 0) rotate(4deg) scale(1.15); opacity: 0.7; }
+  100% { transform: translate3d(-3%, -4%, 0) rotate(-2deg) scale(1.08); opacity: 0.55; }
+}
+@keyframes aurora-drift-b {
+  0%   { transform: translate3d(5%, 2%, 0) rotate(8deg) scale(1.1); opacity: 0.4; }
+  50%  { transform: translate3d(-4%, -3%, 0) rotate(-6deg) scale(1.2); opacity: 0.65; }
+  100% { transform: translate3d(2%, 4%, 0) rotate(3deg) scale(1.05); opacity: 0.5; }
+}
+@keyframes aurora-drift-c {
+  0%   { transform: translate3d(-4%, 3%, 0) scale(1.1); opacity: 0.45; }
+  50%  { transform: translate3d(3%, -2%, 0) scale(1.25); opacity: 0.65; }
+  100% { transform: translate3d(-2%, 2%, 0) scale(1.15); opacity: 0.55; }
+}
+@keyframes aurora-twinkle {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.8; }
 }
 .animate-float { animation: float-soft 6s ease-in-out infinite; }
 .animate-glow-pulse { animation: glow-pulse 2.4s ease-out infinite; }
