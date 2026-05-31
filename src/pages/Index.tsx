@@ -57,19 +57,66 @@ const Index = () => {
         <div className="aurora-ridge-glow" />
         <div className="aurora-haze" />
         <div className="aurora-mountains">
-          <svg viewBox="0 0 1440 400" preserveAspectRatio="none">
-            {/* Farthest range — distant haze */}
-            <path className="m-far" d="M0 220 L100 170 L200 200 L300 130 L420 195 L540 150 L660 200 L800 135 L940 200 L1080 155 L1220 210 L1340 165 L1440 200 L1440 400 L0 400 Z" />
-            {/* Back range */}
-            <path className="m-back" d="M0 270 L120 200 L210 240 L320 160 L430 230 L560 175 L680 240 L820 165 L960 230 L1080 185 L1220 250 L1340 195 L1440 240 L1440 400 L0 400 Z" />
-            {/* Snow caps on back peaks */}
-            <path className="m-snow" d="M315 165 L320 160 L338 188 L326 185 L319 180 Z M815 170 L820 165 L842 195 L828 192 Z M555 178 L560 175 L578 200 L568 198 Z M1075 188 L1080 185 L1098 212 L1086 210 Z" />
+          <svg viewBox="0 0 1440 600" preserveAspectRatio="none">
+            <defs>
+              {/* Distant range — washed by atmospheric haze */}
+              <linearGradient id="mtnFar" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stopColor="hsl(220 60% 55%)" stopOpacity="0.55" />
+                <stop offset="55%" stopColor="hsl(240 50% 25%)" stopOpacity="0.75" />
+                <stop offset="100%" stopColor="hsl(245 55% 15%)" stopOpacity="0.9" />
+              </linearGradient>
+              <linearGradient id="mtnBack" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stopColor="hsl(230 55% 35%)" stopOpacity="0.85" />
+                <stop offset="60%" stopColor="hsl(245 60% 14%)" />
+                <stop offset="100%" stopColor="hsl(250 70% 8%)" />
+              </linearGradient>
+              <linearGradient id="mtnMid" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stopColor="hsl(245 65% 18%)" />
+                <stop offset="100%" stopColor="hsl(252 75% 6%)" />
+              </linearGradient>
+              <linearGradient id="mtnFront" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stopColor="hsl(255 85% 5%)" />
+                <stop offset="100%" stopColor="hsl(255 90% 1%)" />
+              </linearGradient>
+              <linearGradient id="snowGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stopColor="hsl(190 95% 95%)" />
+                <stop offset="60%" stopColor="hsl(200 80% 80%)" stopOpacity="0.7" />
+                <stop offset="100%" stopColor="hsl(220 70% 60%)" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="ridgeRim" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%"  stopColor="hsl(150 100% 65%)" stopOpacity="0.5" />
+                <stop offset="35%" stopColor="hsl(190 100% 75%)" stopOpacity="0.9" />
+                <stop offset="65%" stopColor="hsl(220 100% 75%)" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="hsl(280 100% 75%)" stopOpacity="0.5" />
+              </linearGradient>
+            </defs>
+
+            {/* Farthest range — tall, distant, hazy */}
+            <path className="m-far" d="M0 280 L80 180 L160 220 L240 90 L340 200 L440 110 L540 210 L660 70 L780 200 L900 100 L1020 215 L1150 90 L1280 210 L1380 130 L1440 200 L1440 600 L0 600 Z" />
+
+            {/* Back range — sharper alpine peaks */}
+            <path className="m-back" d="M0 360 L90 230 L180 290 L280 130 L380 270 L500 160 L620 280 L760 110 L880 270 L1010 170 L1150 290 L1280 140 L1440 280 L1440 600 L0 600 Z" />
+            {/* Snow caps follow back peaks */}
+            <path className="m-snow" d="
+              M275 145 L280 130 L300 175 L292 178 L283 170 Z
+              M755 125 L760 110 L782 170 L770 173 L763 165 Z
+              M495 175 L500 160 L520 205 L510 208 L502 200 Z
+              M1005 185 L1010 170 L1030 215 L1020 218 L1012 210 Z
+              M1275 155 L1280 140 L1302 195 L1290 198 Z
+              M375 285 L380 270 L398 305 L388 308 Z
+            " />
+            {/* Aurora rim light along back ridge */}
+            <path className="m-rim" d="M0 360 L90 230 L180 290 L280 130 L380 270 L500 160 L620 280 L760 110 L880 270 L1010 170 L1150 290 L1280 140 L1440 280" />
+
             {/* Mid range */}
-            <path className="m-mid" d="M0 320 L90 260 L180 295 L280 220 L380 285 L500 240 L620 305 L760 230 L880 295 L1010 250 L1150 315 L1280 260 L1440 305 L1440 400 L0 400 Z" />
-            {/* Front range — closest, darkest */}
-            <path className="m-front" d="M0 380 L60 330 L150 365 L250 300 L350 355 L460 310 L580 365 L710 300 L850 355 L1000 320 L1140 372 L1280 330 L1440 365 L1440 400 L0 400 Z" />
+            <path className="m-mid" d="M0 420 L70 320 L160 380 L260 240 L360 360 L480 280 L600 380 L740 230 L860 370 L990 290 L1130 390 L1270 270 L1440 380 L1440 600 L0 600 Z" />
+            <path className="m-rim" d="M0 420 L70 320 L160 380 L260 240 L360 360 L480 280 L600 380 L740 230 L860 370 L990 290 L1130 390 L1270 270 L1440 380" style={{ opacity: 0.4 }} />
+
+            {/* Front range — closest, darkest, jagged */}
+            <path className="m-front" d="M0 520 L50 410 L130 470 L220 360 L320 450 L430 380 L560 460 L700 350 L840 450 L990 390 L1130 470 L1280 390 L1440 460 L1440 600 L0 600 Z" />
           </svg>
         </div>
+        <div className="aurora-fog" />
         <div className="aurora-veil" />
       </div>
       {/* Medical floating icons */}
