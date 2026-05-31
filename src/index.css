@@ -260,8 +260,8 @@
   .aurora-ridge-glow {
     position: absolute;
     left: 0; right: 0;
-    bottom: 36vh;
-    height: 14vh;
+    bottom: 52vh;
+    height: 18vh;
     pointer-events: none;
     z-index: 1;
     background: radial-gradient(ellipse at 30% 100%, hsl(150 100% 65% / 0.45), transparent 60%),
