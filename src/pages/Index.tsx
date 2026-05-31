@@ -54,6 +54,18 @@ const Index = () => {
       <div className="aurora fixed inset-0 -z-10" aria-hidden>
         <div className="aurora-band" />
         <div className="aurora-stars" />
+        <div className="aurora-mountains">
+          <svg viewBox="0 0 1440 400" preserveAspectRatio="none">
+            {/* Back range */}
+            <path className="m-back" d="M0 260 L120 180 L210 230 L320 140 L430 220 L560 160 L680 230 L820 150 L960 220 L1080 170 L1220 240 L1340 180 L1440 230 L1440 400 L0 400 Z" />
+            {/* Mid range */}
+            <path className="m-mid" d="M0 320 L90 250 L180 290 L280 210 L380 280 L500 230 L620 300 L760 220 L880 290 L1010 240 L1150 310 L1280 250 L1440 300 L1440 400 L0 400 Z" />
+            {/* Front range */}
+            <path className="m-front" d="M0 380 L70 320 L160 360 L260 290 L360 350 L470 300 L590 360 L720 290 L860 350 L1000 310 L1140 370 L1280 320 L1440 360 L1440 400 L0 400 Z" />
+            {/* Snow caps on back peaks */}
+            <path className="m-snow" d="M310 145 L320 140 L335 165 L325 162 L318 158 Z M820 152 L820 150 L840 175 L828 172 Z M430 222 L438 230 L425 232 L420 228 Z" />
+          </svg>
+        </div>
         <div className="aurora-veil" />
       </div>
       {/* Medical floating icons */}
