@@ -54,16 +54,20 @@ const Index = () => {
       <div className="aurora fixed inset-0 -z-10" aria-hidden>
         <div className="aurora-band" />
         <div className="aurora-stars" />
+        <div className="aurora-ridge-glow" />
+        <div className="aurora-haze" />
         <div className="aurora-mountains">
           <svg viewBox="0 0 1440 400" preserveAspectRatio="none">
+            {/* Farthest range — distant haze */}
+            <path className="m-far" d="M0 220 L100 170 L200 200 L300 130 L420 195 L540 150 L660 200 L800 135 L940 200 L1080 155 L1220 210 L1340 165 L1440 200 L1440 400 L0 400 Z" />
             {/* Back range */}
-            <path className="m-back" d="M0 260 L120 180 L210 230 L320 140 L430 220 L560 160 L680 230 L820 150 L960 220 L1080 170 L1220 240 L1340 180 L1440 230 L1440 400 L0 400 Z" />
-            {/* Mid range */}
-            <path className="m-mid" d="M0 320 L90 250 L180 290 L280 210 L380 280 L500 230 L620 300 L760 220 L880 290 L1010 240 L1150 310 L1280 250 L1440 300 L1440 400 L0 400 Z" />
-            {/* Front range */}
-            <path className="m-front" d="M0 380 L70 320 L160 360 L260 290 L360 350 L470 300 L590 360 L720 290 L860 350 L1000 310 L1140 370 L1280 320 L1440 360 L1440 400 L0 400 Z" />
+            <path className="m-back" d="M0 270 L120 200 L210 240 L320 160 L430 230 L560 175 L680 240 L820 165 L960 230 L1080 185 L1220 250 L1340 195 L1440 240 L1440 400 L0 400 Z" />
             {/* Snow caps on back peaks */}
-            <path className="m-snow" d="M310 145 L320 140 L335 165 L325 162 L318 158 Z M820 152 L820 150 L840 175 L828 172 Z M430 222 L438 230 L425 232 L420 228 Z" />
+            <path className="m-snow" d="M315 165 L320 160 L338 188 L326 185 L319 180 Z M815 170 L820 165 L842 195 L828 192 Z M555 178 L560 175 L578 200 L568 198 Z M1075 188 L1080 185 L1098 212 L1086 210 Z" />
+            {/* Mid range */}
+            <path className="m-mid" d="M0 320 L90 260 L180 295 L280 220 L380 285 L500 240 L620 305 L760 230 L880 295 L1010 250 L1150 315 L1280 260 L1440 305 L1440 400 L0 400 Z" />
+            {/* Front range — closest, darkest */}
+            <path className="m-front" d="M0 380 L60 330 L150 365 L250 300 L350 355 L460 310 L580 365 L710 300 L850 355 L1000 320 L1140 372 L1280 330 L1440 365 L1440 400 L0 400 Z" />
           </svg>
         </div>
         <div className="aurora-veil" />
