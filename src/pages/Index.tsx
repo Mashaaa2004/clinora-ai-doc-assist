@@ -55,7 +55,9 @@ const Index = () => {
         <div className="aurora-band" />
         <div className="aurora-stars" />
         <div className="aurora-ridge-glow" />
+        <div className="aurora-fog-far" />
         <div className="aurora-haze" />
+        <div className="aurora-fog-mid" />
         <div className="aurora-mountains">
           <svg viewBox="0 0 1440 600" preserveAspectRatio="none">
             <defs>

@@ -259,6 +259,42 @@
     opacity: 0.85;
     animation: aurora-fog-drift 22s ease-in-out infinite alternate;
   }
+  /* Mid-range fog band — sits between back and mid mountains */
+  .aurora-fog-mid {
+    position: absolute;
+    left: -15%; right: -15%;
+    bottom: 28vh;
+    height: 22vh;
+    pointer-events: none;
+    z-index: 2;
+    background:
+      radial-gradient(ellipse at 15% 80%, hsl(180 95% 82% / 0.40), transparent 60%),
+      radial-gradient(ellipse at 45% 90%, hsl(200 90% 80% / 0.45), transparent 65%),
+      radial-gradient(ellipse at 75% 75%, hsl(230 90% 80% / 0.40), transparent 60%),
+      radial-gradient(ellipse at 95% 85%, hsl(280 80% 80% / 0.32), transparent 60%),
+      linear-gradient(180deg, hsl(200 90% 85% / 0) 0%, hsl(210 90% 82% / 0.28) 65%, hsl(220 95% 80% / 0.36) 100%);
+    filter: blur(26px) saturate(140%);
+    mix-blend-mode: screen;
+    opacity: 0.85;
+    animation: aurora-fog-mid-drift 26s ease-in-out infinite alternate;
+  }
+  /* Far-range thin fog — drifts behind the distant peaks */
+  .aurora-fog-far {
+    position: absolute;
+    left: -20%; right: -20%;
+    bottom: 48vh;
+    height: 16vh;
+    pointer-events: none;
+    z-index: 1;
+    background:
+      radial-gradient(ellipse at 30% 90%, hsl(190 100% 88% / 0.28), transparent 65%),
+      radial-gradient(ellipse at 70% 85%, hsl(220 95% 85% / 0.26), transparent 65%),
+      linear-gradient(180deg, transparent 0%, hsl(210 90% 85% / 0.18) 70%, hsl(220 95% 82% / 0.28) 100%);
+    filter: blur(32px) saturate(135%);
+    mix-blend-mode: screen;
+    opacity: 0.8;
+    animation: aurora-fog-far-drift 34s ease-in-out infinite alternate;
+  }
   /* Soft aurora glow rim above mountain ridge */
   .aurora-ridge-glow {
     position: absolute;
@@ -452,6 +488,16 @@
   0%   { transform: translate3d(-4%, 2%, 0) scale(1.05); opacity: 0.7; }
   50%  { transform: translate3d(5%, -1%, 0) scale(1.18); opacity: 0.95; }
   100% { transform: translate3d(-2%, 1%, 0) scale(1.10); opacity: 0.8; }
+}
+@keyframes aurora-fog-mid-drift {
+  0%   { transform: translate3d(-5%, 1%, 0) scale(1.06); opacity: 0.65; filter: blur(26px) saturate(140%) hue-rotate(0deg); }
+  50%  { transform: translate3d(4%, -2%, 0) scale(1.16); opacity: 0.95; filter: blur(30px) saturate(160%) hue-rotate(20deg); }
+  100% { transform: translate3d(-3%, 2%, 0) scale(1.10); opacity: 0.8;  filter: blur(28px) saturate(150%) hue-rotate(-15deg); }
+}
+@keyframes aurora-fog-far-drift {
+  0%   { transform: translate3d(-6%, 0%, 0) scale(1.04); opacity: 0.6;  filter: blur(32px) saturate(135%) hue-rotate(0deg); }
+  50%  { transform: translate3d(5%, -1%, 0) scale(1.14); opacity: 0.9;  filter: blur(36px) saturate(155%) hue-rotate(-20deg); }
+  100% { transform: translate3d(-2%, 1%, 0) scale(1.08); opacity: 0.7;  filter: blur(34px) saturate(145%) hue-rotate(15deg); }
 }
 @keyframes aurora-hue {
   0%   { filter: blur(70px) saturate(220%) hue-rotate(0deg); }
