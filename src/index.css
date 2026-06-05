@@ -511,6 +511,22 @@
   50%  { transform: translate3d(5%, -1%, 0) scale(1.14); opacity: 0.9;  filter: blur(36px) saturate(155%) hue-rotate(-20deg); }
   100% { transform: translate3d(-2%, 1%, 0) scale(1.08); opacity: 0.7;  filter: blur(34px) saturate(145%) hue-rotate(15deg); }
 }
+@keyframes mtn-parallax-front {
+  0%   { transform: translate3d(-1.2%, 0, 0); }
+  100% { transform: translate3d(1.2%, -0.4%, 0); }
+}
+@keyframes mtn-parallax-mid {
+  0%   { transform: translate3d(1%, 0, 0); }
+  100% { transform: translate3d(-1.5%, -0.6%, 0); }
+}
+@keyframes mtn-parallax-back {
+  0%   { transform: translate3d(-0.8%, 0, 0); }
+  100% { transform: translate3d(1.6%, -0.8%, 0); }
+}
+@keyframes mtn-parallax-far {
+  0%   { transform: translate3d(0.6%, 0, 0); }
+  100% { transform: translate3d(-2%, -1%, 0); }
+}
 @keyframes aurora-hue {
   0%   { filter: blur(70px) saturate(220%) hue-rotate(0deg); }
   100% { filter: blur(70px) saturate(240%) hue-rotate(360deg); }
