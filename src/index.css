@@ -217,7 +217,10 @@
   .aurora-mountains .m-back   { fill: url(#mtnBack);   opacity: 0.85; }
   .aurora-mountains .m-mid    { fill: url(#mtnMid);    opacity: 0.95; }
   .aurora-mountains .m-front  { fill: url(#mtnFront); }
-  .aurora-mountains .m-snow   { fill: url(#snowGrad); opacity: 0.85; }
+  .aurora-mountains .m-snow   { fill: url(#snowGrad); opacity: 0.95;
+    filter: drop-shadow(0 0 5px hsl(190 100% 85% / 0.65));
+    animation: aurora-snow-glow 9s ease-in-out infinite alternate;
+  }
   .aurora-mountains .m-rim    { fill: none; stroke: url(#ridgeRim); stroke-width: 1.2; opacity: 0.7;
     filter: drop-shadow(0 -2px 6px hsl(190 100% 70% / 0.55));
     animation: aurora-rim-pulse 7s ease-in-out infinite alternate;
@@ -449,6 +452,18 @@
   0%   { transform: translate3d(-4%, 2%, 0) scale(1.05); opacity: 0.7; }
   50%  { transform: translate3d(5%, -1%, 0) scale(1.18); opacity: 0.95; }
   100% { transform: translate3d(-2%, 1%, 0) scale(1.10); opacity: 0.8; }
+}
+@keyframes aurora-hue {
+  0%   { filter: blur(70px) saturate(220%) hue-rotate(0deg); }
+  100% { filter: blur(70px) saturate(240%) hue-rotate(360deg); }
+}
+@keyframes aurora-hue-rev {
+  0%   { filter: blur(70px) saturate(220%) hue-rotate(0deg); }
+  100% { filter: blur(70px) saturate(240%) hue-rotate(-360deg); }
+}
+@keyframes aurora-snow-glow {
+  0%, 100% { filter: drop-shadow(0 0 4px hsl(190 100% 85% / 0.45)); }
+  50%      { filter: drop-shadow(0 0 10px hsl(160 100% 80% / 0.85)); }
 }
 .animate-float { animation: float-soft 6s ease-in-out infinite; }
 .animate-glow-pulse { animation: glow-pulse 2.4s ease-out infinite; }
