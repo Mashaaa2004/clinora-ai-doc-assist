@@ -133,11 +133,11 @@
   }
 
   .glass-card {
-    background: linear-gradient(180deg, hsl(0 0% 100% / 0.75), hsl(200 60% 98% / 0.65));
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
-    border: 1px solid hsl(188 60% 80% / 0.5);
-    box-shadow: var(--shadow-md), inset 0 1px 0 hsl(0 0% 100% / 0.8);
+    background: linear-gradient(180deg, hsl(0 0% 100% / 0.18), hsl(200 60% 98% / 0.10));
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    border: 1px solid hsl(0 0% 100% / 0.22);
+    box-shadow: 0 10px 40px hsl(220 60% 10% / 0.25), inset 0 1px 0 hsl(0 0% 100% / 0.35);
   }
 
   .text-gradient-primary {
@@ -198,11 +198,11 @@
     inset: 0;
     pointer-events: none;
     background: linear-gradient(180deg,
-      hsl(210 40% 98% / 0.18) 0%,
-      hsl(210 40% 98% / 0.32) 55%,
-      hsl(210 40% 98% / 0.55) 100%);
-    backdrop-filter: blur(1.5px) saturate(120%);
-    -webkit-backdrop-filter: blur(1.5px) saturate(120%);
+      hsl(245 70% 10% / 0.05) 0%,
+      hsl(220 60% 20% / 0.10) 55%,
+      hsl(210 40% 60% / 0.18) 100%);
+    backdrop-filter: blur(0.5px) saturate(115%);
+    -webkit-backdrop-filter: blur(0.5px) saturate(115%);
   }
   /* Mountain silhouettes — layered horizon */
   .aurora-mountains {
@@ -217,7 +217,10 @@
   .aurora-mountains .m-back   { fill: url(#mtnBack);   opacity: 0.85; }
   .aurora-mountains .m-mid    { fill: url(#mtnMid);    opacity: 0.95; }
   .aurora-mountains .m-front  { fill: url(#mtnFront); }
-  .aurora-mountains .m-snow   { fill: url(#snowGrad); opacity: 0.85; }
+  .aurora-mountains .m-snow   { fill: url(#snowGrad); opacity: 0.95;
+    filter: drop-shadow(0 0 5px hsl(190 100% 85% / 0.65));
+    animation: aurora-snow-glow 9s ease-in-out infinite alternate;
+  }
   .aurora-mountains .m-rim    { fill: none; stroke: url(#ridgeRim); stroke-width: 1.2; opacity: 0.7;
     filter: drop-shadow(0 -2px 6px hsl(190 100% 70% / 0.55));
     animation: aurora-rim-pulse 7s ease-in-out infinite alternate;
@@ -294,7 +297,9 @@
       hsl(310 100% 65% / 0.9) 230deg,
       hsl(220 100% 65% / 0.95) 300deg,
       hsl(265 100% 60% / 0) 360deg);
-    animation: aurora-drift-a 28s cubic-bezier(0.45,0.05,0.55,0.95) infinite alternate;
+    animation:
+      aurora-drift-a 28s cubic-bezier(0.45,0.05,0.55,0.95) infinite alternate,
+      aurora-hue 18s linear infinite;
   }
   .aurora::after {
     top: 15%;
@@ -306,7 +311,9 @@
       hsl(280 100% 70% / 0.95) 220deg,
       hsl(220 100% 65% / 1) 290deg,
       hsl(220 100% 65% / 0) 360deg);
-    animation: aurora-drift-b 34s cubic-bezier(0.5,0,0.5,1) infinite alternate;
+    animation:
+      aurora-drift-b 34s cubic-bezier(0.5,0,0.5,1) infinite alternate,
+      aurora-hue-rev 24s linear infinite;
   }
   .aurora > .aurora-band {
     bottom: -10%;
@@ -315,7 +322,9 @@
       radial-gradient(ellipse at 18% 55%, hsl(150 100% 60% / 0.9), transparent 60%),
       radial-gradient(ellipse at 50% 60%, hsl(190 100% 65% / 0.85), transparent 60%),
       radial-gradient(ellipse at 82% 50%, hsl(280 100% 70% / 0.8), transparent 60%);
-    animation: aurora-drift-c 40s cubic-bezier(0.5,0,0.5,1) infinite alternate;
+    animation:
+      aurora-drift-c 40s cubic-bezier(0.5,0,0.5,1) infinite alternate,
+      aurora-hue 30s linear infinite;
   }
   .aurora-stars {
     position: absolute;
@@ -443,6 +452,18 @@
   0%   { transform: translate3d(-4%, 2%, 0) scale(1.05); opacity: 0.7; }
   50%  { transform: translate3d(5%, -1%, 0) scale(1.18); opacity: 0.95; }
   100% { transform: translate3d(-2%, 1%, 0) scale(1.10); opacity: 0.8; }
+}
+@keyframes aurora-hue {
+  0%   { filter: blur(70px) saturate(220%) hue-rotate(0deg); }
+  100% { filter: blur(70px) saturate(240%) hue-rotate(360deg); }
+}
+@keyframes aurora-hue-rev {
+  0%   { filter: blur(70px) saturate(220%) hue-rotate(0deg); }
+  100% { filter: blur(70px) saturate(240%) hue-rotate(-360deg); }
+}
+@keyframes aurora-snow-glow {
+  0%, 100% { filter: drop-shadow(0 0 4px hsl(190 100% 85% / 0.45)); }
+  50%      { filter: drop-shadow(0 0 10px hsl(160 100% 80% / 0.85)); }
 }
 .animate-float { animation: float-soft 6s ease-in-out infinite; }
 .animate-glow-pulse { animation: glow-pulse 2.4s ease-out infinite; }
