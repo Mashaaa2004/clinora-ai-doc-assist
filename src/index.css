@@ -198,11 +198,11 @@
     inset: 0;
     pointer-events: none;
     background: linear-gradient(180deg,
-      hsl(210 40% 98% / 0.18) 0%,
-      hsl(210 40% 98% / 0.32) 55%,
-      hsl(210 40% 98% / 0.55) 100%);
-    backdrop-filter: blur(1.5px) saturate(120%);
-    -webkit-backdrop-filter: blur(1.5px) saturate(120%);
+      hsl(245 70% 10% / 0.05) 0%,
+      hsl(220 60% 20% / 0.10) 55%,
+      hsl(210 40% 60% / 0.18) 100%);
+    backdrop-filter: blur(0.5px) saturate(115%);
+    -webkit-backdrop-filter: blur(0.5px) saturate(115%);
   }
   /* Mountain silhouettes — layered horizon */
   .aurora-mountains {
