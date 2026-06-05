@@ -259,6 +259,42 @@
     opacity: 0.85;
     animation: aurora-fog-drift 22s ease-in-out infinite alternate;
   }
+  /* Mid-range fog band — sits between back and mid mountains */
+  .aurora-fog-mid {
+    position: absolute;
+    left: -15%; right: -15%;
+    bottom: 28vh;
+    height: 22vh;
+    pointer-events: none;
+    z-index: 2;
+    background:
+      radial-gradient(ellipse at 15% 80%, hsl(180 95% 82% / 0.40), transparent 60%),
+      radial-gradient(ellipse at 45% 90%, hsl(200 90% 80% / 0.45), transparent 65%),
+      radial-gradient(ellipse at 75% 75%, hsl(230 90% 80% / 0.40), transparent 60%),
+      radial-gradient(ellipse at 95% 85%, hsl(280 80% 80% / 0.32), transparent 60%),
+      linear-gradient(180deg, hsl(200 90% 85% / 0) 0%, hsl(210 90% 82% / 0.28) 65%, hsl(220 95% 80% / 0.36) 100%);
+    filter: blur(26px) saturate(140%);
+    mix-blend-mode: screen;
+    opacity: 0.85;
+    animation: aurora-fog-mid-drift 26s ease-in-out infinite alternate;
+  }
+  /* Far-range thin fog — drifts behind the distant peaks */
+  .aurora-fog-far {
+    position: absolute;
+    left: -20%; right: -20%;
+    bottom: 48vh;
+    height: 16vh;
+    pointer-events: none;
+    z-index: 1;
+    background:
+      radial-gradient(ellipse at 30% 90%, hsl(190 100% 88% / 0.28), transparent 65%),
+      radial-gradient(ellipse at 70% 85%, hsl(220 95% 85% / 0.26), transparent 65%),
+      linear-gradient(180deg, transparent 0%, hsl(210 90% 85% / 0.18) 70%, hsl(220 95% 82% / 0.28) 100%);
+    filter: blur(32px) saturate(135%);
+    mix-blend-mode: screen;
+    opacity: 0.8;
+    animation: aurora-fog-far-drift 34s ease-in-out infinite alternate;
+  }
   /* Soft aurora glow rim above mountain ridge */
   .aurora-ridge-glow {
     position: absolute;
