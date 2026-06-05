@@ -294,7 +294,9 @@
       hsl(310 100% 65% / 0.9) 230deg,
       hsl(220 100% 65% / 0.95) 300deg,
       hsl(265 100% 60% / 0) 360deg);
-    animation: aurora-drift-a 28s cubic-bezier(0.45,0.05,0.55,0.95) infinite alternate;
+    animation:
+      aurora-drift-a 28s cubic-bezier(0.45,0.05,0.55,0.95) infinite alternate,
+      aurora-hue 18s linear infinite;
   }
   .aurora::after {
     top: 15%;
@@ -306,7 +308,9 @@
       hsl(280 100% 70% / 0.95) 220deg,
       hsl(220 100% 65% / 1) 290deg,
       hsl(220 100% 65% / 0) 360deg);
-    animation: aurora-drift-b 34s cubic-bezier(0.5,0,0.5,1) infinite alternate;
+    animation:
+      aurora-drift-b 34s cubic-bezier(0.5,0,0.5,1) infinite alternate,
+      aurora-hue-rev 24s linear infinite;
   }
   .aurora > .aurora-band {
     bottom: -10%;
@@ -315,7 +319,9 @@
       radial-gradient(ellipse at 18% 55%, hsl(150 100% 60% / 0.9), transparent 60%),
       radial-gradient(ellipse at 50% 60%, hsl(190 100% 65% / 0.85), transparent 60%),
       radial-gradient(ellipse at 82% 50%, hsl(280 100% 70% / 0.8), transparent 60%);
-    animation: aurora-drift-c 40s cubic-bezier(0.5,0,0.5,1) infinite alternate;
+    animation:
+      aurora-drift-c 40s cubic-bezier(0.5,0,0.5,1) infinite alternate,
+      aurora-hue 30s linear infinite;
   }
   .aurora-stars {
     position: absolute;
