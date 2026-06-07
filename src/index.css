@@ -320,58 +320,26 @@
     will-change: transform, opacity;
     transform: translateZ(0);
   }
-  .aurora::before,
-  .aurora::after,
+  /* Single soft aurora band — light on the GPU */
   .aurora > .aurora-band {
     content: "";
     position: absolute;
-    left: -20%;
-    right: -20%;
-    height: 70vh;
-    filter: blur(70px) saturate(220%);
-    mix-blend-mode: screen;
-    border-radius: 50%;
-    will-change: transform, opacity;
-  }
-  .aurora::before {
-    top: -15%;
-    background: conic-gradient(from 120deg at 50% 50%,
-      hsl(265 100% 60% / 0) 0deg,
-      hsl(160 100% 60% / 0.95) 35deg,
-      hsl(190 100% 60% / 1) 90deg,
-      hsl(265 100% 65% / 0.95) 160deg,
-      hsl(310 100% 65% / 0.9) 230deg,
-      hsl(220 100% 65% / 0.95) 300deg,
-      hsl(265 100% 60% / 0) 360deg);
-    animation:
-      aurora-drift-a 28s cubic-bezier(0.45,0.05,0.55,0.95) infinite alternate,
-      aurora-hue 18s linear infinite;
-  }
-  .aurora::after {
-    top: 15%;
-    height: 70vh;
-    background: conic-gradient(from 300deg at 50% 50%,
-      hsl(220 100% 65% / 0) 0deg,
-      hsl(150 100% 60% / 0.95) 60deg,
-      hsl(190 100% 65% / 0.95) 140deg,
-      hsl(280 100% 70% / 0.95) 220deg,
-      hsl(220 100% 65% / 1) 290deg,
-      hsl(220 100% 65% / 0) 360deg);
-    animation:
-      aurora-drift-b 34s cubic-bezier(0.5,0,0.5,1) infinite alternate,
-      aurora-hue-rev 24s linear infinite;
-  }
-  .aurora > .aurora-band {
-    bottom: -10%;
+    left: -10%;
+    right: -10%;
+    top: 5%;
     height: 55vh;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.75;
     background:
-      radial-gradient(ellipse at 18% 55%, hsl(150 100% 60% / 0.9), transparent 60%),
-      radial-gradient(ellipse at 50% 60%, hsl(190 100% 65% / 0.85), transparent 60%),
-      radial-gradient(ellipse at 82% 50%, hsl(280 100% 70% / 0.8), transparent 60%);
-    animation:
-      aurora-drift-c 40s cubic-bezier(0.5,0,0.5,1) infinite alternate,
-      aurora-hue 30s linear infinite;
+      radial-gradient(ellipse at 22% 55%, hsl(150 95% 60% / 0.55), transparent 60%),
+      radial-gradient(ellipse at 52% 50%, hsl(190 95% 65% / 0.55), transparent 60%),
+      radial-gradient(ellipse at 82% 55%, hsl(280 90% 70% / 0.45), transparent 60%);
+    animation: aurora-drift-c 38s ease-in-out infinite alternate;
+    will-change: transform;
   }
+  .aurora::before,
+  .aurora::after { content: none; }
   .aurora-stars {
     position: absolute;
     inset: 0;
