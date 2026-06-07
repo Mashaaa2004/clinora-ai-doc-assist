@@ -169,12 +169,12 @@
 
   /* Medical animated background */
   .med-bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-  .med-bg svg { position: absolute; opacity: 0.55; }
-  .med-float-1 { top: 8%;  left: 6%;  animation: med-float 14s ease-in-out infinite; }
-  .med-float-2 { top: 22%; right: 8%; animation: med-float 18s ease-in-out infinite reverse; }
-  .med-float-3 { bottom: 18%; left: 12%; animation: med-float 16s ease-in-out infinite; animation-delay: -4s; }
-  .med-float-4 { bottom: 10%; right: 14%; animation: med-float 20s ease-in-out infinite reverse; animation-delay: -6s; }
-  .med-float-5 { top: 50%; left: 48%; animation: med-float 22s ease-in-out infinite; animation-delay: -8s; }
+  .med-bg svg { position: absolute; opacity: 0.28; }
+  .med-float-1 { top: 8%;  left: 6%; }
+  .med-float-2 { top: 22%; right: 8%; }
+  .med-float-3 { bottom: 18%; left: 12%; }
+  .med-float-4 { bottom: 10%; right: 14%; }
+  .med-float-5 { top: 50%; left: 48%; }
 
   .ecg-line {
     stroke-dasharray: 600;
