@@ -587,3 +587,113 @@
   0%, 100% { filter: drop-shadow(0 0 2px hsl(190 100% 85% / 0.35)); }
   50%      { filter: drop-shadow(0 0 5px hsl(160 100% 80% / 0.6)); }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   iOS Safari — GPU layer & compositing optimizations
+   Forces every animated aurora/mountain layer onto its own
+   compositor layer so scroll + transform animations stay smooth
+   and don't trigger paint/layout on the main thread.
+   ───────────────────────────────────────────────────────────── */
+@supports (-webkit-touch-callout: none) {
+  /* Promote all animated background layers to their own GPU layers */
+  .aurora,
+  .aurora::before,
+  .aurora::after,
+  .aurora > .aurora-band,
+  .aurora-stars,
+  .aurora-ridge-glow,
+  .aurora-fog,
+  .aurora-fog-mid,
+  .aurora-fog-far,
+  .aurora-haze,
+  .aurora-veil,
+  .aurora-mountains,
+  .aurora-mountains .m-far,
+  .aurora-mountains .m-back,
+  .aurora-mountains .m-mid,
+  .aurora-mountains .m-front,
+  .aurora-mountains .m-snow,
+  .aurora-mountains .m-rim {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000;
+    perspective: 1000;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Isolate paint so scroll on parent doesn't invalidate aurora layers */
+  .aurora {
+    contain: layout paint style;
+    isolation: isolate;
+    -webkit-mask-image: -webkit-radial-gradient(white, black); /* forces own layer in older iOS */
+  }
+  .aurora-mountains,
+  .aurora-fog,
+  .aurora-fog-mid,
+  .aurora-fog-far,
+  .aurora-haze,
+  .aurora-ridge-glow,
+  .aurora-stars {
+    contain: paint;
+  }
+
+  /* iOS struggles with large blur + mix-blend-mode + scroll.
+     Trim blur radii and drop the heaviest saturate filters on touch. */
+  .aurora::before,
+  .aurora::after,
+  .aurora > .aurora-band {
+    filter: blur(42px) saturate(170%);
+  }
+  .aurora-haze      { filter: blur(8px); }
+  .aurora-fog       { filter: blur(12px); }
+  .aurora-fog-mid   { filter: blur(12px) saturate(120%); }
+  .aurora-fog-far   { filter: blur(14px) saturate(115%); }
+  .aurora-ridge-glow { filter: blur(14px); }
+
+  /* drop-shadow on SVG is expensive on iOS — soften it */
+  .aurora-mountains .m-snow { filter: drop-shadow(0 0 3px hsl(190 100% 85% / 0.45)); }
+  .aurora-mountains .m-rim  { filter: drop-shadow(0 -1px 3px hsl(190 100% 70% / 0.4)); }
+
+  /* The fixed backdrop sometimes paints on every scroll tick in
+     iOS Safari. Pin it to a composited layer explicitly. */
+  .aurora.fixed {
+    position: fixed;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  /* Card hover transforms — keep promoted so :active doesn't re-layer */
+  .card-tilt,
+  .shine,
+  .animate-glow-pulse {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+}
+
+/* Respect users who prefer reduced motion (iOS supports this well) */
+@media (prefers-reduced-motion: reduce) {
+  .aurora::before,
+  .aurora::after,
+  .aurora > .aurora-band,
+  .aurora-stars,
+  .aurora-ridge-glow,
+  .aurora-fog,
+  .aurora-fog-mid,
+  .aurora-fog-far,
+  .aurora-haze,
+  .aurora-mountains .m-far,
+  .aurora-mountains .m-back,
+  .aurora-mountains .m-mid,
+  .aurora-mountains .m-front,
+  .aurora-mountains .m-snow,
+  .aurora-mountains .m-rim,
+  .ecg-line,
+  .med-float-1, .med-float-2, .med-float-3, .med-float-4, .med-float-5 {
+    animation: none !important;
+  }
+}
