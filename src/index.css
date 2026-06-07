@@ -189,7 +189,9 @@
     overflow: hidden;
     pointer-events: none;
     background:
-      radial-gradient(ellipse at 50% 0%, hsl(245 75% 16%) 0%, hsl(250 80% 9%) 45%, hsl(255 85% 4%) 100%);
+      radial-gradient(ellipse at 30% 0%, hsl(190 70% 22% / 0.45), transparent 55%),
+      radial-gradient(ellipse at 75% 10%, hsl(265 65% 22% / 0.40), transparent 55%),
+      linear-gradient(180deg, hsl(245 70% 10%) 0%, hsl(250 75% 7%) 55%, hsl(255 85% 4%) 100%);
   }
   .aurora-veil {
     position: absolute;
@@ -199,8 +201,6 @@
       hsl(245 70% 10% / 0.05) 0%,
       hsl(220 60% 20% / 0.10) 55%,
       hsl(210 40% 60% / 0.18) 100%);
-    backdrop-filter: blur(0.5px) saturate(115%);
-    -webkit-backdrop-filter: blur(0.5px) saturate(115%);
   }
   /* Mountain silhouettes — layered horizon */
   .aurora-mountains {
