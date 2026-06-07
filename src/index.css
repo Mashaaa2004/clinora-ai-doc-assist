@@ -217,14 +217,8 @@
   .aurora-mountains .m-back   { fill: url(#mtnBack);   opacity: 0.85; transform-box: fill-box; transform-origin: 50% 100%; animation: mtn-parallax-back 24s ease-in-out infinite alternate; }
   .aurora-mountains .m-mid    { fill: url(#mtnMid);    opacity: 0.95; transform-box: fill-box; transform-origin: 50% 100%; animation: mtn-parallax-mid 20s ease-in-out infinite alternate; }
   .aurora-mountains .m-front  { fill: url(#mtnFront); transform-box: fill-box; transform-origin: 50% 100%; animation: mtn-parallax-front 16s ease-in-out infinite alternate; }
-  .aurora-mountains .m-snow   { fill: url(#snowGrad); opacity: 0.95;
-    filter: drop-shadow(0 0 5px hsl(190 100% 85% / 0.65));
-    animation: aurora-snow-glow 9s ease-in-out infinite alternate;
-  }
-  .aurora-mountains .m-rim    { fill: none; stroke: url(#ridgeRim); stroke-width: 1.2; opacity: 0.7;
-    filter: drop-shadow(0 -2px 6px hsl(190 100% 70% / 0.55));
-    animation: aurora-rim-pulse 7s ease-in-out infinite alternate;
-  }
+  .aurora-mountains .m-snow   { fill: url(#snowGrad); opacity: 0.95; }
+  .aurora-mountains .m-rim    { fill: none; stroke: url(#ridgeRim); stroke-width: 1.2; opacity: 0.7; }
   /* Atmospheric haze between ranges */
   .aurora-haze {
     position: absolute;
@@ -249,18 +243,13 @@
     position: absolute;
     left: -10%; right: -10%;
     bottom: 0;
-    height: 32vh;
+    height: 28vh;
     pointer-events: none;
     z-index: 2;
     background:
-      radial-gradient(ellipse at 20% 100%, hsl(200 90% 85% / 0.55), transparent 60%),
-      radial-gradient(ellipse at 55% 100%, hsl(210 80% 80% / 0.45), transparent 65%),
-      radial-gradient(ellipse at 85% 100%, hsl(220 80% 80% / 0.50), transparent 60%);
-    filter: blur(16px);
-    mix-blend-mode: screen;
-    opacity: 0.85;
-    animation: aurora-fog-drift 18s ease-in-out infinite alternate;
-    will-change: transform, opacity;
+      linear-gradient(180deg, transparent 0%, hsl(200 80% 78% / 0.18) 60%, hsl(210 85% 75% / 0.30) 100%);
+    filter: blur(10px);
+    opacity: 0.9;
     transform: translateZ(0);
   }
   /* Mid-range fog band — sits between back and mid mountains */
