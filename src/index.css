@@ -133,9 +133,11 @@
   }
 
   .glass-card {
-    background: linear-gradient(180deg, hsl(215 40% 14% / 0.55), hsl(220 45% 10% / 0.45));
-    border: 1px solid hsl(190 80% 70% / 0.18);
-    box-shadow: 0 8px 28px hsl(220 60% 6% / 0.35), inset 0 1px 0 hsl(190 80% 80% / 0.10);
+    background: linear-gradient(180deg, hsl(0 0% 100% / 0.16), hsl(200 60% 98% / 0.08));
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid hsl(0 0% 100% / 0.22);
+    box-shadow: 0 10px 36px hsl(220 60% 8% / 0.30), inset 0 1px 0 hsl(0 0% 100% / 0.30);
   }
 
   .text-gradient-primary {
@@ -169,18 +171,17 @@
 
   /* Medical animated background */
   .med-bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-  .med-bg svg { position: absolute; opacity: 0.28; }
-  .med-float-1 { top: 8%;  left: 6%; }
-  .med-float-2 { top: 22%; right: 8%; }
-  .med-float-3 { bottom: 18%; left: 12%; }
-  .med-float-4 { bottom: 10%; right: 14%; }
-  .med-float-5 { top: 50%; left: 48%; }
+  .med-bg svg { position: absolute; opacity: 0.45; }
+  .med-float-1 { top: 8%;  left: 6%;  animation: med-float 16s ease-in-out infinite; }
+  .med-float-2 { top: 22%; right: 8%; animation: med-float 20s ease-in-out infinite reverse; }
+  .med-float-3 { bottom: 18%; left: 12%; animation: med-float 18s ease-in-out infinite; animation-delay: -4s; }
+  .med-float-4 { bottom: 10%; right: 14%; animation: med-float 22s ease-in-out infinite reverse; animation-delay: -6s; }
+  .med-float-5 { top: 50%; left: 48%; animation: med-float 24s ease-in-out infinite; animation-delay: -8s; }
 
   .ecg-line {
     stroke-dasharray: 600;
     stroke-dashoffset: 600;
-    stroke-dashoffset: 0;
-    opacity: 0.5;
+    animation: ecg-draw 5s linear infinite;
   }
 
   /* Aurora — northern lights background */
@@ -218,8 +219,12 @@
   .aurora-mountains .m-back   { fill: url(#mtnBack);   opacity: 0.85; transform-box: fill-box; transform-origin: 50% 100%; animation: mtn-parallax-back 24s ease-in-out infinite alternate; }
   .aurora-mountains .m-mid    { fill: url(#mtnMid);    opacity: 0.95; transform-box: fill-box; transform-origin: 50% 100%; animation: mtn-parallax-mid 20s ease-in-out infinite alternate; }
   .aurora-mountains .m-front  { fill: url(#mtnFront); transform-box: fill-box; transform-origin: 50% 100%; animation: mtn-parallax-front 16s ease-in-out infinite alternate; }
-  .aurora-mountains .m-snow   { fill: url(#snowGrad); opacity: 0.95; }
-  .aurora-mountains .m-rim    { fill: none; stroke: url(#ridgeRim); stroke-width: 1.2; opacity: 0.7; }
+  .aurora-mountains .m-snow   { fill: url(#snowGrad); opacity: 0.95;
+    filter: drop-shadow(0 0 4px hsl(190 100% 85% / 0.55));
+  }
+  .aurora-mountains .m-rim    { fill: none; stroke: url(#ridgeRim); stroke-width: 1.2; opacity: 0.75;
+    filter: drop-shadow(0 -2px 5px hsl(190 100% 70% / 0.45));
+  }
   /* Atmospheric haze between ranges */
   .aurora-haze {
     position: absolute;
@@ -319,17 +324,55 @@
     top: 5%;
     height: 55vh;
     border-radius: 50%;
-    filter: blur(40px);
-    opacity: 0.75;
+    filter: blur(50px) saturate(180%);
+    mix-blend-mode: screen;
+    opacity: 0.85;
     background:
-      radial-gradient(ellipse at 22% 55%, hsl(150 95% 60% / 0.55), transparent 60%),
-      radial-gradient(ellipse at 52% 50%, hsl(190 95% 65% / 0.55), transparent 60%),
-      radial-gradient(ellipse at 82% 55%, hsl(280 90% 70% / 0.45), transparent 60%);
+      radial-gradient(ellipse at 18% 55%, hsl(150 100% 60% / 0.85), transparent 60%),
+      radial-gradient(ellipse at 50% 50%, hsl(190 100% 65% / 0.85), transparent 60%),
+      radial-gradient(ellipse at 82% 55%, hsl(280 100% 70% / 0.75), transparent 60%);
     animation: aurora-drift-c 38s ease-in-out infinite alternate;
     will-change: transform;
   }
+  /* Secondary aurora ribbon — adds depth, lighter blur than before */
   .aurora::before,
-  .aurora::after { content: none; }
+  .aurora::after {
+    content: "";
+    position: absolute;
+    left: -15%;
+    right: -15%;
+    height: 55vh;
+    filter: blur(48px) saturate(180%);
+    mix-blend-mode: screen;
+    border-radius: 50%;
+    will-change: transform, opacity;
+    pointer-events: none;
+  }
+  .aurora::before {
+    top: -8%;
+    background: conic-gradient(from 120deg at 50% 50%,
+      hsl(265 100% 60% / 0) 0deg,
+      hsl(160 100% 60% / 0.85) 40deg,
+      hsl(190 100% 65% / 0.95) 100deg,
+      hsl(265 100% 65% / 0.85) 170deg,
+      hsl(310 100% 65% / 0.8) 240deg,
+      hsl(220 100% 65% / 0.85) 310deg,
+      hsl(265 100% 60% / 0) 360deg);
+    opacity: 0.7;
+    animation: aurora-drift-a 34s ease-in-out infinite alternate;
+  }
+  .aurora::after {
+    top: 18%;
+    background: conic-gradient(from 300deg at 50% 50%,
+      hsl(220 100% 65% / 0) 0deg,
+      hsl(150 100% 60% / 0.85) 70deg,
+      hsl(190 100% 65% / 0.85) 150deg,
+      hsl(280 100% 70% / 0.85) 230deg,
+      hsl(220 100% 65% / 0.9) 300deg,
+      hsl(220 100% 65% / 0) 360deg);
+    opacity: 0.55;
+    animation: aurora-drift-b 42s ease-in-out infinite alternate;
+  }
   .aurora-stars {
     position: absolute;
     inset: 0;
