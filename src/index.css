@@ -133,11 +133,9 @@
   }
 
   .glass-card {
-    background: linear-gradient(180deg, hsl(0 0% 100% / 0.18), hsl(200 60% 98% / 0.10));
-    backdrop-filter: blur(14px) saturate(150%);
-    -webkit-backdrop-filter: blur(14px) saturate(150%);
-    border: 1px solid hsl(0 0% 100% / 0.22);
-    box-shadow: 0 10px 40px hsl(220 60% 10% / 0.25), inset 0 1px 0 hsl(0 0% 100% / 0.35);
+    background: linear-gradient(180deg, hsl(215 40% 14% / 0.55), hsl(220 45% 10% / 0.45));
+    border: 1px solid hsl(190 80% 70% / 0.18);
+    box-shadow: 0 8px 28px hsl(220 60% 6% / 0.35), inset 0 1px 0 hsl(190 80% 80% / 0.10);
   }
 
   .text-gradient-primary {
@@ -171,17 +169,18 @@
 
   /* Medical animated background */
   .med-bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-  .med-bg svg { position: absolute; opacity: 0.55; }
-  .med-float-1 { top: 8%;  left: 6%;  animation: med-float 14s ease-in-out infinite; }
-  .med-float-2 { top: 22%; right: 8%; animation: med-float 18s ease-in-out infinite reverse; }
-  .med-float-3 { bottom: 18%; left: 12%; animation: med-float 16s ease-in-out infinite; animation-delay: -4s; }
-  .med-float-4 { bottom: 10%; right: 14%; animation: med-float 20s ease-in-out infinite reverse; animation-delay: -6s; }
-  .med-float-5 { top: 50%; left: 48%; animation: med-float 22s ease-in-out infinite; animation-delay: -8s; }
+  .med-bg svg { position: absolute; opacity: 0.28; }
+  .med-float-1 { top: 8%;  left: 6%; }
+  .med-float-2 { top: 22%; right: 8%; }
+  .med-float-3 { bottom: 18%; left: 12%; }
+  .med-float-4 { bottom: 10%; right: 14%; }
+  .med-float-5 { top: 50%; left: 48%; }
 
   .ecg-line {
     stroke-dasharray: 600;
     stroke-dashoffset: 600;
-    animation: ecg-draw 4s linear infinite;
+    stroke-dashoffset: 0;
+    opacity: 0.5;
   }
 
   /* Aurora — northern lights background */
@@ -191,7 +190,9 @@
     overflow: hidden;
     pointer-events: none;
     background:
-      radial-gradient(ellipse at 50% 0%, hsl(245 75% 16%) 0%, hsl(250 80% 9%) 45%, hsl(255 85% 4%) 100%);
+      radial-gradient(ellipse at 30% 0%, hsl(190 70% 22% / 0.45), transparent 55%),
+      radial-gradient(ellipse at 75% 10%, hsl(265 65% 22% / 0.40), transparent 55%),
+      linear-gradient(180deg, hsl(245 70% 10%) 0%, hsl(250 75% 7%) 55%, hsl(255 85% 4%) 100%);
   }
   .aurora-veil {
     position: absolute;
@@ -201,8 +202,6 @@
       hsl(245 70% 10% / 0.05) 0%,
       hsl(220 60% 20% / 0.10) 55%,
       hsl(210 40% 60% / 0.18) 100%);
-    backdrop-filter: blur(0.5px) saturate(115%);
-    -webkit-backdrop-filter: blur(0.5px) saturate(115%);
   }
   /* Mountain silhouettes — layered horizon */
   .aurora-mountains {
@@ -219,14 +218,8 @@
   .aurora-mountains .m-back   { fill: url(#mtnBack);   opacity: 0.85; transform-box: fill-box; transform-origin: 50% 100%; animation: mtn-parallax-back 24s ease-in-out infinite alternate; }
   .aurora-mountains .m-mid    { fill: url(#mtnMid);    opacity: 0.95; transform-box: fill-box; transform-origin: 50% 100%; animation: mtn-parallax-mid 20s ease-in-out infinite alternate; }
   .aurora-mountains .m-front  { fill: url(#mtnFront); transform-box: fill-box; transform-origin: 50% 100%; animation: mtn-parallax-front 16s ease-in-out infinite alternate; }
-  .aurora-mountains .m-snow   { fill: url(#snowGrad); opacity: 0.95;
-    filter: drop-shadow(0 0 5px hsl(190 100% 85% / 0.65));
-    animation: aurora-snow-glow 9s ease-in-out infinite alternate;
-  }
-  .aurora-mountains .m-rim    { fill: none; stroke: url(#ridgeRim); stroke-width: 1.2; opacity: 0.7;
-    filter: drop-shadow(0 -2px 6px hsl(190 100% 70% / 0.55));
-    animation: aurora-rim-pulse 7s ease-in-out infinite alternate;
-  }
+  .aurora-mountains .m-snow   { fill: url(#snowGrad); opacity: 0.95; }
+  .aurora-mountains .m-rim    { fill: none; stroke: url(#ridgeRim); stroke-width: 1.2; opacity: 0.7; }
   /* Atmospheric haze between ranges */
   .aurora-haze {
     position: absolute;
@@ -251,18 +244,13 @@
     position: absolute;
     left: -10%; right: -10%;
     bottom: 0;
-    height: 32vh;
+    height: 28vh;
     pointer-events: none;
     z-index: 2;
     background:
-      radial-gradient(ellipse at 20% 100%, hsl(200 90% 85% / 0.55), transparent 60%),
-      radial-gradient(ellipse at 55% 100%, hsl(210 80% 80% / 0.45), transparent 65%),
-      radial-gradient(ellipse at 85% 100%, hsl(220 80% 80% / 0.50), transparent 60%);
-    filter: blur(16px);
-    mix-blend-mode: screen;
-    opacity: 0.85;
-    animation: aurora-fog-drift 18s ease-in-out infinite alternate;
-    will-change: transform, opacity;
+      linear-gradient(180deg, transparent 0%, hsl(200 80% 78% / 0.18) 60%, hsl(210 85% 75% / 0.30) 100%);
+    filter: blur(10px);
+    opacity: 0.9;
     transform: translateZ(0);
   }
   /* Mid-range fog band — sits between back and mid mountains */
@@ -322,58 +310,26 @@
     will-change: transform, opacity;
     transform: translateZ(0);
   }
-  .aurora::before,
-  .aurora::after,
+  /* Single soft aurora band — light on the GPU */
   .aurora > .aurora-band {
     content: "";
     position: absolute;
-    left: -20%;
-    right: -20%;
-    height: 70vh;
-    filter: blur(70px) saturate(220%);
-    mix-blend-mode: screen;
-    border-radius: 50%;
-    will-change: transform, opacity;
-  }
-  .aurora::before {
-    top: -15%;
-    background: conic-gradient(from 120deg at 50% 50%,
-      hsl(265 100% 60% / 0) 0deg,
-      hsl(160 100% 60% / 0.95) 35deg,
-      hsl(190 100% 60% / 1) 90deg,
-      hsl(265 100% 65% / 0.95) 160deg,
-      hsl(310 100% 65% / 0.9) 230deg,
-      hsl(220 100% 65% / 0.95) 300deg,
-      hsl(265 100% 60% / 0) 360deg);
-    animation:
-      aurora-drift-a 28s cubic-bezier(0.45,0.05,0.55,0.95) infinite alternate,
-      aurora-hue 18s linear infinite;
-  }
-  .aurora::after {
-    top: 15%;
-    height: 70vh;
-    background: conic-gradient(from 300deg at 50% 50%,
-      hsl(220 100% 65% / 0) 0deg,
-      hsl(150 100% 60% / 0.95) 60deg,
-      hsl(190 100% 65% / 0.95) 140deg,
-      hsl(280 100% 70% / 0.95) 220deg,
-      hsl(220 100% 65% / 1) 290deg,
-      hsl(220 100% 65% / 0) 360deg);
-    animation:
-      aurora-drift-b 34s cubic-bezier(0.5,0,0.5,1) infinite alternate,
-      aurora-hue-rev 24s linear infinite;
-  }
-  .aurora > .aurora-band {
-    bottom: -10%;
+    left: -10%;
+    right: -10%;
+    top: 5%;
     height: 55vh;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.75;
     background:
-      radial-gradient(ellipse at 18% 55%, hsl(150 100% 60% / 0.9), transparent 60%),
-      radial-gradient(ellipse at 50% 60%, hsl(190 100% 65% / 0.85), transparent 60%),
-      radial-gradient(ellipse at 82% 50%, hsl(280 100% 70% / 0.8), transparent 60%);
-    animation:
-      aurora-drift-c 40s cubic-bezier(0.5,0,0.5,1) infinite alternate,
-      aurora-hue 30s linear infinite;
+      radial-gradient(ellipse at 22% 55%, hsl(150 95% 60% / 0.55), transparent 60%),
+      radial-gradient(ellipse at 52% 50%, hsl(190 95% 65% / 0.55), transparent 60%),
+      radial-gradient(ellipse at 82% 55%, hsl(280 90% 70% / 0.45), transparent 60%);
+    animation: aurora-drift-c 38s ease-in-out infinite alternate;
+    will-change: transform;
   }
+  .aurora::before,
+  .aurora::after { content: none; }
   .aurora-stars {
     position: absolute;
     inset: 0;
