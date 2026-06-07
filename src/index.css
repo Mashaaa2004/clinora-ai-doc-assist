@@ -179,7 +179,8 @@
   .ecg-line {
     stroke-dasharray: 600;
     stroke-dashoffset: 600;
-    animation: ecg-draw 4s linear infinite;
+    stroke-dashoffset: 0;
+    opacity: 0.5;
   }
 
   /* Aurora — northern lights background */
