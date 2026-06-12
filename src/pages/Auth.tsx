@@ -80,7 +80,7 @@ const AuthPage = () => {
         } else {
           const { error } = await supabase.auth.signInWithPassword({ email, password });
           if (error) { toast.error(error.message); return; }
-          await ensurePatientAccount();
+          await refreshStatus();
         }
       } else if (mode === "signup" && audience !== "admin") {
         if (!fullName.trim() || !hospital.trim()) {
