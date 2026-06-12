@@ -20,7 +20,7 @@ const Notifications = () => {
 
   useEffect(() => {
     if (!user) return;
-    (async () => {
+    const load = async () => {
       const { data } = await supabase.from("symptom_reports")
         .select("*").eq("patient_id", user.id).order("updated_at", { ascending: false }).limit(50);
       const r = data ?? [];
@@ -34,7 +34,14 @@ const Notifications = () => {
         setDoctors(map);
       }
       setLoading(false);
-    })();
+    };
+    load();
+    const ch = supabase.channel("notif-" + user.id)
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "symptom_reports", filter: `patient_id=eq.${user.id}` },
+        () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, [user]);
 
   return (

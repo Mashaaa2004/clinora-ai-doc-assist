@@ -21,8 +21,15 @@ const MyRequests = () => {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!user) return;
-    supabase.from("symptom_reports").select("*").eq("patient_id", user.id).order("created_at", { ascending: false })
+    const load = () => supabase.from("symptom_reports").select("*").eq("patient_id", user.id).order("created_at", { ascending: false })
       .then(({ data }) => { setRows(data ?? []); setLoading(false); });
+    load();
+    const ch = supabase.channel("my-requests-" + user.id)
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "symptom_reports", filter: `patient_id=eq.${user.id}` },
+        () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, [user]);
   return (
     <>
