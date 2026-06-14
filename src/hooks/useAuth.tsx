@@ -150,6 +150,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    try {
+      localStorage.removeItem("clinora:last-result-v2");
+      localStorage.removeItem("clinora:last-user");
+    } catch {}
     await supabase.auth.signOut();
   };
 
