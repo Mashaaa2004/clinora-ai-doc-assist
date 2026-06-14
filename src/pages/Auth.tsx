@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Loader2, Mail, Stethoscope, Shield, User as UserIcon } from "lucide-react";
+import { Loader2, Mail, Stethoscope, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,13 +12,13 @@ import { useT } from "@/i18n/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Helmet } from "react-helmet-async";
 
-type Audience = "patient" | "doctor" | "admin";
+type Audience = "doctor" | "admin";
 
 const AuthPage = () => {
   const navigate = useNavigate();
   const { user, role, loading, refreshStatus } = useAuth();
   const { t } = useT();
-  const [audience, setAudience] = useState<Audience>("patient");
+  const [audience, setAudience] = useState<Audience>("doctor");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,63 +26,17 @@ const AuthPage = () => {
   const [hospital, setHospital] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // Patient extra state (email/password)
-  const [phone, setPhone] = useState("");
-  const [pGender, setPGender] = useState("");
-  const [pDob, setPDob] = useState("");
-  const [pLang, setPLang] = useState("uz");
-
   useEffect(() => {
     if (loading || !user) return;
     if (role === "admin") navigate("/admin", { replace: true });
-    else if (role === "patient") navigate("/patient", { replace: true });
     else navigate("/app", { replace: true });
   }, [user, role, loading, navigate]);
-
-  const ensurePatientAccount = async () => {
-    const { error } = await supabase.rpc("ensure_patient_account", {
-      _full_name: fullName.trim(),
-      _phone: phone.trim(),
-      _gender: pGender,
-      _language: pLang,
-      _date_of_birth: pDob || undefined,
-    });
-
-    if (error) throw error;
-    await refreshStatus();
-    navigate("/patient", { replace: true });
-  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
-      if (audience === "patient") {
-        if (mode === "signup") {
-          if (!fullName.trim()) { toast.error(t("auth.required")); setBusy(false); return; }
-          const { error } = await supabase.auth.signUp({
-            email, password,
-            options: {
-              emailRedirectTo: `${window.location.origin}/patient`,
-              data: {
-                role: "patient",
-                full_name: fullName.trim(),
-                phone: phone.trim(),
-                gender: pGender,
-                language: pLang,
-                date_of_birth: pDob,
-              },
-            },
-          });
-          if (error) { toast.error(error.message); return; }
-          await ensurePatientAccount();
-          toast.success(t("auth.created"));
-        } else {
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) { toast.error(error.message); return; }
-          await refreshStatus();
-        }
-      } else if (mode === "signup" && audience !== "admin") {
+      if (mode === "signup" && audience !== "admin") {
         if (!fullName.trim() || !hospital.trim()) {
           toast.error(t("auth.required"));
           setBusy(false);
@@ -101,6 +55,7 @@ const AuthPage = () => {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) { toast.error(error.message); return; }
+        await refreshStatus();
       }
     } finally { setBusy(false); }
   };
@@ -138,9 +93,8 @@ const AuthPage = () => {
               <h1 className="text-2xl font-semibold text-foreground">Clinora Platform Login</h1>
               <p className="mt-1 text-sm text-muted-foreground">Rolingizni tanlang va davom eting</p>
 
-              <div className="mt-4 grid grid-cols-3 gap-1.5 rounded-2xl border border-border bg-muted/40 p-1.5">
+              <div className="mt-4 grid grid-cols-2 gap-1.5 rounded-2xl border border-border bg-muted/40 p-1.5">
                 {([
-                  ["patient", "Bemor", UserIcon],
                   ["doctor", "Shifokor", Stethoscope],
                   ["admin", "Admin", Shield],
                 ] as const).map(([k, label, Icon]) => (
@@ -159,22 +113,7 @@ const AuthPage = () => {
                 ))}
               </div>
 
-              {audience === "patient" ? (
-                <PatientAuthBlock
-                  mode={mode}
-                  setMode={setMode}
-                  email={email} setEmail={setEmail}
-                  password={password} setPassword={setPassword}
-                  phone={phone} setPhone={setPhone}
-                  fullName={fullName} setFullName={setFullName}
-                  pGender={pGender} setPGender={setPGender}
-                  pDob={pDob} setPDob={setPDob}
-                  pLang={pLang} setPLang={setPLang}
-                  busy={busy}
-                  submit={submit}
-                />
-              ) : (
-                <DoctorAdminAuthBlock
+              <DoctorAdminAuthBlock
                   audience={audience}
                   mode={mode} setMode={setMode}
                   email={email} setEmail={setEmail}
@@ -185,8 +124,7 @@ const AuthPage = () => {
                   submit={submit}
                   google={google}
                   t={t}
-                />
-              )}
+              />
             </div>
           </div>
         </div>
@@ -194,75 +132,6 @@ const AuthPage = () => {
     </>
   );
 };
-
-const PatientAuthBlock = (p: any) => (
-  <div className="mt-5">
-    <div className="mb-4 flex gap-2 text-xs">
-      <button type="button" onClick={() => p.setMode("signin")}
-        className={"flex-1 rounded-lg py-2 font-medium " + (p.mode === "signin" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
-        Kirish
-      </button>
-      <button type="button" onClick={() => p.setMode("signup")}
-        className={"flex-1 rounded-lg py-2 font-medium " + (p.mode === "signup" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
-        Ro'yxatdan o'tish
-      </button>
-    </div>
-
-    <form onSubmit={p.submit} className="space-y-3">
-      {p.mode === "signup" && (
-        <>
-          <div>
-            <Label htmlFor="pfn">Ism va familiya</Label>
-            <Input id="pfn" value={p.fullName} onChange={(e: any) => p.setFullName(e.target.value)} required className="rounded-xl mt-1" />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label htmlFor="pdob">Tug'ilgan sana</Label>
-              <Input id="pdob" type="date" value={p.pDob} onChange={(e: any) => p.setPDob(e.target.value)} className="rounded-xl mt-1" />
-            </div>
-            <div>
-              <Label htmlFor="pg">Jins</Label>
-              <select id="pg" value={p.pGender} onChange={(e) => p.setPGender(e.target.value)}
-                className="mt-1 h-10 w-full rounded-xl border border-input bg-background px-3 text-sm">
-                <option value="">—</option>
-                <option value="male">Erkak</option>
-                <option value="female">Ayol</option>
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label htmlFor="plang">Til</Label>
-              <select id="plang" value={p.pLang} onChange={(e) => p.setPLang(e.target.value)}
-                className="mt-1 h-10 w-full rounded-xl border border-input bg-background px-3 text-sm">
-                <option value="uz">O'zbek</option>
-                <option value="ru">Русский</option>
-                <option value="en">English</option>
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="pph">Telefon (ixtiyoriy)</Label>
-              <Input id="pph" type="tel" value={p.phone} onChange={(e: any) => p.setPhone(e.target.value)}
-                placeholder="+998..." className="rounded-xl mt-1" />
-            </div>
-          </div>
-        </>
-      )}
-      <div>
-        <Label htmlFor="pem">Email</Label>
-        <Input id="pem" type="email" value={p.email} onChange={(e: any) => p.setEmail(e.target.value)} required className="rounded-xl mt-1" />
-      </div>
-      <div>
-        <Label htmlFor="ppw">Parol</Label>
-        <Input id="ppw" type="password" value={p.password} onChange={(e: any) => p.setPassword(e.target.value)} required minLength={6} className="rounded-xl mt-1" />
-      </div>
-      <Button type="submit" disabled={p.busy} size="lg" className="w-full rounded-xl shadow-md"
-        style={{ background: "var(--gradient-primary)" }}>
-        {p.busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Mail className="mr-2 h-5 w-5" /> {p.mode === "signin" ? "Kirish" : "Ro'yxatdan o'tish"}</>}
-      </Button>
-    </form>
-  </div>
-);
 
 const DoctorAdminAuthBlock = (p: any) => {
   const isAdmin = p.audience === "admin";
