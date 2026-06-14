@@ -80,6 +80,7 @@ type AnalysisResult = {
 
 const STORAGE_KEY = "clinora:last-result-v2";
 const GUIDE_KEY = "clinora:guide-seen";
+const LAST_USER_KEY = "clinora:last-user";
 
 const emptyRx = (): Prescription => ({ name: "", dosage: "", frequency: "", duration: "", notes: "" });
 const emptyLab = (): LabTest => ({ name: "", reason: "", result: "" });
@@ -112,6 +113,26 @@ const AppPage = () => {
   useEffect(() => {
     if (!localStorage.getItem(GUIDE_KEY)) setShowGuide(true);
 
+    // When a different doctor signs in (or a fresh login), reset platform to
+    // a clean slate so a new patient's data can be entered from scratch.
+    const lastUser = localStorage.getItem(LAST_USER_KEY);
+    const currentUser = user?.id ?? null;
+    if (currentUser && lastUser !== currentUser) {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem(LAST_USER_KEY, currentUser);
+      setStep(1);
+      setTranscript("");
+      setPatientName("");
+      setResult(null);
+      setChosenIdx(0);
+      setConfirmed(false);
+      setSelectedComorb([]);
+      setPatientCode("");
+      setConsultationId(null);
+      baseTranscriptRef.current = "";
+      return;
+    }
+
     // Check for copied consultation from history
     const copyData = sessionStorage.getItem("clinora:copy-consultation");
     if (copyData) {
@@ -143,7 +164,7 @@ const AppPage = () => {
         if (Array.isArray(p.selectedComorb)) setSelectedComorb(p.selectedComorb);
       } catch {}
     }
-  }, []);
+  }, [user?.id]);
 
   // ---- speech recognition (re-init on language change) ----
   useEffect(() => {
