@@ -27,18 +27,18 @@ Deno.serve(async (req) => {
     const language = String(body.language || "uz");
     if (!clinic_id || symptoms.length < 5) return json({ error: "invalid_input" }, 400);
 
-    // AI analysis via Lovable AI
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    // AI analysis via Google Gemini (direct)
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     let summary = symptoms.slice(0, 200);
     let urgency = "medium";
     let specialization = "Terapevt";
 
-    if (LOVABLE_API_KEY) {
-      const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    if (GEMINI_API_KEY) {
+      const aiResp = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${GEMINI_API_KEY}` },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash-lite",
+          model: "gemini-2.5-flash",
           messages: [
             { role: "system", content: `You are a medical triage assistant. Reply ONLY valid JSON: {"summary": string (in ${language}, max 2 sentences), "urgency": "low"|"medium"|"high"|"emergency", "specialization": one of [Terapevt, Pediatr, Kardiolog, Nevrolog, Gastroenterolog, Endokrinolog, Ginekolog, Urolog, Dermatolog, LOR, Oftalmolog, Travmatolog, Psixiatr, Pulmonolog]}` },
             { role: "user", content: symptoms },
