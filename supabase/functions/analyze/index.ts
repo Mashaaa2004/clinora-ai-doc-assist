@@ -117,7 +117,8 @@ Deno.serve(async (req) => {
 
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
-    if (!GEMINI_API_KEY && !GROQ_API_KEY) throw new Error("No AI API key configured (GEMINI_API_KEY or GROQ_API_KEY)");
+    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+    if (!GEMINI_API_KEY && !GROQ_API_KEY && !OPENROUTER_API_KEY) throw new Error("No AI API key configured");
 
     const lang: Lang = ["uz", "ru", "en", "kk", "ky", "tr"].includes(language) ? language : "uz";
     const langInstr = LANG_INSTRUCTION[lang];
@@ -157,7 +158,7 @@ Return the result via the structured tool only.`;
     const userContent = parts.join("\n\n=====\n\n");
 
     const requestBody = JSON.stringify({
-        model: GEMINI_API_KEY ? "gemini-2.5-flash" : "llama-3.3-70b-versatile",
+        model: OPENROUTER_API_KEY ? "meta-llama/llama-3.3-70b-instruct" : (GEMINI_API_KEY ? "gemini-2.5-flash" : "llama-3.3-70b-versatile"),
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userContent },
@@ -287,9 +288,27 @@ Return the result via the structured tool only.`;
         body: JSON.stringify(body),
       });
     }
+    async function callOpenRouter() {
+      const body = JSON.parse(requestBody);
+      body.model = "meta-llama/llama-3.3-70b-instruct";
+      return fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://clinora-ai-doc-assist.lovable.app",
+          "X-Title": "Clinora.AI",
+        },
+        body: JSON.stringify(body),
+      });
+    }
 
     let response: Response;
-    if (GROQ_API_KEY) {
+    if (OPENROUTER_API_KEY) {
+      response = await callOpenRouter();
+      if (!response.ok && GROQ_API_KEY) response = await callGroq();
+      if (!response.ok && GEMINI_API_KEY) response = await callGemini();
+    } else if (GROQ_API_KEY) {
       response = await callGroq();
     } else {
       response = await callGemini();
