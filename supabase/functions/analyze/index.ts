@@ -64,7 +64,8 @@ Deno.serve(async (req) => {
     }
 
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+    if (!GEMINI_API_KEY && !GROQ_API_KEY) throw new Error("No AI API key configured (GEMINI_API_KEY or GROQ_API_KEY)");
 
     const lang: Lang = ["uz", "ru", "en", "kk", "ky", "tr"].includes(language) ? language : "uz";
     const langInstr = LANG_INSTRUCTION[lang];
@@ -103,14 +104,8 @@ Return the result via the structured tool only.`;
     parts.push(labels.analyze);
     const userContent = parts.join("\n\n=====\n\n");
 
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${GEMINI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gemini-2.5-flash",
+    const requestBody = JSON.stringify({
+        model: GEMINI_API_KEY ? "gemini-2.5-flash" : "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userContent },
@@ -222,8 +217,35 @@ Return the result via the structured tool only.`;
           },
         ],
         tool_choice: { type: "function", function: { name: "medical_analysis" } },
-      }),
     });
+
+    async function callGemini() {
+      return fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${GEMINI_API_KEY}`, "Content-Type": "application/json" },
+        body: requestBody,
+      });
+    }
+    async function callGroq() {
+      const body = JSON.parse(requestBody);
+      body.model = "llama-3.3-70b-versatile";
+      return fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    }
+
+    let response: Response;
+    if (GEMINI_API_KEY) {
+      response = await callGemini();
+      if (!response.ok && GROQ_API_KEY && (response.status === 401 || response.status === 402 || response.status === 403 || response.status === 429)) {
+        console.log("Gemini failed with", response.status, "- falling back to Groq");
+        response = await callGroq();
+      }
+    } else {
+      response = await callGroq();
+    }
 
     if (response.status === 429) {
       return new Response(JSON.stringify({ error: "Rate limit. Try again later." }), {
