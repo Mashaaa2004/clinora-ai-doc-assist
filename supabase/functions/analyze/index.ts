@@ -291,7 +291,7 @@ Return the result via the structured tool only.`;
     let response: Response;
     if (GEMINI_API_KEY) {
       response = await callGemini();
-      if (!response.ok && GROQ_API_KEY && (response.status === 401 || response.status === 402 || response.status === 403 || response.status === 429)) {
+      if (!response.ok && GROQ_API_KEY) {
         console.log("Gemini failed with", response.status, "- falling back to Groq");
         response = await callGroq();
       }
