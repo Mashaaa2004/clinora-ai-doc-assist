@@ -1,4 +1,5 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -55,10 +56,61 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ---- AuthN: require valid Supabase JWT ----
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = userData.user.id;
+
+    // ---- Server-side quota enforcement (free tier: 5/day) ----
+    const [{ data: isProData }, { data: cntData }] = await Promise.all([
+      supabase.rpc("is_pro", { _user_id: userId }),
+      supabase.rpc("daily_usage_count", { _user_id: userId }),
+    ]);
+    if (!isProData && (cntData ?? 0) >= 5) {
+      return new Response(JSON.stringify({ error: "Daily limit reached", code: "QUOTA_EXCEEDED" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { transcript, previousHistory, language, labResults, instrumentalResults } = await req.json();
     if (!transcript || typeof transcript !== "string" || transcript.trim().length < 3) {
       return new Response(JSON.stringify({ error: "Текст пуст или слишком короткий" }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ---- Input size limits (prevent payload abuse / token exhaustion) ----
+    const MAX_TRANSCRIPT = 15_000;
+    const MAX_HISTORY = 20_000;
+    const MAX_LAB = 10_000;
+    const MAX_INSTRUMENTAL = 10_000;
+    const tooLong =
+      transcript.length > MAX_TRANSCRIPT ||
+      (typeof previousHistory === "string" && previousHistory.length > MAX_HISTORY) ||
+      (typeof labResults === "string" && labResults.length > MAX_LAB) ||
+      (typeof instrumentalResults === "string" && instrumentalResults.length > MAX_INSTRUMENTAL);
+    if (tooLong) {
+      return new Response(JSON.stringify({ error: "Input too long", code: "INPUT_TOO_LONG" }), {
+        status: 413,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -283,7 +335,7 @@ Return the result via the structured tool only.`;
     });
   } catch (e) {
     console.error("analyze error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

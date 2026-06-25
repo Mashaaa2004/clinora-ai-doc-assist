@@ -24,8 +24,10 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const clinic_id = String(body.clinic_id || "");
     const symptoms = String(body.symptoms || "").trim();
-    const language = String(body.language || "uz");
+    const language = String(body.language || "uz").slice(0, 8);
+    const MAX_SYMPTOMS = 5_000;
     if (!clinic_id || symptoms.length < 5) return json({ error: "invalid_input" }, 400);
+    if (symptoms.length > MAX_SYMPTOMS) return json({ error: "input_too_long", code: "INPUT_TOO_LONG" }, 413);
 
     // AI analysis: try Gemini, fall back to Groq
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
@@ -95,11 +97,15 @@ Deno.serve(async (req) => {
       recommended_specialization: specialization,
       status: doctor ? "assigned" : "pending",
     }).select().single();
-    if (insErr) return json({ error: insErr.message }, 400);
+    if (insErr) {
+      console.error("patient-route insert error:", insErr);
+      return json({ error: "Could not create report" }, 400);
+    }
 
     return json({ report: inserted, doctor });
   } catch (e) {
-    return json({ error: String((e as Error).message) }, 500);
+    console.error("patient-route error:", e);
+    return json({ error: "Internal server error" }, 500);
   }
 });
 
