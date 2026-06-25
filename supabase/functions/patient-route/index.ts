@@ -29,50 +29,19 @@ Deno.serve(async (req) => {
     if (!clinic_id || symptoms.length < 5) return json({ error: "invalid_input" }, 400);
     if (symptoms.length > MAX_SYMPTOMS) return json({ error: "input_too_long", code: "INPUT_TOO_LONG" }, 413);
 
-    // AI analysis: try Gemini, fall back to Groq
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
-    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+    // AI analysis via Cerebras
+    const CEREBRAS_API_KEY = Deno.env.get("CEREBRAS_API_KEY");
     let summary = symptoms.slice(0, 200);
     let urgency = "medium";
     let specialization = "Terapevt";
 
-    if (GEMINI_API_KEY || GROQ_API_KEY || OPENROUTER_API_KEY) {
+    if (CEREBRAS_API_KEY) {
       const sys = `You are a medical triage assistant. Reply ONLY valid JSON: {"summary": string (in ${language}, max 2 sentences), "urgency": "low"|"medium"|"high"|"emergency", "specialization": one of [Terapevt, Pediatr, Kardiolog, Nevrolog, Gastroenterolog, Endokrinolog, Ginekolog, Urolog, Dermatolog, LOR, Oftalmolog, Travmatolog, Psixiatr, Pulmonolog]}`;
-      const callGemini = () => fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+      const aiResp: Response = await fetch("https://api.cerebras.ai/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${GEMINI_API_KEY}` },
-        body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "system", content: sys }, { role: "user", content: symptoms }], response_format: { type: "json_object" } }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${CEREBRAS_API_KEY}` },
+        body: JSON.stringify({ model: "llama-3.3-70b", messages: [{ role: "system", content: sys }, { role: "user", content: symptoms }], response_format: { type: "json_object" } }),
       });
-      const callGroq = () => fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${GROQ_API_KEY}` },
-        body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "system", content: sys }, { role: "user", content: symptoms }], response_format: { type: "json_object" } }),
-      });
-      const callOpenRouter = () => fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          "HTTP-Referer": "https://clinora-ai-doc-assist.lovable.app",
-          "X-Title": "Clinora.AI",
-        },
-        body: JSON.stringify({ model: "meta-llama/llama-3.3-70b-instruct", messages: [{ role: "system", content: sys }, { role: "user", content: symptoms }], response_format: { type: "json_object" } }),
-      });
-
-      let aiResp: Response | null = null;
-      if (OPENROUTER_API_KEY) {
-        aiResp = await callOpenRouter();
-        if (!aiResp.ok && GROQ_API_KEY) aiResp = await callGroq();
-        if (!aiResp.ok && GEMINI_API_KEY) aiResp = await callGemini();
-      } else if (GEMINI_API_KEY) {
-        aiResp = await callGemini();
-        if (!aiResp.ok && GROQ_API_KEY) {
-          aiResp = await callGroq();
-        }
-      } else {
-        aiResp = await callGroq();
-      }
 
       if (aiResp && aiResp.ok) {
         const aiJson = await aiResp.json();
