@@ -156,7 +156,7 @@ Return the result via the structured tool only.`;
     const userContent = parts.join("\n\n=====\n\n");
 
     const requestBody = JSON.stringify({
-        model: "llama-3.3-70b",
+        model: "gpt-oss-120b",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userContent },

@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
       const aiResp: Response = await fetch("https://api.cerebras.ai/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${CEREBRAS_API_KEY}` },
-        body: JSON.stringify({ model: "llama-3.3-70b", messages: [{ role: "system", content: sys }, { role: "user", content: symptoms }], response_format: { type: "json_object" } }),
+        body: JSON.stringify({ model: "gpt-oss-120b", messages: [{ role: "system", content: sys }, { role: "user", content: symptoms }], response_format: { type: "json_object" } }),
       });
 
       if (aiResp && aiResp.ok) {
