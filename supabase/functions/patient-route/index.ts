@@ -27,26 +27,37 @@ Deno.serve(async (req) => {
     const language = String(body.language || "uz");
     if (!clinic_id || symptoms.length < 5) return json({ error: "invalid_input" }, 400);
 
-    // AI analysis via Google Gemini (direct)
+    // AI analysis: try Gemini, fall back to Groq
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
     let summary = symptoms.slice(0, 200);
     let urgency = "medium";
     let specialization = "Terapevt";
 
-    if (GEMINI_API_KEY) {
-      const aiResp = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+    if (GEMINI_API_KEY || GROQ_API_KEY) {
+      const sys = `You are a medical triage assistant. Reply ONLY valid JSON: {"summary": string (in ${language}, max 2 sentences), "urgency": "low"|"medium"|"high"|"emergency", "specialization": one of [Terapevt, Pediatr, Kardiolog, Nevrolog, Gastroenterolog, Endokrinolog, Ginekolog, Urolog, Dermatolog, LOR, Oftalmolog, Travmatolog, Psixiatr, Pulmonolog]}`;
+      const callGemini = () => fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${GEMINI_API_KEY}` },
-        body: JSON.stringify({
-          model: "gemini-2.5-flash",
-          messages: [
-            { role: "system", content: `You are a medical triage assistant. Reply ONLY valid JSON: {"summary": string (in ${language}, max 2 sentences), "urgency": "low"|"medium"|"high"|"emergency", "specialization": one of [Terapevt, Pediatr, Kardiolog, Nevrolog, Gastroenterolog, Endokrinolog, Ginekolog, Urolog, Dermatolog, LOR, Oftalmolog, Travmatolog, Psixiatr, Pulmonolog]}` },
-            { role: "user", content: symptoms },
-          ],
-          response_format: { type: "json_object" },
-        }),
+        body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "system", content: sys }, { role: "user", content: symptoms }], response_format: { type: "json_object" } }),
       });
-      if (aiResp.ok) {
+      const callGroq = () => fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${GROQ_API_KEY}` },
+        body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "system", content: sys }, { role: "user", content: symptoms }], response_format: { type: "json_object" } }),
+      });
+
+      let aiResp: Response | null = null;
+      if (GEMINI_API_KEY) {
+        aiResp = await callGemini();
+        if (!aiResp.ok && GROQ_API_KEY && [401, 402, 403, 429].includes(aiResp.status)) {
+          aiResp = await callGroq();
+        }
+      } else {
+        aiResp = await callGroq();
+      }
+
+      if (aiResp && aiResp.ok) {
         const aiJson = await aiResp.json();
         const txt = aiJson?.choices?.[0]?.message?.content ?? "{}";
         try {
