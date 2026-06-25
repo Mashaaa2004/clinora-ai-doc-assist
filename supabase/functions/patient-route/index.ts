@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
       let aiResp: Response | null = null;
       if (GEMINI_API_KEY) {
         aiResp = await callGemini();
-        if (!aiResp.ok && GROQ_API_KEY && [401, 402, 403, 429].includes(aiResp.status)) {
+        if (!aiResp.ok && GROQ_API_KEY) {
           aiResp = await callGroq();
         }
       } else {
