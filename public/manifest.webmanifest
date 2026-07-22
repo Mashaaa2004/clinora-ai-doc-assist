@@ -1,0 +1,17 @@
+{
+  "name": "Clinora AI — Shifokorlar uchun aqlli yordamchi",
+  "short_name": "Clinora AI",
+  "description": "AI yordamida bemor suhbatidan simptomlar, tashxis va tavsiyalar.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#2176eb",
+  "lang": "uz",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
