@@ -156,7 +156,7 @@ Return the result via the structured tool only.`;
     const userContent = parts.join("\n\n=====\n\n");
 
     const requestBody = JSON.stringify({
-        model: "gpt-oss-120b",
+        model: "openai/gpt-5.6-sol",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userContent },
