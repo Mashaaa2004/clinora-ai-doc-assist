@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Loader2, Mail, Stethoscope, Shield } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,7 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const { user, role, loading, refreshStatus } = useAuth();
   const { t } = useT();
-  const [audience, setAudience] = useState<Audience>("doctor");
+  const audience: Audience = "doctor";
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
