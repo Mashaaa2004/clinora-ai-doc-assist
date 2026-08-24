@@ -115,8 +115,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const CEREBRAS_API_KEY = Deno.env.get("CEREBRAS_API_KEY");
-    if (!CEREBRAS_API_KEY) throw new Error("No AI API key configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("No AI API key configured");
 
     const lang: Lang = ["uz", "ru", "en", "kk", "ky", "tr"].includes(language) ? language : "uz";
     const langInstr = LANG_INSTRUCTION[lang];
