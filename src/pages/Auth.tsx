@@ -36,7 +36,7 @@ const AuthPage = () => {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "signup" && audience !== "admin") {
+      if (mode === "signup") {
         if (!fullName.trim() || !hospital.trim()) {
           toast.error(t("auth.required"));
           setBusy(false);
