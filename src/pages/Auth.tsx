@@ -90,28 +90,9 @@ const AuthPage = () => {
             </Link>
 
             <div className="rounded-3xl border border-border bg-card p-6 shadow-md sm:p-7">
-              <h1 className="text-2xl font-semibold text-foreground">Clinora Platform Login</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Rolingizni tanlang va davom eting</p>
-
-              <div className="mt-4 grid grid-cols-2 gap-1.5 rounded-2xl border border-border bg-muted/40 p-1.5">
-                {([
-                  ["doctor", "Shifokor", Stethoscope],
-                  ["admin", "Admin", Shield],
-                ] as const).map(([k, label, Icon]) => (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() => setAudience(k)}
-                    className={
-                      "flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-xs font-medium transition " +
-                      (audience === k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")
-                    }
-                  >
-                    <Icon className="h-4 w-4" />
-                    {label}
-                  </button>
-                ))}
-              </div>
+              <h1 className="text-2xl font-semibold text-foreground">
+                {mode === "signin" ? t("auth.signin") : t("auth.signup")}
+              </h1>
 
               <DoctorAdminAuthBlock
                   audience={audience}
