@@ -270,9 +270,9 @@ Return the result via the structured tool only.`;
         tool_choice: { type: "function", function: { name: "medical_analysis" } },
     });
 
-    const response: Response = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+    const response: Response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: { Authorization: `Bearer ${CEREBRAS_API_KEY}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: requestBody,
     });
 
