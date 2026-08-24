@@ -115,8 +115,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const CEREBRAS_API_KEY = Deno.env.get("CEREBRAS_API_KEY");
-    if (!CEREBRAS_API_KEY) throw new Error("No AI API key configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("No AI API key configured");
 
     const lang: Lang = ["uz", "ru", "en", "kk", "ky", "tr"].includes(language) ? language : "uz";
     const langInstr = LANG_INSTRUCTION[lang];
@@ -156,7 +156,7 @@ Return the result via the structured tool only.`;
     const userContent = parts.join("\n\n=====\n\n");
 
     const requestBody = JSON.stringify({
-        model: "gpt-oss-120b",
+        model: "openai/gpt-5.6-sol",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userContent },
@@ -270,9 +270,9 @@ Return the result via the structured tool only.`;
         tool_choice: { type: "function", function: { name: "medical_analysis" } },
     });
 
-    const response: Response = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+    const response: Response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: { Authorization: `Bearer ${CEREBRAS_API_KEY}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: requestBody,
     });
 

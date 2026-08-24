@@ -30,17 +30,17 @@ Deno.serve(async (req) => {
     if (symptoms.length > MAX_SYMPTOMS) return json({ error: "input_too_long", code: "INPUT_TOO_LONG" }, 413);
 
     // AI analysis via Cerebras
-    const CEREBRAS_API_KEY = Deno.env.get("CEREBRAS_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     let summary = symptoms.slice(0, 200);
     let urgency = "medium";
     let specialization = "Terapevt";
 
-    if (CEREBRAS_API_KEY) {
+    if (LOVABLE_API_KEY) {
       const sys = `You are a medical triage assistant. Reply ONLY valid JSON: {"summary": string (in ${language}, max 2 sentences), "urgency": "low"|"medium"|"high"|"emergency", "specialization": one of [Terapevt, Pediatr, Kardiolog, Nevrolog, Gastroenterolog, Endokrinolog, Ginekolog, Urolog, Dermatolog, LOR, Oftalmolog, Travmatolog, Psixiatr, Pulmonolog]}`;
-      const aiResp: Response = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+      const aiResp: Response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${CEREBRAS_API_KEY}` },
-        body: JSON.stringify({ model: "gpt-oss-120b", messages: [{ role: "system", content: sys }, { role: "user", content: symptoms }], response_format: { type: "json_object" } }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
+        body: JSON.stringify({ model: "openai/gpt-5.6-sol", messages: [{ role: "system", content: sys }, { role: "user", content: symptoms }], response_format: { type: "json_object" } }),
       });
 
       if (aiResp && aiResp.ok) {
