@@ -108,6 +108,8 @@ const AppPage = () => {
 
   const recognitionRef = useRef<any>(null);
   const baseTranscriptRef = useRef("");
+  const aishaActiveRef = useRef(false);
+  const aisha = useAishaStt();
 
   // ---- init ----
   useEffect(() => {
@@ -273,7 +275,7 @@ const AppPage = () => {
       const { data: cnt } = await supabase.rpc("daily_usage_count", { _user_id: user.id });
       if ((cnt ?? 0) >= 5) { toast.error(t("err.dailyLimit")); return; }
     }
-    if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); }
+    if (isRecording) stopRecording();
     setIsAnalyzing(true);
 
     // Build previous history
@@ -765,7 +767,7 @@ const AppPage = () => {
             </div>
 
             <div className="flex flex-col items-center text-center">
-              <button onClick={toggleRecording} disabled={!supported}
+              <button onClick={toggleRecording}
                 aria-label={isRecording ? t("rec.recording") : t("rec.start")}
                 className="relative flex h-20 w-20 items-center justify-center rounded-full shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50"
                 style={{ background: isRecording ? "hsl(var(--destructive))" : "var(--gradient-primary)" }}>
