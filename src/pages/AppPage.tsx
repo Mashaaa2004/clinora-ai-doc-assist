@@ -252,13 +252,20 @@ const AppPage = () => {
           baseTranscriptRef.current = (baseTranscriptRef.current + " " + txt).trim();
           setTranscript(baseTranscriptRef.current);
         },
-        onError: () => {},
+        onError: () => {
+          // Aisha dropped mid-session — switch to the browser recognizer.
+          if (!aishaActiveRef.current) return;
+          aishaActiveRef.current = false;
+          aisha.stop();
+          startBrowserRecognition();
+        },
         onClose: () => {
           if (aishaActiveRef.current) {
             aishaActiveRef.current = false;
             setIsRecording(false);
           }
         },
+
       });
       aishaActiveRef.current = true;
       setIsRecording(true);
