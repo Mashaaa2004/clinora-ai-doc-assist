@@ -54,66 +54,92 @@ export function useAishaStt() {
 
   const start = useCallback(
     async (language: string, cb: Callbacks) => {
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token;
-      if (!token) throw new Error("not_authenticated");
+      let stream: MediaStream | null = null;
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        if (!token) throw new Error("not_authenticated");
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
-      });
-      streamRef.current = stream;
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+        });
+        streamRef.current = stream;
 
-      const url = `wss://${PROJECT_ID}.functions.supabase.co/aisha-stt?token=${encodeURIComponent(
-        token,
-      )}&language=${encodeURIComponent(language)}`;
+        const url = `wss://${PROJECT_ID}.functions.supabase.co/aisha-stt?token=${encodeURIComponent(
+          token,
+        )}&language=${encodeURIComponent(language)}`;
 
-      const ws = new WebSocket(url);
-      ws.binaryType = "arraybuffer";
-      wsRef.current = ws;
+        const ws = new WebSocket(url);
+        ws.binaryType = "arraybuffer";
+        wsRef.current = ws;
 
-      await new Promise<void>((resolve, reject) => {
-        const timer = window.setTimeout(() => reject(new Error("stt_timeout")), 8000);
-        ws.onopen = () => { window.clearTimeout(timer); resolve(); };
-        ws.onerror = () => { window.clearTimeout(timer); reject(new Error("stt_connect_failed")); };
-      });
+        // Wait until the proxy reports the upstream Aisha socket is really ready.
+        await new Promise<void>((resolve, reject) => {
+          let settled = false;
+          const done = (err?: Error) => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timer);
+            err ? reject(err) : resolve();
+          };
+          const timer = window.setTimeout(() => done(new Error("stt_timeout")), 6000);
+          ws.onopen = () => { /* wait for the ready frame */ };
+          ws.onerror = () => done(new Error("stt_connect_failed"));
+          ws.onclose = () => done(new Error("stt_closed"));
+          ws.onmessage = (e) => {
+            if (typeof e.data !== "string") return;
+            let p: any;
+            try { p = JSON.parse(e.data); } catch { return; }
+            if (p?.type === "ready") done();
+            else if (p?.type === "error") done(new Error(p.message || "stt_error"));
+          };
+        });
 
-      ws.onmessage = (e) => {
-        if (typeof e.data !== "string") return;
-        let payload: any;
-        try { payload = JSON.parse(e.data); } catch { payload = { text: e.data }; }
-        if (payload?.type === "error") { cb.onError?.(payload.message || "stt_error"); return; }
-        const picked = pickText(payload);
-        if (!picked) return;
-        if (picked.isFinal) cb.onFinal?.(picked.text);
-        else cb.onPartial?.(picked.text);
-      };
-      ws.onerror = () => cb.onError?.("stt_error");
-      ws.onclose = () => cb.onClose?.();
+        ws.onmessage = (e) => {
+          if (typeof e.data !== "string") return;
+          let payload: any;
+          try { payload = JSON.parse(e.data); } catch { payload = { text: e.data }; }
+          if (payload?.type === "ready" || payload?.type === "binary") return;
+          if (payload?.type === "error") { cb.onError?.(payload.message || "stt_error"); return; }
+          const picked = pickText(payload);
+          if (!picked) return;
+          if (picked.isFinal) cb.onFinal?.(picked.text);
+          else cb.onPartial?.(picked.text);
+        };
+        ws.onerror = () => cb.onError?.("stt_error");
+        ws.onclose = () => cb.onClose?.();
 
-      const AudioCtx: typeof AudioContext =
-        (window as any).AudioContext || (window as any).webkitAudioContext;
-      const ctx = new AudioCtx({ sampleRate: 16000 });
-      ctxRef.current = ctx;
-      const source = ctx.createMediaStreamSource(stream);
-      const processor = ctx.createScriptProcessor(4096, 1, 1);
-      nodeRef.current = processor;
+        const AudioCtx: typeof AudioContext =
+          (window as any).AudioContext || (window as any).webkitAudioContext;
+        const ctx = new AudioCtx({ sampleRate: 16000 });
+        ctxRef.current = ctx;
+        if (ctx.state === "suspended") { try { await ctx.resume(); } catch { /* noop */ } }
+        const source = ctx.createMediaStreamSource(stream);
+        const processor = ctx.createScriptProcessor(4096, 1, 1);
+        nodeRef.current = processor;
 
-      processor.onaudioprocess = (ev) => {
-        if (ws.readyState !== WebSocket.OPEN) return;
-        const input = ev.inputBuffer.getChannelData(0);
-        const pcm = new Int16Array(input.length);
-        for (let i = 0; i < input.length; i++) {
-          const s = Math.max(-1, Math.min(1, input[i]));
-          pcm[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-        }
-        try { ws.send(pcm.buffer); } catch { /* noop */ }
-      };
+        processor.onaudioprocess = (ev) => {
+          if (ws.readyState !== WebSocket.OPEN) return;
+          const input = ev.inputBuffer.getChannelData(0);
+          const pcm = new Int16Array(input.length);
+          for (let i = 0; i < input.length; i++) {
+            const s = Math.max(-1, Math.min(1, input[i]));
+            pcm[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+          }
+          try { ws.send(pcm.buffer); } catch { /* noop */ }
+        };
 
-      source.connect(processor);
-      processor.connect(ctx.destination);
+        source.connect(processor);
+        processor.connect(ctx.destination);
+      } catch (err) {
+        // Release the mic and socket so the caller can fall back cleanly.
+        stop();
+        throw err;
+      }
     },
-    [],
+    [stop],
   );
+
 
   return { start, stop };
 }
