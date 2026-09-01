@@ -43,6 +43,8 @@ import SupportFooter from "@/components/SupportFooter";
 import { Helmet } from "react-helmet-async";
 import QRCode from "qrcode";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAishaStt } from "@/hooks/useAishaStt";
+
 
 type Prescription = {
   name: string;
