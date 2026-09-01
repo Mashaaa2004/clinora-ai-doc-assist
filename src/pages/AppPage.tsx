@@ -219,19 +219,52 @@ const AppPage = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   };
 
-  const toggleRecording = () => {
-    if (!recognitionRef.current) return;
-    if (isRecording) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
-    } else {
-      baseTranscriptRef.current = transcript;
-      try {
-        recognitionRef.current.start();
-        setIsRecording(true);
-      } catch { toast.error("Could not start recording"); }
+  const startBrowserRecognition = () => {
+    if (!recognitionRef.current) { toast.error("Speech recognition is not available"); return; }
+    baseTranscriptRef.current = transcript;
+    try {
+      recognitionRef.current.start();
+      setIsRecording(true);
+    } catch { toast.error("Could not start recording"); }
+  };
+
+  const stopRecording = () => {
+    if (aishaActiveRef.current) {
+      aisha.stop();
+      aishaActiveRef.current = false;
+    }
+    try { recognitionRef.current?.stop(); } catch {}
+    setIsRecording(false);
+  };
+
+  const toggleRecording = async () => {
+    if (isRecording) { stopRecording(); return; }
+
+    baseTranscriptRef.current = transcript;
+    try {
+      await aisha.start(lang, {
+        onPartial: (txt) => setTranscript((baseTranscriptRef.current + " " + txt).trim()),
+        onFinal: (txt) => {
+          baseTranscriptRef.current = (baseTranscriptRef.current + " " + txt).trim();
+          setTranscript(baseTranscriptRef.current);
+        },
+        onError: () => {},
+        onClose: () => {
+          if (aishaActiveRef.current) {
+            aishaActiveRef.current = false;
+            setIsRecording(false);
+          }
+        },
+      });
+      aishaActiveRef.current = true;
+      setIsRecording(true);
+    } catch {
+      // Aisha unavailable — fall back to the browser recognizer.
+      aishaActiveRef.current = false;
+      startBrowserRecognition();
     }
   };
+
 
   // ---- run AI analysis ----
   const runAnalysis = async () => {
