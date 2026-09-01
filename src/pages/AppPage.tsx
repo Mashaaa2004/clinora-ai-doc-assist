@@ -43,6 +43,8 @@ import SupportFooter from "@/components/SupportFooter";
 import { Helmet } from "react-helmet-async";
 import QRCode from "qrcode";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAishaStt } from "@/hooks/useAishaStt";
+
 
 type Prescription = {
   name: string;
@@ -108,6 +110,8 @@ const AppPage = () => {
 
   const recognitionRef = useRef<any>(null);
   const baseTranscriptRef = useRef("");
+  const aishaActiveRef = useRef(false);
+  const aisha = useAishaStt();
 
   // ---- init ----
   useEffect(() => {
@@ -219,19 +223,52 @@ const AppPage = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   };
 
-  const toggleRecording = () => {
-    if (!recognitionRef.current) return;
-    if (isRecording) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
-    } else {
-      baseTranscriptRef.current = transcript;
-      try {
-        recognitionRef.current.start();
-        setIsRecording(true);
-      } catch { toast.error("Could not start recording"); }
+  const startBrowserRecognition = () => {
+    if (!recognitionRef.current) { toast.error("Speech recognition is not available"); return; }
+    baseTranscriptRef.current = transcript;
+    try {
+      recognitionRef.current.start();
+      setIsRecording(true);
+    } catch { toast.error("Could not start recording"); }
+  };
+
+  const stopRecording = () => {
+    if (aishaActiveRef.current) {
+      aisha.stop();
+      aishaActiveRef.current = false;
+    }
+    try { recognitionRef.current?.stop(); } catch {}
+    setIsRecording(false);
+  };
+
+  const toggleRecording = async () => {
+    if (isRecording) { stopRecording(); return; }
+
+    baseTranscriptRef.current = transcript;
+    try {
+      await aisha.start(lang, {
+        onPartial: (txt) => setTranscript((baseTranscriptRef.current + " " + txt).trim()),
+        onFinal: (txt) => {
+          baseTranscriptRef.current = (baseTranscriptRef.current + " " + txt).trim();
+          setTranscript(baseTranscriptRef.current);
+        },
+        onError: () => {},
+        onClose: () => {
+          if (aishaActiveRef.current) {
+            aishaActiveRef.current = false;
+            setIsRecording(false);
+          }
+        },
+      });
+      aishaActiveRef.current = true;
+      setIsRecording(true);
+    } catch {
+      // Aisha unavailable — fall back to the browser recognizer.
+      aishaActiveRef.current = false;
+      startBrowserRecognition();
     }
   };
+
 
   // ---- run AI analysis ----
   const runAnalysis = async () => {
@@ -240,7 +277,7 @@ const AppPage = () => {
       const { data: cnt } = await supabase.rpc("daily_usage_count", { _user_id: user.id });
       if ((cnt ?? 0) >= 5) { toast.error(t("err.dailyLimit")); return; }
     }
-    if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); }
+    if (isRecording) stopRecording();
     setIsAnalyzing(true);
 
     // Build previous history
@@ -732,7 +769,7 @@ const AppPage = () => {
             </div>
 
             <div className="flex flex-col items-center text-center">
-              <button onClick={toggleRecording} disabled={!supported}
+              <button onClick={toggleRecording}
                 aria-label={isRecording ? t("rec.recording") : t("rec.start")}
                 className="relative flex h-20 w-20 items-center justify-center rounded-full shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50"
                 style={{ background: isRecording ? "hsl(var(--destructive))" : "var(--gradient-primary)" }}>
