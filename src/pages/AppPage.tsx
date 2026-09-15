@@ -510,7 +510,8 @@ const AppPage = () => {
 <style>
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;background:#f4f6fb;color:#111827;font-family:'Inter',system-ui,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:10.5px}
-  .page{width:210mm;min-height:297mm;margin:16px auto;padding:8mm 11mm;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.08);display:flex;flex-direction:column}
+  .page{width:210mm;height:297mm;margin:16px auto;padding:8mm 11mm;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.08);overflow:hidden;position:relative}
+  .inner{display:flex;flex-direction:column;transform-origin:top left}
   .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:8px;border-bottom:2px solid #2176eb}
   .brand{display:flex;align-items:center;gap:12px}
   .logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#2176eb,#4f9bff);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Manrope',sans-serif;font-weight:800;font-size:15px}
@@ -548,13 +549,14 @@ const AppPage = () => {
   .actions{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:9999}
   .actions button{background:#2176eb;color:#fff;border:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(33,118,235,.35);font-family:inherit}
   .actions .alt{background:#fff;color:#374151;border:1px solid #d1d5db}
-  @media print{body{background:#fff}.page{box-shadow:none;margin:0;padding:7mm 10mm;min-height:297mm;width:auto}.actions{display:none}table.rx,tr,.family-box,.signature{page-break-inside:avoid}h2.section{page-break-after:avoid}@page{size:A4 portrait;margin:0}}
+  @media print{html,body{width:210mm;height:297mm}body{background:#fff}.page{box-shadow:none;margin:0;padding:7mm 10mm;width:210mm;height:297mm}.actions{display:none}@page{size:A4 portrait;margin:0}}
 </style></head><body>
 <div class="actions">
   <button class="alt" onclick="window.close()">${L("common.close")}</button>
   <button onclick="window.print()">📄 ${L("act.downloadPdf")}</button>
 </div>
 <div class="page">
+ <div class="inner">
   <div class="header">
     <div class="brand"><div class="logo">C</div><div><h1>Clinora AI</h1><p>${L("pdf.title")}</p></div></div>
     <div class="clinic"><div class="clinic-name">${esc(hosp || "—")}</div>${hospAddr ? `<div>${esc(hospAddr)}</div>` : ""}${hospPhone ? `<div>☎ ${esc(hospPhone)}</div>` : ""}${clinicIg ? `<div>📷 ${esc(at(clinicIg))}</div>` : ""}${clinicTg ? `<div>✈ ${esc(at(clinicTg))}</div>` : ""}</div>
@@ -604,10 +606,37 @@ const AppPage = () => {
     Clinora AI · <b>Telegram:</b> @clinora_support · <b>Instagram:</b> @clinora.ai<br/>
     <span style="font-style:italic">${L("pdf.disclaimer")}</span>
   </div>
+ </div>
 </div>
 <script>
 (function(){
-  function doPrint(){ try { window.focus(); window.print(); } catch(e){} }
+  function fitToOnePage(){
+    var page = document.querySelector('.page');
+    var inner = document.querySelector('.inner');
+    if(!page || !inner) return;
+    inner.style.transform = 'none';
+    inner.style.width = '100%';
+    var cs = window.getComputedStyle(page);
+    var padV = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    var avail = page.clientHeight - padV;
+    var need = inner.scrollHeight;
+    if(need > avail){
+      var s = Math.max(0.5, avail / need);
+      inner.style.transform = 'scale(' + s + ')';
+      inner.style.width = (100 / s) + '%';
+      need = inner.scrollHeight;
+      if(need * s > avail){
+        s = Math.max(0.4, avail / need);
+        inner.style.transform = 'scale(' + s + ')';
+        inner.style.width = (100 / s) + '%';
+      }
+    }
+    inner.style.minHeight = avail + 'px';
+  }
+  window.addEventListener('load', fitToOnePage);
+  window.addEventListener('resize', fitToOnePage);
+  window.addEventListener('beforeprint', fitToOnePage);
+  function doPrint(){ fitToOnePage(); setTimeout(function(){ try { window.focus(); window.print(); } catch(e){} }, 60); }
   function whenImagesReady(cb){
     var imgs = Array.prototype.slice.call(document.images);
     if(!imgs.length) return cb();
