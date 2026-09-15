@@ -556,6 +556,7 @@ const AppPage = () => {
   <button onclick="window.print()">📄 ${L("act.downloadPdf")}</button>
 </div>
 <div class="page">
+ <div class="inner">
   <div class="header">
     <div class="brand"><div class="logo">C</div><div><h1>Clinora AI</h1><p>${L("pdf.title")}</p></div></div>
     <div class="clinic"><div class="clinic-name">${esc(hosp || "—")}</div>${hospAddr ? `<div>${esc(hospAddr)}</div>` : ""}${hospPhone ? `<div>☎ ${esc(hospPhone)}</div>` : ""}${clinicIg ? `<div>📷 ${esc(at(clinicIg))}</div>` : ""}${clinicTg ? `<div>✈ ${esc(at(clinicTg))}</div>` : ""}</div>
