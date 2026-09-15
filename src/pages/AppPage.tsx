@@ -548,7 +548,7 @@ const AppPage = () => {
   .actions{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:9999}
   .actions button{background:#2176eb;color:#fff;border:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(33,118,235,.35);font-family:inherit}
   .actions .alt{background:#fff;color:#374151;border:1px solid #d1d5db}
-  @media print{body{background:#fff}.page{box-shadow:none;margin:0;padding:7mm 10mm;height:297mm}.actions{display:none}@page{size:A4 portrait;margin:0}}
+  @media print{body{background:#fff}.page{box-shadow:none;margin:0;padding:7mm 10mm;min-height:297mm;width:auto}.actions{display:none}table.rx,tr,.family-box,.signature{page-break-inside:avoid}h2.section{page-break-after:avoid}@page{size:A4 portrait;margin:0}}
 </style></head><body>
 <div class="actions">
   <button class="alt" onclick="window.close()">${L("common.close")}</button>
