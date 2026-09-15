@@ -606,10 +606,31 @@ const AppPage = () => {
     Clinora AI · <b>Telegram:</b> @clinora_support · <b>Instagram:</b> @clinora.ai<br/>
     <span style="font-style:italic">${L("pdf.disclaimer")}</span>
   </div>
+ </div>
 </div>
 <script>
 (function(){
-  function doPrint(){ try { window.focus(); window.print(); } catch(e){} }
+  function fitToOnePage(){
+    var page = document.querySelector('.page');
+    var inner = document.querySelector('.inner');
+    if(!page || !inner) return;
+    inner.style.transform = 'none';
+    inner.style.width = '100%';
+    var avail = page.clientHeight;
+    var need = inner.scrollHeight;
+    if(need > avail){
+      var s = Math.max(0.5, avail / need);
+      inner.style.transform = 'scale(' + s + ')';
+      inner.style.width = (100 / s) + '%';
+    }
+    var availW = page.clientWidth;
+    inner.style.minHeight = avail + 'px';
+    void availW;
+  }
+  window.addEventListener('load', fitToOnePage);
+  window.addEventListener('resize', fitToOnePage);
+  window.addEventListener('beforeprint', fitToOnePage);
+  function doPrint(){ fitToOnePage(); setTimeout(function(){ try { window.focus(); window.print(); } catch(e){} }, 60); }
   function whenImagesReady(cb){
     var imgs = Array.prototype.slice.call(document.images);
     if(!imgs.length) return cb();
