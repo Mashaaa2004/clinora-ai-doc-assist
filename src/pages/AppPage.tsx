@@ -510,7 +510,7 @@ const AppPage = () => {
 <style>
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;background:#f4f6fb;color:#111827;font-family:'Inter',system-ui,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:10.5px}
-  .page{width:210mm;height:297mm;margin:16px auto;padding:8mm 11mm;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.08);display:flex;flex-direction:column;overflow:hidden}
+  .page{width:210mm;min-height:297mm;margin:16px auto;padding:8mm 11mm;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.08);display:flex;flex-direction:column}
   .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:8px;border-bottom:2px solid #2176eb}
   .brand{display:flex;align-items:center;gap:12px}
   .logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#2176eb,#4f9bff);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Manrope',sans-serif;font-weight:800;font-size:15px}
@@ -548,7 +548,7 @@ const AppPage = () => {
   .actions{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:9999}
   .actions button{background:#2176eb;color:#fff;border:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(33,118,235,.35);font-family:inherit}
   .actions .alt{background:#fff;color:#374151;border:1px solid #d1d5db}
-  @media print{body{background:#fff}.page{box-shadow:none;margin:0;padding:7mm 10mm;height:297mm}.actions{display:none}@page{size:A4 portrait;margin:0}}
+  @media print{body{background:#fff}.page{box-shadow:none;margin:0;padding:7mm 10mm;min-height:297mm;width:auto}.actions{display:none}table.rx,tr,.family-box,.signature{page-break-inside:avoid}h2.section{page-break-after:avoid}@page{size:A4 portrait;margin:0}}
 </style></head><body>
 <div class="actions">
   <button class="alt" onclick="window.close()">${L("common.close")}</button>
