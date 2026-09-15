@@ -157,6 +157,7 @@ Return the result via the structured tool only.`;
 
     const requestBody = JSON.stringify({
         model: "openai/gpt-5.6-sol",
+        reasoning_effort: "none",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userContent },
