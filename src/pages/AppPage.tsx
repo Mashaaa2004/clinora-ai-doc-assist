@@ -616,16 +616,22 @@ const AppPage = () => {
     if(!page || !inner) return;
     inner.style.transform = 'none';
     inner.style.width = '100%';
-    var avail = page.clientHeight;
+    var cs = window.getComputedStyle(page);
+    var padV = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    var avail = page.clientHeight - padV;
     var need = inner.scrollHeight;
     if(need > avail){
       var s = Math.max(0.5, avail / need);
       inner.style.transform = 'scale(' + s + ')';
       inner.style.width = (100 / s) + '%';
+      need = inner.scrollHeight;
+      if(need * s > avail){
+        s = Math.max(0.4, avail / need);
+        inner.style.transform = 'scale(' + s + ')';
+        inner.style.width = (100 / s) + '%';
+      }
     }
-    var availW = page.clientWidth;
     inner.style.minHeight = avail + 'px';
-    void availW;
   }
   window.addEventListener('load', fitToOnePage);
   window.addEventListener('resize', fitToOnePage);
