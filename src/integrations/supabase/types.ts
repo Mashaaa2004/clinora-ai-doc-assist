@@ -17,7 +17,11 @@ export type Database = {
       clinics: {
         Row: {
           address: string
+          base44_clinic_id: string | null
+          city: string | null
+          clinic_code: string | null
           created_at: string
+          currency: string | null
           id: string
           is_active: boolean
           languages_supported: string[]
@@ -27,7 +31,11 @@ export type Database = {
         }
         Insert: {
           address?: string
+          base44_clinic_id?: string | null
+          city?: string | null
+          clinic_code?: string | null
           created_at?: string
+          currency?: string | null
           id?: string
           is_active?: boolean
           languages_supported?: string[]
@@ -37,7 +45,11 @@ export type Database = {
         }
         Update: {
           address?: string
+          base44_clinic_id?: string | null
+          city?: string | null
+          clinic_code?: string | null
           created_at?: string
+          currency?: string | null
           id?: string
           is_active?: boolean
           languages_supported?: string[]
@@ -248,6 +260,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string
+          base44_doctor_id: string | null
           clinic_id: string | null
           clinic_instagram: string
           clinic_telegram: string
@@ -267,6 +280,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string
+          base44_doctor_id?: string | null
           clinic_id?: string | null
           clinic_instagram?: string
           clinic_telegram?: string
@@ -286,6 +300,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string
+          base44_doctor_id?: string | null
           clinic_id?: string | null
           clinic_instagram?: string
           clinic_telegram?: string

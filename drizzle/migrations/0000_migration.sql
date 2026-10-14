@@ -1,0 +1,2 @@
+ALTER TABLE public.clinics ADD COLUMN IF NOT EXISTS clinic_code text UNIQUE, ADD COLUMN IF NOT EXISTS city text, ADD COLUMN IF NOT EXISTS currency text, ADD COLUMN IF NOT EXISTS base44_clinic_id text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS base44_doctor_id text;
