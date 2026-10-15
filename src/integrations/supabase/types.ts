@@ -65,6 +65,8 @@ export type Database = {
           created_at: string
           diagnosis: string
           differentials: Json
+          duration_seconds: number | null
+          ended_at: string | null
           family_advice: string
           id: string
           instrumental_tests: Json
@@ -74,6 +76,7 @@ export type Database = {
           patient_name: string
           prescriptions: Json
           recommendation: string
+          started_at: string | null
           symptoms: Json
           transcript: string
           updated_at: string
@@ -84,6 +87,8 @@ export type Database = {
           created_at?: string
           diagnosis?: string
           differentials?: Json
+          duration_seconds?: number | null
+          ended_at?: string | null
           family_advice?: string
           id?: string
           instrumental_tests?: Json
@@ -93,6 +98,7 @@ export type Database = {
           patient_name?: string
           prescriptions?: Json
           recommendation?: string
+          started_at?: string | null
           symptoms?: Json
           transcript?: string
           updated_at?: string
@@ -103,6 +109,8 @@ export type Database = {
           created_at?: string
           diagnosis?: string
           differentials?: Json
+          duration_seconds?: number | null
+          ended_at?: string | null
           family_advice?: string
           id?: string
           instrumental_tests?: Json
@@ -112,9 +120,31 @@ export type Database = {
           patient_name?: string
           prescriptions?: Json
           recommendation?: string
+          started_at?: string | null
           symptoms?: Json
           transcript?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      doctor_activity: {
+        Row: {
+          consultation_started_at: string | null
+          last_seen_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          consultation_started_at?: string | null
+          last_seen_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          consultation_started_at?: string | null
+          last_seen_at?: string
+          status?: string
           user_id?: string
         }
         Relationships: []
