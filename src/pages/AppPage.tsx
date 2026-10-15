@@ -243,6 +243,14 @@ const AppPage = () => {
 
   const toggleRecording = async () => {
     if (isRecording) { stopRecording(); return; }
+    if (user && !localStorage.getItem("clinora_consult_start")) {
+      const startedAt = new Date().toISOString();
+      localStorage.setItem("clinora_consult_start", startedAt);
+      supabase.from("doctor_activity").upsert({
+        user_id: user.id, status: "in_consultation", consultation_started_at: startedAt, last_seen_at: startedAt,
+      }).then(() => {});
+    }
+
 
     baseTranscriptRef.current = transcript;
     try {
@@ -433,7 +441,17 @@ const AppPage = () => {
       const rnd = Math.random().toString(36).slice(2, 6).toUpperCase();
       const newCode = `${docPrefix}-${ymd}-${rnd}`;
       setPatientCode(newCode);
+      const endedAt = new Date();
+      const startIso = localStorage.getItem("clinora_consult_start");
+      const startedAtD = startIso ? new Date(startIso) : null;
+      localStorage.removeItem("clinora_consult_start");
+      supabase.from("doctor_activity").upsert({
+        user_id: user.id, status: "idle", consultation_started_at: null, last_seen_at: endedAt.toISOString(),
+      }).then(() => {});
       const { data: ins } = await supabase.from("consultations").insert({
+        started_at: startedAtD?.toISOString() ?? null,
+        ended_at: endedAt.toISOString(),
+        duration_seconds: startedAtD ? Math.max(0, Math.round((endedAt.getTime() - startedAtD.getTime()) / 1000)) : null,
         user_id: user.id,
         patient_name: patientName.trim() || "—",
         patient_code: newCode,
