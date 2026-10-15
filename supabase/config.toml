@@ -5,3 +5,5 @@ verify_jwt = false
 
 [functions.generate-document]
 verify_jwt = false
+[functions.crm-activity]
+verify_jwt = false
