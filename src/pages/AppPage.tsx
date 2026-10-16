@@ -171,6 +171,14 @@ const AppPage = () => {
         if (typeof p.step === "number") setStep(p.step);
         // Approval is never restored from mutable browser storage.
         setConfirmed(false);
+        if(p.result?.draft_id&&currentUser){
+          supabase.from("clinical_drafts").select("status,consultation_id").eq("id",p.result.draft_id).eq("user_id",currentUser).maybeSingle().then(async({data:draft})=>{
+            if(draft?.status!=="approved"||!draft.consultation_id)return;
+            const {data:record}=await supabase.from("consultations").select("document_status,patient_code").eq("id",draft.consultation_id).eq("user_id",currentUser).maybeSingle();
+            if(record?.document_status!=="approved")return;
+            setConsultationId(draft.consultation_id);setPatientCode(record.patient_code);setConfirmed(true);
+          });
+        }
         if (Array.isArray(p.selectedComorb)) setSelectedComorb(p.selectedComorb);
       } catch {}
     }

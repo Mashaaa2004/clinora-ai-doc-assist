@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { attachGrounding, minimizeIdentifiers, retrievalQuery, type Passage } from '../../supabase/functions/_shared/clinical-grounding';
+import { attachGrounding, minimizeIdentifiers, retrievalQuery, hasProcessingConsent, type Passage } from '../../supabase/functions/_shared/clinical-grounding';
 const passage:Passage={passage_id:'verified-1',protocol_id:'p1',title:'Synthetic source',specialty:'test',source_url:'https://example.org/synthetic',version:'1',revision_date:null,page:3,section:'Test',content:'synthetic evidence'};
 describe('Clinical grounding rules',()=>{
+  it('requires an explicit true processing consent value',()=>{expect(hasProcessingConsent({consentConfirmed:'true'})).toBe(false);expect(hasProcessingConsent({})).toBe(false);expect(hasProcessingConsent({consentConfirmed:true})).toBe(true);});
   it('does not accept fabricated citation IDs',()=>{expect(attachGrounding({cited_passage_ids:['fabricated']},[passage]).protocol_refs).toEqual([]);});
   it('preserves exact retrieved page and passage on accepted citations',()=>{expect(attachGrounding({cited_passage_ids:['verified-1']},[passage]).protocol_refs).toEqual([passage]);});
   it('explicitly marks absent verified protocols',()=>{expect(attachGrounding({},[]).protocol_status).toBe('no_verified_protocol');});
