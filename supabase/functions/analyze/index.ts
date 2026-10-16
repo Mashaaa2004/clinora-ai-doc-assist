@@ -1,10 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { CLINICAL_SAFETY, SAFETY_PROPERTIES, hasProcessingConsent, attachGrounding, groundingContext, minimizeIdentifiers, retrievalQuery, type Passage } from "../_shared/clinical-grounding.ts";
 
 type Lang = "uz" | "ru" | "en" | "kk" | "ky" | "tr";
 
@@ -64,8 +61,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -90,7 +87,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { transcript, previousHistory, language, labResults, instrumentalResults } = await req.json();
+    const body = await req.json();
+    if(!hasProcessingConsent(body)) return new Response(JSON.stringify({error:"Patient AI processing consent confirmation required"}), {status:400,headers:{...corsHeaders,"Content-Type":"application/json"}});
+    const { language } = body;
+    const identifiers = typeof body.patientName === "string" ? [body.patientName] : [];
+    const { transcript, previousHistory, labResults, instrumentalResults } = minimizeIdentifiers(body, identifiers) as Record<string, any>;
     if (!transcript || typeof transcript !== "string" || transcript.trim().length < 3) {
       return new Response(JSON.stringify({ error: "Текст пуст или слишком короткий" }), {
         status: 400,
@@ -122,24 +123,13 @@ Deno.serve(async (req) => {
     const langInstr = LANG_INSTRUCTION[lang];
     const labels = LABELS[lang];
 
-    const systemPrompt = `You are an experienced medical assistant AI helping a doctor during a patient consultation.
-You will receive: (1) the patient's complaints / dialogue, (2) optionally previous visit history, (3) optionally already-known laboratory results, (4) optionally already-known instrumental exam results (US, ECG, MRI, etc.).
-
-Your task — return ONE structured analysis containing:
-- symptoms: list of identified symptoms
-- lab_tests: recommended laboratory tests (with reason). If lab results are already provided, include them with their result filled in and add new ones only if necessary.
-- instrumental_tests: recommended instrumental/apparatus exams (US, ECG, X-ray, MRI, CT, EEG, etc.) with reason. Same rule for already-provided results.
-- differentials: EXACTLY 3 most likely differential diagnoses ordered by probability, each with: name, probability ("high"/"medium"/"low"), short reasoning (2-3 sentences) tying it to the symptoms AND any lab/instrumental findings. ALWAYS prioritize the available laboratory and instrumental results when reasoning — they outweigh subjective complaints.
-- comorbidities: EXACTLY 3 possible CONCOMITANT or HIDDEN related conditions that could co-exist or develop alongside the main symptoms (purpose: EARLY DETECTION). These are NOT differentials — they are diseases the doctor should screen for. Each item MUST include: name, risk_level ("high"/"medium"/"low"), reasoning (1-2 sentences linking to symptoms / lab / instrumental data), specialist (the medical specialty the patient should be referred to — e.g. "Кардиолог", "Эндокринолог", "Невропатолог"), referral_note (1 short sentence the primary doctor can include when referring the patient to that specialist).
-- recommendation: treatment plan (lifestyle, regimen, follow-up) for the MOST LIKELY diagnosis (the first differential). The doctor may switch to another diagnosis afterwards.
-- prescriptions: tentative drug prescriptions for the MOST LIKELY diagnosis. The doctor will review and approve.
-- family_advice: a SHORT, concise note (MAX 3 sentences, ~40-50 words total) for the patient's family in plain language. Cover only: (1) what the patient has (one sentence), (2) the most important home-care action(s), (3) when to call emergency. No filler, no greetings, no emotional preamble.
-
-ANALYSIS ORDER: First consider the lab and instrumental results (if provided), then the symptoms / complaints, then the previous history. Diagnoses and comorbidities must be consistent with the test findings.
-
-IMPORTANT: ${langInstr}
-If previous history is provided, use it (chronic conditions, recurring symptoms).
-Return the result via the structured tool only.`;
+    const { data: passageData, error: retrievalError } = await supabase.rpc("search_protocol_passages", { search_text: retrievalQuery(transcript) });
+    if (retrievalError) return new Response(JSON.stringify({ error: "Protocol lookup unavailable. Please try again later." }), {status:503,headers:{...corsHeaders,"Content-Type":"application/json"}});
+    const passages = (passageData ?? []) as Passage[];
+    const systemPrompt = `${CLINICAL_SAFETY}
+${langInstr}
+Return symptoms, lab_tests, instrumental_tests, differentials, comorbidities, recommendation, prescriptions, family_advice and SOAP fields through the structured tool. Preserve known lab results. Keep family advice concise and conditional, not a confirmed diagnosis.
+${groundingContext(passages)}`;
 
     const parts: string[] = [];
     if (previousHistory && typeof previousHistory === "string" && previousHistory.trim()) {
@@ -171,6 +161,7 @@ Return the result via the structured tool only.`;
               parameters: {
                 type: "object",
                 properties: {
+                  ...SAFETY_PROPERTIES,
                   symptoms: {
                     type: "array",
                     items: { type: "string" },
@@ -225,8 +216,8 @@ Return the result via the structured tool only.`;
                   },
                   differentials: {
                     type: "array",
-                    description: "Exactly 3 differential diagnoses ordered by probability.",
-                    minItems: 3,
+                    description: "Possible differential diagnoses for clinician review; leave empty when unsupported.",
+                    minItems: 0,
                     maxItems: 3,
                     items: {
                       type: "object",
@@ -241,8 +232,8 @@ Return the result via the structured tool only.`;
                   },
                   comorbidities: {
                     type: "array",
-                    description: "Exactly 3 possible concomitant/hidden related conditions to screen for. Each includes the specialist to refer the patient to and a short referral note.",
-                    minItems: 3,
+                    description: "Possible concomitant conditions only if supported; do not force a count. Each includes the specialist to refer the patient to and a short referral note.",
+                    minItems: 0,
                     maxItems: 3,
                     items: {
                       type: "object",
@@ -262,7 +253,7 @@ Return the result via the structured tool only.`;
                     description: "Clear simple-language guidance for the patient's family members (4-8 sentences). Explains condition, home care, warning signs that require emergency, emotional support.",
                   },
                 },
-                required: ["symptoms", "recommendation", "prescriptions", "lab_tests", "instrumental_tests", "differentials", "comorbidities", "family_advice"],
+                required: ["symptoms", "recommendation", "prescriptions", "lab_tests", "instrumental_tests", "differentials", "comorbidities", "family_advice", "soap", "review_flags", "urgent_flags", "cited_passage_ids"],
                 additionalProperties: false,
               },
             },
@@ -277,25 +268,10 @@ Return the result via the structured tool only.`;
       body: requestBody,
     });
 
-    if (response.status === 429) {
-      return new Response(JSON.stringify({ error: "Rate limit. Try again later." }), {
-        status: 429,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if (response.status === 402) {
-      return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds to your workspace." }), {
-        status: 402,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
     if (!response.ok) {
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI gateway error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const failure = await response.json().catch(() => ({}));
+      const message = failure.message ?? failure.error?.message ?? "AI request failed";
+      return new Response(JSON.stringify({error:message}), {status:response.status,headers:{...corsHeaders,"Content-Type":"application/json"}});
     }
 
     const data = await response.json();
@@ -308,11 +284,14 @@ Return the result via the structured tool only.`;
     }
 
     const args = JSON.parse(toolCall.function.arguments);
-    return new Response(JSON.stringify(args), {
+    const grounded = attachGrounding(args, passages);
+    const { data: draft, error: draftError } = await supabase.from("clinical_drafts").insert({user_id:userId,original_analysis:grounded}).select("id").single();
+    if (draftError) return new Response(JSON.stringify({error:"Draft could not be saved"}),{status:500,headers:{...corsHeaders,"Content-Type":"application/json"}});
+    return new Response(JSON.stringify({...grounded,draft_id:draft.id}), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("analyze error:", e);
+    console.error("analyze request failed");
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

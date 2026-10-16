@@ -1,10 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { CLINICAL_SAFETY, SAFETY_PROPERTIES, hasProcessingConsent, attachGrounding, groundingContext, minimizeIdentifiers, retrievalQuery, type Passage } from "../_shared/clinical-grounding.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -47,7 +43,9 @@ Deno.serve(async (req) => {
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       return json({ error: "Invalid JSON body" }, 400);
     }
-    const raw = JSON.stringify(body);
+    if(!hasProcessingConsent(body)) return json({error:"Patient AI processing consent confirmation required",code:"CONSENT_REQUIRED"},400);
+    const identifiers = [body.patient_name, body.full_name, body.patient?.full_name, body.patient?.name].filter((v): v is string => typeof v === "string");
+    const raw = JSON.stringify(minimizeIdentifiers(body, identifiers));
     if (raw.length > 100_000) {
       return json({ error: "Input too long", code: "INPUT_TOO_LONG" }, 413);
     }
@@ -58,14 +56,14 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return json({ error: "AI not configured" }, 500);
 
-    const systemPrompt = `You are Clinora.AI's medical document drafting engine.
-You receive ONE consultation record as JSON (field names may vary between CRMs — interpret them intelligently).
-Draft a complete, professionally structured medical consultation document from the data.
-Use ONLY the data present in the input; never invent facts, diagnoses, or medications.
-Structure the document with clear section headings, for example (omit a section if its data is absent):
-PATIENT INFORMATION / SHIFOYAT & ANAMNEZ (complaints, history) / EXAMINATION FINDINGS / ASSESSMENT & DIAGNOSES / TREATMENT PLAN / PRESCRIPTIONS / RECOMMENDATIONS & FOLLOW-UP.
+    const cloud = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
+    const {data: retrieved,error: retrievalError}=await cloud.rpc("search_protocol_passages",{search_text:retrievalQuery(raw)});
+    if(retrievalError)return json({error:"Protocol lookup unavailable"},503);
+    const passages=(retrieved??[]) as Passage[];
+    const systemPrompt = `${CLINICAL_SAFETY}
 ${langInstr}
-Respond ONLY with a JSON object: {"title": string, "document": string} where "document" is the full drafted document as plain text with headings (no markdown fences).`;
+Draft a consultation document using only the supplied data. Return JSON containing title, document (plain text with SOAP headings), soap, review_flags, urgent_flags and cited_passage_ids. Do not include identifying information in the document.
+${groundingContext(passages)}`;
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -77,13 +75,13 @@ Respond ONLY with a JSON object: {"title": string, "document": string} where "do
           { role: "system", content: systemPrompt },
           { role: "user", content: `Consultation data JSON:\n${raw}` },
         ],
-        response_format: { type: "json_object" },
+        response_format: { type: "json_schema", json_schema: { name:"clinical_document", strict:true, schema:{type:"object",properties:{title:{type:"string"},document:{type:"string"},...SAFETY_PROPERTIES},required:["title","document","soap","review_flags","urgent_flags","cited_passage_ids"],additionalProperties:false} } },
       }),
     });
 
     if (!aiResp.ok) {
-      console.error("generate-document AI error:", aiResp.status, await aiResp.text().catch(() => ""));
-      return json({ error: "Document generation failed" }, 502);
+      const failure=await aiResp.json().catch(()=>({}));
+      return json({error:failure.message??failure.error?.message??"Document generation failed"},aiResp.status);
     }
     const aiJson = await aiResp.json();
     const txt = aiJson?.choices?.[0]?.message?.content ?? "{}";
@@ -97,6 +95,8 @@ Respond ONLY with a JSON object: {"title": string, "document": string} where "do
     if (!document) return json({ error: "Document generation failed" }, 502);
 
     return json({
+      ...attachGrounding(parsed,passages),
+      requires_clinician_approval:true,
       ok: true,
       title: String(parsed.title ?? "Medical Consultation Document"),
       document,
@@ -104,7 +104,7 @@ Respond ONLY with a JSON object: {"title": string, "document": string} where "do
       generated_at: new Date().toISOString(),
     });
   } catch (e) {
-    console.error("generate-document error:", e);
+    console.error("generate-document request failed");
     return json({ error: "Internal server error" }, 500);
   }
 });

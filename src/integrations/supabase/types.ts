@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      clinical_drafts: {
+        Row: {
+          approved_at: string | null
+          consultation_id: string | null
+          created_at: string
+          edited_analysis: Json | null
+          id: string
+          original_analysis: Json
+          status: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          edited_analysis?: Json | null
+          id?: string
+          original_analysis: Json
+          status?: string
+          user_id?: string
+        }
+        Update: {
+          approved_at?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          edited_analysis?: Json | null
+          id?: string
+          original_analysis?: Json
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_drafts_consultation_id_fkey"
+            columns: ["consultation_id"]
+            isOneToOne: false
+            referencedRelation: "consultations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinical_protocols: {
+        Row: {
+          created_at: string
+          disease: string
+          document_kind: string
+          file_path: string | null
+          id: string
+          imported_by: string
+          issuing_authority: string
+          keywords: string
+          revision_date: string | null
+          source_url: string
+          specialty: string
+          status: string
+          title: string
+          verified_at: string | null
+          verified_by: string | null
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          disease?: string
+          document_kind?: string
+          file_path?: string | null
+          id?: string
+          imported_by?: string
+          issuing_authority: string
+          keywords?: string
+          revision_date?: string | null
+          source_url: string
+          specialty?: string
+          status?: string
+          title: string
+          verified_at?: string | null
+          verified_by?: string | null
+          version?: string
+        }
+        Update: {
+          created_at?: string
+          disease?: string
+          document_kind?: string
+          file_path?: string | null
+          id?: string
+          imported_by?: string
+          issuing_authority?: string
+          keywords?: string
+          revision_date?: string | null
+          source_url?: string
+          specialty?: string
+          status?: string
+          title?: string
+          verified_at?: string | null
+          verified_by?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       clinics: {
         Row: {
           address: string
@@ -61,10 +159,13 @@ export type Database = {
       }
       consultations: {
         Row: {
+          approved_at: string | null
           chosen_diagnosis: string
+          clinical_document: Json | null
           created_at: string
           diagnosis: string
           differentials: Json
+          document_status: string
           duration_seconds: number | null
           ended_at: string | null
           family_advice: string
@@ -75,6 +176,7 @@ export type Database = {
           patient_code: string
           patient_name: string
           prescriptions: Json
+          protocol_refs: Json
           recommendation: string
           started_at: string | null
           symptoms: Json
@@ -83,10 +185,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approved_at?: string | null
           chosen_diagnosis?: string
+          clinical_document?: Json | null
           created_at?: string
           diagnosis?: string
           differentials?: Json
+          document_status?: string
           duration_seconds?: number | null
           ended_at?: string | null
           family_advice?: string
@@ -97,6 +202,7 @@ export type Database = {
           patient_code?: string
           patient_name?: string
           prescriptions?: Json
+          protocol_refs?: Json
           recommendation?: string
           started_at?: string | null
           symptoms?: Json
@@ -105,10 +211,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approved_at?: string | null
           chosen_diagnosis?: string
+          clinical_document?: Json | null
           created_at?: string
           diagnosis?: string
           differentials?: Json
+          document_status?: string
           duration_seconds?: number | null
           ended_at?: string | null
           family_advice?: string
@@ -119,6 +228,7 @@ export type Database = {
           patient_code?: string
           patient_name?: string
           prescriptions?: Json
+          protocol_refs?: Json
           recommendation?: string
           started_at?: string | null
           symptoms?: Json
@@ -358,6 +468,38 @@ export type Database = {
           },
         ]
       }
+      protocol_passages: {
+        Row: {
+          content: string
+          id: string
+          page: number
+          protocol_id: string
+          section: string
+        }
+        Insert: {
+          content: string
+          id?: string
+          page?: number
+          protocol_id: string
+          section?: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          page?: number
+          protocol_id?: string
+          section?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocol_passages_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_protocols"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           activated_by: string | null
@@ -500,6 +642,30 @@ export type Database = {
       }
       is_pro: { Args: { _user_id: string }; Returns: boolean }
       platform_stats: { Args: never; Returns: Json }
+      review_clinical_draft: {
+        Args: {
+          decision: string
+          draft_id: string
+          edited: Json
+          final_record?: Json
+        }
+        Returns: string
+      }
+      search_protocol_passages: {
+        Args: { search_text: string }
+        Returns: {
+          content: string
+          page: number
+          passage_id: string
+          protocol_id: string
+          revision_date: string
+          section: string
+          source_url: string
+          specialty: string
+          title: string
+          version: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "doctor" | "patient"
