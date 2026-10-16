@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { CLINICAL_SAFETY, SAFETY_PROPERTIES, attachGrounding, groundingContext, minimizeIdentifiers, retrievalQuery, type Passage } from "../_shared/clinical-grounding.ts";
+import { CLINICAL_SAFETY, SAFETY_PROPERTIES, hasProcessingConsent, attachGrounding, groundingContext, minimizeIdentifiers, retrievalQuery, type Passage } from "../_shared/clinical-grounding.ts";
 
 type Lang = "uz" | "ru" | "en" | "kk" | "ky" | "tr";
 
@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    if(body.consentConfirmed !== true) return new Response(JSON.stringify({error:"Patient AI processing consent confirmation required"}), {status:400,headers:{...corsHeaders,"Content-Type":"application/json"}});
+    if(!hasProcessingConsent(body)) return new Response(JSON.stringify({error:"Patient AI processing consent confirmation required"}), {status:400,headers:{...corsHeaders,"Content-Type":"application/json"}});
     const { language } = body;
     const identifiers = typeof body.patientName === "string" ? [body.patientName] : [];
     const { transcript, previousHistory, labResults, instrumentalResults } = minimizeIdentifiers(body, identifiers) as Record<string, any>;

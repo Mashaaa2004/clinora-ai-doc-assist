@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { CLINICAL_SAFETY, SAFETY_PROPERTIES, attachGrounding, groundingContext, minimizeIdentifiers, retrievalQuery, type Passage } from "../_shared/clinical-grounding.ts";
+import { CLINICAL_SAFETY, SAFETY_PROPERTIES, hasProcessingConsent, attachGrounding, groundingContext, minimizeIdentifiers, retrievalQuery, type Passage } from "../_shared/clinical-grounding.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       return json({ error: "Invalid JSON body" }, 400);
     }
-    if(body.consentConfirmed !== true) return json({error:"Patient AI processing consent confirmation required",code:"CONSENT_REQUIRED"},400);
+    if(!hasProcessingConsent(body)) return json({error:"Patient AI processing consent confirmation required",code:"CONSENT_REQUIRED"},400);
     const identifiers = [body.patient_name, body.full_name, body.patient?.full_name, body.patient?.name].filter((v): v is string => typeof v === "string");
     const raw = JSON.stringify(minimizeIdentifiers(body, identifiers));
     if (raw.length > 100_000) {
