@@ -333,7 +333,7 @@ const AppPage = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke("analyze", {
-        body: { transcript, patientName, previousHistory, language: lang, labResults, instrumentalResults },
+        body: { transcript, patientName, previousHistory, language: lang, labResults, instrumentalResults, consentConfirmed: aiConsent },
       });
       if (error) {
         let msg=error.message;

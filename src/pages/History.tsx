@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useT } from "@/i18n/LanguageContext";
 import { DATE_LOCALE } from "@/i18n/translations";
 import { Helmet } from "react-helmet-async";
+import ClinicalReview, { type ClinicalFields } from "@/components/ClinicalReview";
 
 type Consultation = {
   id: string;
@@ -24,6 +25,8 @@ type Consultation = {
   family_advice?: string;
   user_id: string;
   created_at: string;
+  clinical_document?: ClinicalFields;
+  approved_at?: string | null;
 };
 
 const HistoryPage = () => {
@@ -42,7 +45,7 @@ const HistoryPage = () => {
     setLoading(true);
     let query = supabase
       .from("consultations")
-      .select("id,user_id,patient_name,patient_code,diagnosis,chosen_diagnosis,recommendation,symptoms,prescriptions,lab_tests,instrumental_tests,family_advice,created_at")
+      .select("id,user_id,patient_name,patient_code,diagnosis,chosen_diagnosis,recommendation,symptoms,prescriptions,lab_tests,instrumental_tests,family_advice,created_at,clinical_document,approved_at")
       .order("created_at", { ascending: false });
     query = query.eq("user_id", user.id);
     if (!isPro) query = query.limit(10);
@@ -268,6 +271,8 @@ const HistoryPage = () => {
                           <p className="rounded-xl bg-warning/10 p-3 text-sm whitespace-pre-wrap">{x.family_advice}</p>
                         </div>
                       )}
+                      {x.clinical_document&&<ClinicalReview value={x.clinical_document} approved={true} onChange={()=>{}}/>}
+                      {x.approved_at&&<p className="text-xs text-muted-foreground">Tasdiqlangan: {new Date(x.approved_at).toLocaleString(DATE_LOCALE[lang])}</p>}
                       {doctorNames[x.user_id] && (
                         <div className="text-xs text-muted-foreground">
                           {t("hist.acceptedBy")} <b>{doctorNames[x.user_id]}</b>

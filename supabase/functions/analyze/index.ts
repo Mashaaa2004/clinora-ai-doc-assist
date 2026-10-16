@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
+    if(body.consentConfirmed !== true) return new Response(JSON.stringify({error:"Patient AI processing consent confirmation required"}), {status:400,headers:{...corsHeaders,"Content-Type":"application/json"}});
     const { language } = body;
     const identifiers = typeof body.patientName === "string" ? [body.patientName] : [];
     const { transcript, previousHistory, labResults, instrumentalResults } = minimizeIdentifiers(body, identifiers) as Record<string, any>;
