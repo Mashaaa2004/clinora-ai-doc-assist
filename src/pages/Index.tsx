@@ -1,283 +1,94 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/i18n/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import {
-  Activity,
-  Brain,
-  Clock,
-  Heart,
-  Instagram,
-  Send,
-  ShieldCheck,
-  Sparkles,
-  Stethoscope,
-  Zap,
-} from "lucide-react";
-
-const MedicalBackdrop = () => (
-  <div className="med-bg" aria-hidden>
-    {/* Heart */}
-    <svg className="med-float-1" width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="hsl(174 72% 45%)" strokeWidth="1.2">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-    </svg>
-    {/* DNA */}
-    <svg className="med-float-2" width="110" height="110" viewBox="0 0 64 64" fill="none" stroke="hsl(188 85% 55%)" strokeWidth="1.4">
-      <path d="M16 4 C40 16 24 32 48 44 M48 4 C24 16 40 32 16 44 M16 12 H48 M16 20 H48 M16 28 H48 M16 36 H48"/>
-    </svg>
-    {/* Plus / cross */}
-    <svg className="med-float-3" width="80" height="80" viewBox="0 0 24 24" fill="hsl(160 70% 55% / 0.25)" stroke="hsl(160 70% 45%)" strokeWidth="1">
-      <path d="M9 2h6v7h7v6h-7v7H9v-7H2V9h7z"/>
-    </svg>
-    {/* Pill */}
-    <svg className="med-float-4" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="hsl(200 90% 55%)" strokeWidth="1.4">
-      <rect x="2" y="8" width="20" height="8" rx="4"/>
-      <path d="M12 8v8"/>
-    </svg>
-    {/* ECG pulse */}
-    <svg className="med-float-5" width="220" height="60" viewBox="0 0 220 60" fill="none">
-      <path className="ecg-line" d="M0 30 H40 L50 10 L60 50 L72 20 L82 40 L92 30 H220" stroke="hsl(174 72% 50%)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-    {/* Stethoscope-ish circles */}
-    <svg className="med-float-1" style={{ top: "65%", left: "70%" }} width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="hsl(188 85% 50%)" strokeWidth="1.2">
-      <circle cx="12" cy="12" r="8"/>
-      <circle cx="12" cy="12" r="3"/>
-    </svg>
-  </div>
-);
+import { Activity, ArrowDown, ArrowUpRight, Brain, Clock, Heart, Instagram, Send, ShieldCheck } from "lucide-react";
+import clinicImage from "@/assets/clinora-clinic.jpg";
 
 const Index = () => {
   const { t } = useT();
+  useEffect(() => {
+    document.documentElement.classList.add("home-scroll");
+    return () => document.documentElement.classList.remove("home-scroll");
+  }, []);
   return (
-    <div className="relative min-h-screen text-foreground overflow-hidden">
-      {/* Aurora — real northern lights backdrop */}
-      <div className="aurora fixed inset-0 -z-10" aria-hidden>
-        <div className="aurora-band" />
-        <div className="aurora-stars" />
-        <div className="aurora-ridge-glow" />
-        <div className="aurora-fog-far" />
-        <div className="aurora-haze" />
-        <div className="aurora-fog-mid" />
-        <div className="aurora-mountains">
-          <svg viewBox="0 0 1440 600" preserveAspectRatio="none">
-            <defs>
-              {/* Distant range — washed by atmospheric haze */}
-              <linearGradient id="mtnFar" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stopColor="hsl(220 60% 55%)" stopOpacity="0.55" />
-                <stop offset="55%" stopColor="hsl(240 50% 25%)" stopOpacity="0.75" />
-                <stop offset="100%" stopColor="hsl(245 55% 15%)" stopOpacity="0.9" />
-              </linearGradient>
-              <linearGradient id="mtnBack" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stopColor="hsl(230 55% 35%)" stopOpacity="0.85" />
-                <stop offset="60%" stopColor="hsl(245 60% 14%)" />
-                <stop offset="100%" stopColor="hsl(250 70% 8%)" />
-              </linearGradient>
-              <linearGradient id="mtnMid" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stopColor="hsl(245 65% 18%)" />
-                <stop offset="100%" stopColor="hsl(252 75% 6%)" />
-              </linearGradient>
-              <linearGradient id="mtnFront" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stopColor="hsl(255 85% 5%)" />
-                <stop offset="100%" stopColor="hsl(255 90% 1%)" />
-              </linearGradient>
-              <linearGradient id="snowGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stopColor="hsl(190 95% 95%)" />
-                <stop offset="60%" stopColor="hsl(200 80% 80%)" stopOpacity="0.7" />
-                <stop offset="100%" stopColor="hsl(220 70% 60%)" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient id="ridgeRim" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%"  stopColor="hsl(150 100% 65%)" stopOpacity="0.5" />
-                <stop offset="35%" stopColor="hsl(190 100% 75%)" stopOpacity="0.9" />
-                <stop offset="65%" stopColor="hsl(220 100% 75%)" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="hsl(280 100% 75%)" stopOpacity="0.5" />
-              </linearGradient>
-            </defs>
-
-            {/* Farthest range — tall, distant, hazy */}
-            <path className="m-far" d="M0 280 L80 180 L160 220 L240 90 L340 200 L440 110 L540 210 L660 70 L780 200 L900 100 L1020 215 L1150 90 L1280 210 L1380 130 L1440 200 L1440 600 L0 600 Z" />
-
-            {/* Back range — sharper alpine peaks */}
-            <path className="m-back" d="M0 360 L90 230 L180 290 L280 130 L380 270 L500 160 L620 280 L760 110 L880 270 L1010 170 L1150 290 L1280 140 L1440 280 L1440 600 L0 600 Z" />
-            {/* Snow caps follow back peaks */}
-            <path className="m-snow" d="
-              M275 145 L280 130 L300 175 L292 178 L283 170 Z
-              M755 125 L760 110 L782 170 L770 173 L763 165 Z
-              M495 175 L500 160 L520 205 L510 208 L502 200 Z
-              M1005 185 L1010 170 L1030 215 L1020 218 L1012 210 Z
-              M1275 155 L1280 140 L1302 195 L1290 198 Z
-              M375 285 L380 270 L398 305 L388 308 Z
-            " />
-            {/* Aurora rim light along back ridge */}
-            <path className="m-rim" d="M0 360 L90 230 L180 290 L280 130 L380 270 L500 160 L620 280 L760 110 L880 270 L1010 170 L1150 290 L1280 140 L1440 280" />
-
-            {/* Mid range */}
-            <path className="m-mid" d="M0 420 L70 320 L160 380 L260 240 L360 360 L480 280 L600 380 L740 230 L860 370 L990 290 L1130 390 L1270 270 L1440 380 L1440 600 L0 600 Z" />
-            <path className="m-rim" d="M0 420 L70 320 L160 380 L260 240 L360 360 L480 280 L600 380 L740 230 L860 370 L990 290 L1130 390 L1270 270 L1440 380" style={{ opacity: 0.4 }} />
-
-            {/* Front range — closest, darkest, jagged */}
-            <path className="m-front" d="M0 520 L50 410 L130 470 L220 360 L320 450 L430 380 L560 460 L700 350 L840 450 L990 390 L1130 470 L1280 390 L1440 460 L1440 600 L0 600 Z" />
-          </svg>
-        </div>
-        <div className="aurora-fog" />
-        <div className="aurora-veil" />
-      </div>
-      {/* Medical floating icons */}
-      <div className="absolute inset-0 -z-10"><MedicalBackdrop /></div>
-
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="flex h-11 w-11 items-center justify-center rounded-2xl shadow-lg animate-glow-pulse"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              <span className="font-display text-lg font-extrabold leading-none text-primary-foreground">C</span>
-            </div>
-            <span className="text-xl font-bold tracking-tight">Clinora AI</span>
-          </div>
-          <div className="flex items-center gap-2">
+    <div className="home-page min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-40 border-b border-border bg-background">
+        <div className="home-container flex h-20 items-center justify-between gap-3">
+          <Link to="/" className="flex items-center gap-3" aria-label="Clinora AI">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary font-display text-xl font-bold text-primary-foreground">C</span>
+            <span className="text-lg font-bold sm:text-xl">Clinora AI</span>
+          </Link>
+          <div className="flex items-center gap-2 sm:gap-5">
             <LanguageSwitcher />
-            <Link to="/auth">
-              <Button size="sm" className="shine rounded-full px-6 h-10 text-primary-foreground font-semibold" style={{ background: "var(--gradient-primary)" }}>
-                {t("idx.signin")}
-              </Button>
-            </Link>
+            <Button asChild size="sm" className="rounded-lg px-4 sm:px-6"><Link to="/auth">{t("idx.signin")}<ArrowUpRight className="ml-2 h-4 w-4" /></Link></Button>
           </div>
         </div>
       </header>
-
       <main>
-      {/* Hero */}
-      <section className="relative">
-        <div className="container py-20 md:py-28">
-          <div className="mx-auto max-w-3xl text-center animate-fade-up">
-            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-white/60 px-5 py-2 text-sm font-semibold text-primary backdrop-blur-md shadow-sm">
-              <Sparkles className="h-4 w-4" />
-              {t("idx.badge")}
-            </div>
-            <h1 className="text-balance text-5xl font-bold tracking-tight md:text-7xl leading-[1.05]">
-              {t("idx.heroTitle")}{" "}
-              <span className="text-gradient-primary">{t("idx.heroSpan")}</span>
-            </h1>
-            <p className="mx-auto mt-8 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground md:text-2xl">
-              {t("idx.heroDesc")}
-            </p>
-            <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <Link to="/auth">
-                <Button
-                  size="lg"
-                  className="shine rounded-full px-10 py-7 text-lg font-semibold text-primary-foreground shadow-xl"
-                  style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
-                >
-                  <Zap className="mr-2 h-5 w-5" />
-                  {t("idx.try")}
-                </Button>
-              </Link>
-              <span className="text-base text-muted-foreground font-medium">{t("idx.free")}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Problem / Solution */}
-      <section className="container relative py-16 md:py-20">
-        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
-          <div className="glass-card card-tilt rounded-3xl p-9">
-            <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 ring-1 ring-destructive/30 animate-float">
-              <Clock className="h-7 w-7 text-destructive" />
-            </div>
-            <h2 className="mb-3 text-2xl md:text-3xl font-bold">{t("idx.problemT")}</h2>
-            <p className="text-lg leading-relaxed text-muted-foreground">
-              {t("idx.problemD")}
-            </p>
-          </div>
-          <div className="glass-card card-tilt rounded-3xl p-9">
-            <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/30 animate-float" style={{ animationDelay: "1.5s" }}>
-              <Brain className="h-7 w-7 text-primary" />
-            </div>
-            <h2 className="mb-3 text-2xl md:text-3xl font-bold">{t("idx.solutionT")}</h2>
-            <p className="text-lg leading-relaxed text-muted-foreground">
-              {t("idx.solutionD")}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits */}
-      <section className="container relative pb-20 md:pb-28">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="mb-14 text-center text-4xl font-bold tracking-tight md:text-6xl">
-            <span className="text-gradient-primary">{t("idx.benefitsT")}</span>
-          </h2>
-          <div className="grid gap-6 md:grid-cols-3">
-            {[
-              { icon: Zap, title: t("idx.b1T"), text: t("idx.b1D") },
-              { icon: Activity, title: t("idx.b2T"), text: t("idx.b2D") },
-              { icon: Heart, title: t("idx.b3T"), text: t("idx.b3D") },
-            ].map(({ icon: Icon, title, text }, i) => (
-              <div
-                key={title}
-                className="glass-card card-tilt group rounded-3xl p-9"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              >
-                <div
-                  className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-6"
-                  style={{ background: "var(--gradient-primary)" }}
-                >
-                  <Icon className="h-8 w-8 text-primary-foreground" />
-                </div>
-                <h3 className="mb-2 text-2xl font-bold">{title}</h3>
-                <p className="text-lg leading-relaxed text-muted-foreground">{text}</p>
+        <section className="home-hero relative isolate overflow-hidden">
+          <img src={clinicImage} width={1536} height={1024} fetchPriority="high" alt="" className="absolute inset-0 -z-20 h-full w-full object-cover" />
+          <div className="home-hero-shade absolute inset-0 -z-10 bg-background/20" />
+          <div className="home-container relative flex min-h-[540px] items-center py-14">
+            <div className="home-intro max-w-xl">
+              <div className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase text-primary"><span className="h-2 w-2 rounded-full bg-primary" />{t("idx.badge")}</div>
+              <h1 className="font-display text-5xl font-semibold leading-tight sm:text-6xl lg:text-7xl">Clinora AI</h1>
+              <p className="mt-5 max-w-lg text-2xl font-medium leading-snug sm:text-3xl">{t("idx.heroTitle")} {t("idx.heroSpan")}</p>
+              <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground">{t("idx.heroDesc")}</p>
+              <div className="mt-8 flex flex-wrap items-center gap-5">
+                <Button asChild size="lg" className="h-12 rounded-lg px-6"><Link to="/auth">{t("idx.try")}<ArrowUpRight className="ml-3 h-4 w-4" /></Link></Button>
+                <span className="text-sm text-muted-foreground">{t("idx.free")}</span>
               </div>
-            ))}
+              <Button asChild variant="ghost" size="icon" className="mt-7 rounded-full text-foreground"><a href="#overview" aria-label={t("idx.benefitsT")}><ArrowDown className="h-5 w-5" /></a></Button>
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="container relative pb-24">
-        <div className="glass-card card-tilt mx-auto max-w-3xl overflow-hidden rounded-[2rem] p-14 text-center">
-          <h2 className="text-4xl font-bold md:text-5xl">{t("idx.ctaT")}</h2>
-          <p className="mt-5 text-xl text-muted-foreground">
-            {t("idx.ctaD")}
-          </p>
-          <Link to="/auth" className="mt-10 inline-block">
-            <Button
-              size="lg"
-              className="shine rounded-full px-12 py-7 text-lg font-semibold text-primary-foreground"
-              style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
-            >
-              {t("idx.ctaBtn")}
-            </Button>
-          </Link>
-        </div>
-      </section>
+        </section>
+        <section id="overview" className="scroll-mt-24 border-b border-border bg-background">
+          <div className="home-container grid gap-10 py-14 md:grid-cols-2 md:gap-16 md:py-20">
+            <div>
+              <Clock className="mb-5 h-7 w-7 text-muted-foreground" />
+              <h2 className="text-2xl font-semibold sm:text-3xl">{t("idx.problemT")}</h2>
+              <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">{t("idx.problemD")}</p>
+            </div>
+            <div className="border-t border-border pt-9 md:border-l md:border-t-0 md:pl-12 md:pt-0">
+              <Brain className="mb-5 h-7 w-7 text-primary" />
+              <h2 className="text-2xl font-semibold sm:text-3xl">{t("idx.solutionT")}</h2>
+              <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">{t("idx.solutionD")}</p>
+            </div>
+          </div>
+        </section>
+        <section className="bg-secondary">
+          <div className="home-container py-16 md:py-20">
+            <div className="mb-10 flex items-end justify-between gap-6"><h2 className="max-w-2xl text-3xl font-semibold leading-tight sm:text-4xl">{t("idx.benefitsT")}</h2><Activity className="hidden h-8 w-8 shrink-0 text-primary sm:block" /></div>
+            <div className="grid gap-5 md:grid-cols-3">
+              {[
+                { icon: Clock, title: t("idx.b1T"), text: t("idx.b1D"), tone: "text-primary bg-primary/10" },
+                { icon: Activity, title: t("idx.b2T"), text: t("idx.b2D"), tone: "text-accent-foreground bg-accent" },
+                { icon: Heart, title: t("idx.b3T"), text: t("idx.b3D"), tone: "text-warning-foreground bg-warning/15" },
+              ].map(({ icon: Icon, title, text, tone }, i) => (
+                <article key={title} className="home-benefit rounded-lg border border-border bg-card p-7">
+                  <div className="mb-8 flex items-center justify-between"><span className={`flex h-11 w-11 items-center justify-center rounded-lg ${tone}`}><Icon className="h-5 w-5" /></span><span className="text-xs text-muted-foreground">0{i + 1}</span></div>
+                  <h3 className="text-xl font-semibold">{title}</h3>
+                  <p className="mt-3 text-base leading-relaxed text-muted-foreground">{text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+        <section className="border-y border-border bg-accent">
+          <div className="home-container flex flex-col items-start justify-between gap-8 py-16 md:flex-row md:items-center md:py-20">
+            <div className="max-w-2xl"><h2 className="text-3xl font-semibold leading-tight sm:text-4xl">{t("idx.ctaT")}</h2><p className="mt-4 text-base text-muted-foreground">{t("idx.ctaD")}</p></div>
+            <Button asChild size="lg" className="h-12 shrink-0 rounded-lg px-6"><Link to="/auth">{t("idx.ctaBtn")}<ArrowUpRight className="ml-3 h-4 w-4" /></Link></Button>
+          </div>
+        </section>
       </main>
-
-      <footer className="relative border-t border-border/60 py-8 backdrop-blur-sm bg-background/60">
-        <div className="container flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground md:flex-row">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            <span>{t("status.aiNote")}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <a
-              href="https://t.me/clinora_support"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white/70 px-3 py-1.5 backdrop-blur transition-colors hover:border-primary/60 hover:text-primary"
-            >
-              <Send className="h-3.5 w-3.5" /> Telegram
-            </a>
-            <a
-              href="https://instagram.com/clinora.ai"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white/70 px-3 py-1.5 backdrop-blur transition-colors hover:border-primary/60 hover:text-primary"
-            >
-              <Instagram className="h-3.5 w-3.5" /> Instagram
-            </a>
+      <footer className="bg-background">
+        <div className="home-container flex flex-col justify-between gap-6 py-9 text-xs text-muted-foreground lg:flex-row lg:items-center">
+          <div className="flex max-w-lg items-start gap-2"><ShieldCheck className="h-4 w-4 shrink-0 text-primary" /><span>{t("status.aiNote")}</span></div>
+          <div className="flex items-center gap-6">
+            <a href="https://t.me/clinora_support" target="_blank" rel="noreferrer" className="flex items-center gap-2 transition-colors hover:text-primary"><Send className="h-4 w-4" />Telegram</a>
+            <a href="https://instagram.com/clinora.ai" target="_blank" rel="noreferrer" className="flex items-center gap-2 transition-colors hover:text-primary"><Instagram className="h-4 w-4" />Instagram</a>
           </div>
           <span>© {new Date().getFullYear()} Clinora AI</span>
         </div>
@@ -285,5 +96,4 @@ const Index = () => {
     </div>
   );
 };
-
 export default Index;
