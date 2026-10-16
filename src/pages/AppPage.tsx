@@ -882,7 +882,7 @@ const AppPage = () => {
               <Button onClick={runAnalysis} disabled={isAnalyzing} variant="outline" size="lg" className="rounded-2xl">
                 {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Brain className="mr-2 h-4 w-4" /> {t("act.suggestDiagnosis")}</>}
               </Button>
-              <Button onClick={() => goToStep(4)} disabled={!result.differentials?.length} size="lg" className="flex-1 rounded-2xl" style={{ background: "var(--gradient-primary)" }}>{t("common.next")}</Button>
+              <Button onClick={() => goToStep(4)} size="lg" className="flex-1 rounded-2xl" style={{ background: "var(--gradient-primary)" }}>{t("common.next")}</Button>
             </div>
           </section>
         )}
