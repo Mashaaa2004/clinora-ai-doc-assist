@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import ProtocolsPanel from "@/components/ProtocolsPanel";
 
 type Profile = {
   id: string;
@@ -38,7 +39,7 @@ type Sub = {
 
 const AdminDashboard = () => {
   const { isAdmin, loading, signOut, user } = useAuth();
-  const [tab, setTab] = useState<"requests" | "users" | "subs" | "clinics" | "settings" | "maintenance">("requests");
+  const [tab, setTab] = useState<"requests" | "users" | "subs" | "clinics" | "protocols" | "settings" | "maintenance">("requests");
   const [adminAllowed, setAdminAllowed] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -101,6 +102,7 @@ const AdminDashboard = () => {
             ["users", "Фойдаланувчилар"],
             ["subs", "Фаол обуналар"],
             ["clinics", "Клиникалар"],
+            ["protocols", "Клиник протоколлар"],
             ["settings", "Созламалар"],
             ["maintenance", "Тозалаш"],
           ] as const).map(([k, label]) => (
@@ -121,6 +123,7 @@ const AdminDashboard = () => {
         {tab === "users" && <UsersPanel />}
         {tab === "subs" && <SubsPanel />}
         {tab === "clinics" && <ClinicsPanel />}
+        {tab === "protocols" && <ProtocolsPanel />}
         {tab === "settings" && <SettingsPanel />}
         {tab === "maintenance" && <MaintenancePanel />}
       </main>

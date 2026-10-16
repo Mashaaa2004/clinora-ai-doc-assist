@@ -44,6 +44,8 @@ import { Helmet } from "react-helmet-async";
 import QRCode from "qrcode";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAishaStt } from "@/hooks/useAishaStt";
+import ClinicalReview, { type ClinicalFields } from "@/components/ClinicalReview";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 
 
 type Prescription = {
@@ -69,7 +71,7 @@ type Comorbidity = {
   referral_note?: string;
 };
 
-type AnalysisResult = {
+type AnalysisResult = ClinicalFields & {
   symptoms: string[];
   recommendation: string;
   prescriptions: Prescription[];
@@ -102,6 +104,9 @@ const AppPage = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [chosenIdx, setChosenIdx] = useState<number>(0);
   const [confirmed, setConfirmed] = useState(false);
+  const [reviewAccepted,setReviewAccepted]=useState(false);
+  const [saving,setSaving]=useState(false);
+  const [aiConsent,setAiConsent]=useState(false);
   const [selectedComorb, setSelectedComorb] = useState<number[]>([]);
   const [supported, setSupported] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
@@ -164,7 +169,8 @@ const AppPage = () => {
         if (p.result) setResult(p.result);
         if (typeof p.chosenIdx === "number") setChosenIdx(p.chosenIdx);
         if (typeof p.step === "number") setStep(p.step);
-        if (p.confirmed) setConfirmed(true);
+        // Approval is never restored from mutable browser storage.
+        setConfirmed(false);
         if (Array.isArray(p.selectedComorb)) setSelectedComorb(p.selectedComorb);
       } catch {}
     }
@@ -287,6 +293,7 @@ const AppPage = () => {
 
   // ---- run AI analysis ----
   const runAnalysis = async () => {
+    if(!aiConsent){toast.error("Bemorning AI orqali qayta ishlash roziligi talab qilinadi.");return;}
     if (!transcript.trim() || transcript.trim().length < 5) { toast.error(t("err.short")); return; }
     if (!isPro && user) {
       const { data: cnt } = await supabase.rpc("daily_usage_count", { _user_id: user.id });
@@ -302,6 +309,7 @@ const AppPage = () => {
       const { data: prev } = await supabase
         .from("consultations")
         .select("created_at,chosen_diagnosis,diagnosis,symptoms,recommendation,prescriptions,lab_tests,instrumental_tests")
+        .eq("user_id", user?.id ?? "")
         .ilike("patient_name", pn)
         .order("created_at", { ascending: false })
         .limit(5);
@@ -325,10 +333,11 @@ const AppPage = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke("analyze", {
-        body: { transcript, previousHistory, language: lang, labResults, instrumentalResults },
+        body: { transcript, patientName, previousHistory, language: lang, labResults, instrumentalResults },
       });
       if (error) {
-        const msg = (error as any).context?.error || (error as any).message || t("err.failed");
+        let msg=error.message;
+        if(error instanceof FunctionsHttpError){const details=await error.context.json().catch(()=>({}));msg=details.error??msg;}
         toast.error(msg); return;
       }
       if ((data as any)?.error) { toast.error((data as any).error); return; }
@@ -354,6 +363,7 @@ const AppPage = () => {
         res.instrumental_tests = mergeResults(res.instrumental_tests, result.instrumental_tests || []);
       }
       setResult(res);
+      setReviewAccepted(false);
       setChosenIdx(0);
       setSelectedComorb([]);
       setConfirmed(false);
@@ -372,6 +382,8 @@ const AppPage = () => {
     setResult((p) => {
       if (!p) return p;
       const n = fn(p);
+      setConfirmed(false);
+      setReviewAccepted(false);
       const data = { transcript, patientName, result: n, chosenIdx, step, confirmed };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       return n;
@@ -382,6 +394,8 @@ const AppPage = () => {
     setStep(1); setTranscript(""); setPatientName("");
     setResult(null); setChosenIdx(0); setConfirmed(false);
     setSelectedComorb([]);
+    setReviewAccepted(false);
+    setAiConsent(false);
     setConsultationId(null);
     setPatientCode("");
     baseTranscriptRef.current = "";
@@ -392,89 +406,38 @@ const AppPage = () => {
 
   // ---- confirm & save ----
   const handleConfirm = async () => {
-    if (!result) return;
+    if (!result || !user || !result.draft_id || !reviewAccepted || saving) return;
     const chosen = result.differentials[chosenIdx];
     if (!chosen?.name?.trim()) { toast.error(t("err.diagnosisEmpty")); return; }
-
-    const cleaned: AnalysisResult = {
-      symptoms: result.symptoms.map((s) => s.trim()).filter(Boolean),
-      recommendation: result.recommendation.trim(),
-      family_advice: result.family_advice.trim(),
-      differentials: result.differentials,
-      comorbidities: result.comorbidities || [],
-      prescriptions: result.prescriptions
-        .map((p) => ({
-          name: p.name.trim(), dosage: p.dosage.trim(), frequency: p.frequency.trim(),
-          duration: p.duration.trim(), notes: p.notes?.trim() || "",
-        }))
-        .filter((p) => p.name),
-      lab_tests: (result.lab_tests || []).map((l) => ({
-        name: l.name.trim(), reason: l.reason?.trim() || "", result: l.result?.trim() || "",
-      })).filter((l) => l.name),
-      instrumental_tests: (result.instrumental_tests || []).map((l) => ({
-        name: l.name.trim(), reason: l.reason?.trim() || "", result: l.result?.trim() || "",
-      })).filter((l) => l.name),
-    };
-
-    setResult(cleaned);
-    setConfirmed(true);
-    setStep(5);
-    persist({ result: cleaned, confirmed: true, step: 5 });
-
-    if (user) {
-      await supabase.from("prescriptions_log").insert({
-        user_id: user.id,
-        doctor_name: profile?.full_name || "",
-        hospital: profile?.hospital || "",
-        patient_name: patientName.trim() || "—",
-        symptoms_count: cleaned.symptoms.length,
-        prescriptions_count: cleaned.prescriptions.length,
-      });
-      // Generate a unique, human-readable patient code.
-      // Format: {DOCTOR_PREFIX}-{YYYYMMDD}-{XXXX}
-      //   DOCTOR_PREFIX = first 4 hex chars of doctor's user_id (uppercased)
-      //   so every patient code begins with the same prefix for that doctor,
-      //   making it easy to tell which doctor saw the patient.
-      const docPrefix = user.id.replace(/-/g, "").slice(0, 4).toUpperCase();
-      const d = new Date();
-      const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
-      const rnd = Math.random().toString(36).slice(2, 6).toUpperCase();
-      const newCode = `${docPrefix}-${ymd}-${rnd}`;
-      setPatientCode(newCode);
-      const endedAt = new Date();
-      const startIso = localStorage.getItem("clinora_consult_start");
-      const startedAtD = startIso ? new Date(startIso) : null;
+    setSaving(true);
+    const endedAt=new Date();
+    const startIso=localStorage.getItem("clinora_consult_start");
+    const startedAt=startIso?new Date(startIso):null;
+    const cleaned={...result,symptoms:result.symptoms.map(s=>s.trim()).filter(Boolean),recommendation:result.recommendation.trim(),family_advice:result.family_advice.trim()};
+    const docPrefix=user.id.replace(/-/g,"").slice(0,4).toUpperCase();
+    const newCode=`${docPrefix}-${endedAt.getFullYear()}${String(endedAt.getMonth()+1).padStart(2,"0")}${String(endedAt.getDate()).padStart(2,"0")}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+    try {
+      const {data:id,error}=await supabase.rpc("review_clinical_draft",{draft_id:result.draft_id,decision:"approved",edited:cleaned as any,final_record:{patient_name:patientName.trim(),patient_code:newCode,transcript,diagnosis:chosen.name,language:lang,started_at:startedAt?.toISOString()??null,duration_seconds:startedAt?Math.max(0,Math.round((endedAt.getTime()-startedAt.getTime())/1000)):null}});
+      if(error)throw error;
+      setResult(cleaned);setConfirmed(true);setStep(5);setPatientCode(newCode);setConsultationId(id);
+      persist({result:cleaned,confirmed:false,step:5});
       localStorage.removeItem("clinora_consult_start");
-      supabase.from("doctor_activity").upsert({
-        user_id: user.id, status: "idle", consultation_started_at: null, last_seen_at: endedAt.toISOString(),
-      }).then(() => {});
-      const { data: ins } = await supabase.from("consultations").insert({
-        started_at: startedAtD?.toISOString() ?? null,
-        ended_at: endedAt.toISOString(),
-        duration_seconds: startedAtD ? Math.max(0, Math.round((endedAt.getTime() - startedAtD.getTime()) / 1000)) : null,
-        user_id: user.id,
-        patient_name: patientName.trim() || "—",
-        patient_code: newCode,
-        transcript,
-        symptoms: cleaned.symptoms,
-        diagnosis: chosen.name,
-        chosen_diagnosis: chosen.name,
-        differentials: cleaned.differentials as any,
-        recommendation: cleaned.recommendation,
-        prescriptions: cleaned.prescriptions as any,
-        lab_tests: cleaned.lab_tests as any,
-        instrumental_tests: cleaned.instrumental_tests as any,
-        family_advice: cleaned.family_advice,
-        language: lang,
-      }).select("id").maybeSingle();
-      if (ins?.id) setConsultationId(ins.id);
-    }
-    toast.success(t("status.confirmed"));
+      await supabase.from("doctor_activity").upsert({user_id:user.id,status:"idle",consultation_started_at:null,last_seen_at:endedAt.toISOString()});
+      await supabase.from("prescriptions_log").insert({user_id:user.id,doctor_name:profile?.full_name??"",hospital:profile?.hospital??"",patient_name:patientName.trim(),symptoms_count:cleaned.symptoms.length,prescriptions_count:cleaned.prescriptions.length});
+      toast.success(t("status.confirmed"));
+    }catch(e){toast.error(e instanceof Error?e.message:"Tasdiqlash saqlanmadi");}finally{setSaving(false);}
+  };
+  const rejectDraft=async()=>{
+    if(!result?.draft_id)return;
+    const {error}=await supabase.rpc("review_clinical_draft",{draft_id:result.draft_id,decision:"rejected",edited:result as any});
+    if(error){toast.error(error.message);return;} handleClear();toast.info("Qoralama rad etildi");
   };
 
   // ---- PDF ----
   const generatePdf = async () => {
-    if (!result || !confirmed) return;
+    if (!result || !confirmed || !consultationId || !user) return;
+    const {data: approved}=await supabase.from("consultations").select("document_status").eq("id",consultationId).eq("user_id",user.id).maybeSingle();
+    if(approved?.document_status!=="approved"){toast.error("Shifokor tasdig‘i talab qilinadi");return;}
     // Refresh profile so latest doctor/hospital info appears on the PDF
     try { await refreshProfile(); } catch {}
     const chosen = result.differentials[chosenIdx];
@@ -585,6 +548,8 @@ const AppPage = () => {
     <div class="row"><div class="label">${lang === "ru" ? "Дата" : lang === "en" ? "Date" : "Сана"}</div><div class="val">${esc(dateStr)}</div></div>
   </div>
 
+  ${result.soap ? `<h2 class="section">SOAP</h2><p class="body"><b>S:</b> ${esc(result.soap.subjective)}<br/><b>O:</b> ${esc(result.soap.objective)}<br/><b>A:</b> ${esc(result.soap.assessment)}<br/><b>P:</b> ${esc(result.soap.plan)}</p>` : ""}
+  ${result.protocol_refs?.length ? `<h2 class="section">Rasmiy protokol manbalari</h2><p class="body">${result.protocol_refs.map(p=>esc(`${p.title} · ${p.section} · ${p.page}-sahifa · ${p.version} · ${p.revision_date??""} · ${p.source_url}`)).join("<br/>")}</p>` : `<p class="muted">Tasdiqlangan mos protokol topilmadi.</p>`}
   <h2 class="section">${L("sec.symptoms")}</h2>
   ${symptomsHtml}
 
@@ -806,6 +771,7 @@ const AppPage = () => {
           </div>
 
           <Stepper />
+          {result&&<ClinicalReview value={result} approved={confirmed} onChange={(key,text)=>update(r=>({...r,soap:{subjective:r.soap?.subjective??"",objective:r.soap?.objective??"",assessment:r.soap?.assessment??"",plan:r.soap?.plan??"",[key]:text}}))}/> }
 
         {/* STEP 1: Complaints */}
         {step === 1 && (
@@ -840,8 +806,9 @@ const AppPage = () => {
                 placeholder={t("rec.placeholder")} className="min-h-[140px] rounded-2xl bg-background text-base" />
             </div>
 
+            <label className="mt-4 flex items-start gap-3 text-sm"><Checkbox checked={aiConsent} onCheckedChange={v=>setAiConsent(v===true)} aria-label="Bemor AI roziligi"/><span>Bemor AI orqali qayta ishlashga rozilik berdi; suhbatdagi ism, manzil va boshqa shaxsiy ma’lumotlarni olib tashladim.</span></label>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <Button onClick={runAnalysis} disabled={isAnalyzing || !transcript.trim()} size="lg" className="flex-1 rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
+              <Button onClick={runAnalysis} disabled={isAnalyzing || !transcript.trim() || !aiConsent} size="lg" className="flex-1 rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
                 {isAnalyzing ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t("act.analyzing")}</> : <><Sparkles className="mr-2 h-5 w-5" /> {t("act.suggestLabs")}</>}
               </Button>
               <Button onClick={handleClear} variant="outline" size="lg" aria-label={t("common.clear") || "Clear"} className="rounded-2xl" disabled={isAnalyzing || (!transcript && !result)}>
@@ -952,6 +919,7 @@ const AppPage = () => {
                 })}
               </div>
             </div>
+            <label className="block text-sm">Shifokor kiritadigan tashxis<Input aria-label="Shifokor tashxisi" className="mt-2" onChange={e=>{const name=e.target.value;setChosenIdx(0);update(r=>({...r,differentials:[{name,probability:"medium",reasoning:"Shifokor kiritgan baho"},...r.differentials.slice(1)]}));}}/></label>
             {result.comorbidities && result.comorbidities.length > 0 && (
               <div className={cardCls}>
                 <h3 className={labelCls}><Brain className="h-4 w-4 text-warning" /> {t("sec.comorbid")}</h3>
@@ -1050,9 +1018,11 @@ const AppPage = () => {
             </div>
 
             {!confirmed ? (
-              <div className="flex gap-3">
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 text-sm"><Checkbox checked={reviewAccepted} onCheckedChange={v=>setReviewAccepted(v===true)} aria-label="Shifokor ko‘rigi tasdiqi"/><span>Ma’lumotlarni, ogohlantirishlarni va manbalarni ko‘rib chiqdim; yakuniy hujjatni shifokor sifatida tasdiqlayman.</span></label>
+                <Button onClick={()=>void rejectDraft()} variant="destructive" disabled={saving}>Qoralamani rad etish</Button>
                 <Button onClick={() => goToStep(4)} variant="outline" size="lg" className="rounded-2xl">{t("common.back")}</Button>
-                <Button onClick={handleConfirm} size="lg" className="flex-1 rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
+                <Button onClick={handleConfirm} disabled={!reviewAccepted||saving||!result.draft_id} size="lg" className="flex-1 rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
                   <CheckCircle2 className="mr-2 h-5 w-5" /> {t("act.confirm")}
                 </Button>
               </div>
