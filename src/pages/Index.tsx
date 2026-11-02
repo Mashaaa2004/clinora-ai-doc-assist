@@ -29,7 +29,7 @@ const Index = () => {
       <main>
         <section className="home-hero relative isolate overflow-hidden">
           <img src={clinicImage} width={1536} height={1024} fetchPriority="high" alt="" className="absolute inset-0 -z-20 h-full w-full object-cover" />
-          <div className="home-hero-shade absolute inset-0 -z-10 bg-background/20" />
+          <div className="home-hero-shade absolute inset-0 -z-10" />
           <div className="home-container relative flex min-h-[540px] items-center py-14">
             <div className="home-intro max-w-xl">
               <div className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase text-primary"><span className="h-2 w-2 rounded-full bg-primary" />{t("idx.badge")}</div>
