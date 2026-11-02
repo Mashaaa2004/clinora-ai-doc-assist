@@ -1,5 +1,5 @@
 # Clinora clinical documentation upgrade
-- [ ] Finish homepage palette, lightweight scrolling and phone/tablet/desktop checks.
+- [x] Finish homepage palette, lightweight scrolling and phone/tablet/desktop checks.
 - [x] Verified protocol library, private PDF/text storage, chunk extraction and search.
 - [x] Ground existing analysis and CRM drafting in retrieved excerpts, with SOAP, safety flags and citations.
 - [x] Durable draft, rejection, explicit clinician approval and audit trail; preserve PDF layout.
