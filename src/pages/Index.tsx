@@ -18,7 +18,7 @@ const Index = () => {
         <div className="home-container flex h-20 items-center justify-between gap-3">
           <Link to="/" className="flex items-center gap-3" aria-label="Clinora AI">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary font-display text-xl font-bold text-primary-foreground">C</span>
-            <span className="text-lg font-bold sm:text-xl">Clinora AI</span>
+            <span className="text-lg font-bold max-[360px]:hidden sm:text-xl">Clinora AI</span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-5">
             <LanguageSwitcher />
@@ -29,7 +29,7 @@ const Index = () => {
       <main>
         <section className="home-hero relative isolate overflow-hidden">
           <img src={clinicImage} width={1536} height={1024} fetchPriority="high" alt="" className="absolute inset-0 -z-20 h-full w-full object-cover" />
-          <div className="home-hero-shade absolute inset-0 -z-10 bg-background/20" />
+          <div className="home-hero-shade absolute inset-0 -z-10" />
           <div className="home-container relative flex min-h-[540px] items-center py-14">
             <div className="home-intro max-w-xl">
               <div className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase text-primary"><span className="h-2 w-2 rounded-full bg-primary" />{t("idx.badge")}</div>
@@ -77,7 +77,7 @@ const Index = () => {
           </div>
         </section>
         <section className="border-y border-border bg-accent">
-          <div className="home-container flex flex-col items-start justify-between gap-8 py-16 md:flex-row md:items-center md:py-20">
+          <div className="home-container flex flex-col items-start justify-between gap-8 py-16 md:py-20 lg:flex-row lg:items-center">
             <div className="max-w-2xl"><h2 className="text-3xl font-semibold leading-tight sm:text-4xl">{t("idx.ctaT")}</h2><p className="mt-4 text-base text-muted-foreground">{t("idx.ctaD")}</p></div>
             <Button asChild size="lg" className="h-12 shrink-0 rounded-lg px-6"><Link to="/auth">{t("idx.ctaBtn")}<ArrowUpRight className="ml-3 h-4 w-4" /></Link></Button>
           </div>

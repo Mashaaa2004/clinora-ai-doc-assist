@@ -1,4 +1,5 @@
 # Architecture rules
+- Scope homepage theme tokens and scrolling styles to the homepage; this preserves clinical-screen appearance and behavior.
 - Preserve the existing voice-to-analysis-to-review-to-PDF workflow and AI provider when adding clinical grounding; this avoids unrelated MVP regressions.
 - Store protocols and page-aware excerpts separately with authenticated reads and admin-only writes; retrieval must select verified, current clinical documents only.
 - Keep retrieval, citation validation, identity minimization and clinical safety instructions in a server-only shared module used by both document endpoints; this keeps the grounding boundary consistent.
