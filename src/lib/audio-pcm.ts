@@ -1,5 +1,5 @@
 /** Convert device-rate mono audio to the 16 kHz PCM required by STT. */
-export function toPcm16(input: Float32Array, sampleRate: number): Int16Array {
+export function toPcm16(input: Float32Array, sampleRate: number) {
   const ratio = sampleRate / 16000;
   const output = new Int16Array(Math.floor(input.length / ratio));
   for (let i = 0; i < output.length; i++) {
