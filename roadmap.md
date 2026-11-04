@@ -1,4 +1,5 @@
 # Clinora clinical documentation upgrade
+- [ ] Adapt clinical navigation, dialogs, audio and PDF opening for iPhone/Android and Mac/desktop; verify supported browsers.
 - [x] Finish homepage palette, lightweight scrolling and phone/tablet/desktop checks.
 - [x] Verified protocol library, private PDF/text storage, chunk extraction and search.
 - [x] Ground existing analysis and CRM drafting in retrieved excerpts, with SOAP, safety flags and citations.
