@@ -743,17 +743,17 @@ const AppPage = () => {
               <HelpCircle className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">{t("nav.guide")}</span>
             </Button>
-            <Button variant="ghost" size="sm" className="rounded-full" onClick={() => window.dispatchEvent(new Event(OPEN_LEGAL_EVENT))} title="Legal & Privacy">
+            <Button variant="ghost" size="sm" className="rounded-full" aria-label="Legal & Privacy" onClick={() => window.dispatchEvent(new Event(OPEN_LEGAL_EVENT))} title="Legal & Privacy">
               <ShieldCheck className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden md:inline">Legal</span>
             </Button>
             <LanguageSwitcher />
-            <Link to="/history"><Button variant="ghost" size="sm" className="rounded-full"><HistoryIcon className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">{t("nav.history")}</span></Button></Link>
-            <Link to="/queue"><Button variant="ghost" size="sm" className="rounded-full"><Inbox className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">Navbat</span></Button></Link>
-            <Link to="/profile"><Button variant="ghost" size="sm" className="rounded-full"><User className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.profile")}</span></Button></Link>
-            <Link to="/analytics"><Button variant="ghost" size="sm" className="rounded-full"><BarChart3 className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.analytics")}</span></Button></Link>
+            <Link to="/history"><Button variant="ghost" size="sm" aria-label={t("nav.history")} className="rounded-full"><HistoryIcon className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">{t("nav.history")}</span></Button></Link>
+            <Link to="/queue"><Button variant="ghost" size="sm" aria-label="Navbat" className="rounded-full"><Inbox className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">Navbat</span></Button></Link>
+            <Link to="/profile"><Button variant="ghost" size="sm" aria-label={t("nav.profile")} className="rounded-full"><User className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.profile")}</span></Button></Link>
+            <Link to="/analytics"><Button variant="ghost" size="sm" aria-label={t("nav.analytics")} className="rounded-full"><BarChart3 className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.analytics")}</span></Button></Link>
             <Link to="/pricing"><Button variant="ghost" size="sm" className="rounded-full text-primary" style={isPro ? { background: "hsl(var(--primary) / 0.12)" } : undefined}><Crown className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{isPro ? "PRO" : t("nav.pro")}</span></Button></Link>
-            <Button variant="ghost" size="sm" onClick={signOut} className="rounded-full"><LogOut className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.signout")}</span></Button>
+            <Button variant="ghost" size="sm" aria-label={t("nav.signout")} onClick={signOut} className="rounded-full"><LogOut className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.signout")}</span></Button>
           </div>
         </div>
       </header>
@@ -790,7 +790,7 @@ const AppPage = () => {
             <h2 className="text-lg font-semibold">{t("step.1.title")}</h2>
             <p className="mb-5 text-sm text-muted-foreground">{t("step.1.desc")}</p>
 
-            {!supported && (
+            {!supported && !navigator.mediaDevices?.getUserMedia && (
               <div className="mb-4 rounded-2xl border border-warning/30 bg-warning/10 p-3 text-sm">{t("rec.unsupported")}</div>
             )}
 
