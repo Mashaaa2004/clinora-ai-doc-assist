@@ -1,5 +1,6 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toPcm16 } from "@/lib/audio-pcm";
 
 const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
@@ -52,10 +53,20 @@ export function useAishaStt() {
     wsRef.current = null;
   }, []);
 
+  useEffect(() => stop, [stop]);
+
   const start = useCallback(
     async (language: string, cb: Callbacks) => {
       let stream: MediaStream | null = null;
       try {
+        stop();
+        const AudioCtx: typeof AudioContext | undefined =
+          window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioCtx || !navigator.mediaDevices?.getUserMedia) throw new Error("audio_unavailable");
+        // Resume within the microphone click, before asynchronous session/socket work.
+        const ctx = new AudioCtx();
+        ctxRef.current = ctx;
+        await ctx.resume();
         const { data: sess } = await supabase.auth.getSession();
         const token = sess.session?.access_token;
         if (!token) throw new Error("not_authenticated");
@@ -109,11 +120,8 @@ export function useAishaStt() {
         ws.onerror = () => cb.onError?.("stt_error");
         ws.onclose = () => cb.onClose?.();
 
-        const AudioCtx: typeof AudioContext =
-          (window as any).AudioContext || (window as any).webkitAudioContext;
-        const ctx = new AudioCtx({ sampleRate: 16000 });
-        ctxRef.current = ctx;
-        if (ctx.state === "suspended") { try { await ctx.resume(); } catch { /* noop */ } }
+        if (ctx.state !== "running") await ctx.resume();
+        if (ctx.state !== "running") throw new Error("audio_suspended");
         const source = ctx.createMediaStreamSource(stream);
         const processor = ctx.createScriptProcessor(4096, 1, 1);
         nodeRef.current = processor;
@@ -121,11 +129,7 @@ export function useAishaStt() {
         processor.onaudioprocess = (ev) => {
           if (ws.readyState !== WebSocket.OPEN) return;
           const input = ev.inputBuffer.getChannelData(0);
-          const pcm = new Int16Array(input.length);
-          for (let i = 0; i < input.length; i++) {
-            const s = Math.max(-1, Math.min(1, input[i]));
-            pcm[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-          }
+          const pcm = toPcm16(input, ctx.sampleRate);
           try { ws.send(pcm.buffer); } catch { /* noop */ }
         };
 
@@ -134,6 +138,7 @@ export function useAishaStt() {
       } catch (err) {
         // Release the mic and socket so the caller can fall back cleanly.
         stop();
+        stream?.getTracks().forEach(track => track.stop());
         throw err;
       }
     },

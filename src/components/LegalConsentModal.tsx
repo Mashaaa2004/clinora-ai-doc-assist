@@ -356,7 +356,7 @@ const LegalConsentModal = () => {
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o && forced) { setForced(false); setOpen(false); } }}>
       <DialogContent
-        className="w-[calc(100vw-1.5rem)] max-w-2xl p-4 sm:p-6 rounded-2xl max-h-[92vh] overflow-y-auto"
+        className="device-dialog w-[calc(100vw-1.5rem)] max-w-2xl p-4 sm:p-6 rounded-2xl overflow-y-auto"
         onPointerDownOutside={(e) => { if (!forced) e.preventDefault(); }}
         onEscapeKeyDown={(e) => { if (!forced) e.preventDefault(); }}
       >
@@ -368,7 +368,7 @@ const LegalConsentModal = () => {
           <DialogDescription className="text-center text-xs sm:text-sm">{c.intro}</DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[38vh] sm:max-h-[45vh] rounded-md border bg-muted/30 p-3 sm:p-4 text-xs sm:text-sm leading-relaxed">
+        <div className="rounded-md border bg-muted/30 p-3 sm:p-4 text-sm leading-relaxed">
           <div className="space-y-4 sm:space-y-5">
             <section>
               <div className="mb-1 flex items-center gap-2 font-semibold text-sm">
@@ -417,7 +417,7 @@ const LegalConsentModal = () => {
               <p className="text-muted-foreground">{c.s6}</p>
             </section>
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="space-y-2 sm:space-y-3 pt-2">
           <label className="flex cursor-pointer items-start gap-2.5 sm:gap-3 rounded-lg border bg-card p-2.5 sm:p-3 hover:bg-accent/40">
