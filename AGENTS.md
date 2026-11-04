@@ -5,3 +5,5 @@
 - Keep retrieval, citation validation, identity minimization and clinical safety instructions in a server-only shared module used by both document endpoints; this keeps the grounding boundary consistent.
 - Persist original AI drafts separately from clinician-approved final documents and audit approvals through authenticated database functions; client state must not grant approval.
 - Extract PDF text locally with PDF.js and store original documents privately; unsupported scanned documents require manually reviewed text rather than fabricated OCR.
+- Normalize device-rate microphone samples to 16 kHz PCM in the shared audio helper and resume Web Audio from the user gesture; browser hardware rates differ.
+- Reserve the clinical PDF window before asynchronous approval checks and retain manual printing; Safari blocks late popups and automated print sheets.

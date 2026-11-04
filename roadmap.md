@@ -1,4 +1,5 @@
 # Clinora clinical documentation upgrade
+- [x] Adapt clinical navigation, dialogs, audio and PDF opening for iPhone/Android and Mac/desktop; Chromium/WebKit layouts and PCM tests verified. Physical microphone and device print sheets need real-device testing.
 - [x] Finish homepage palette, lightweight scrolling and phone/tablet/desktop checks.
 - [x] Verified protocol library, private PDF/text storage, chunk extraction and search.
 - [x] Ground existing analysis and CRM drafting in retrieved excerpts, with SOAP, safety flags and citations.

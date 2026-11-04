@@ -20,7 +20,7 @@ const GuideModal = ({ onClose }: Props) => {
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(dontShow); }}>
-      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-lg rounded-2xl sm:rounded-3xl p-4 sm:p-6 max-h-[92vh] overflow-y-auto">
+      <DialogContent className="device-dialog w-[calc(100vw-1.5rem)] max-w-lg rounded-2xl sm:rounded-3xl p-4 sm:p-6 overflow-y-auto">
         <DialogHeader>
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
             <Sparkles className="h-6 w-6 text-primary-foreground" />
@@ -48,7 +48,7 @@ const GuideModal = ({ onClose }: Props) => {
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
-          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+          <label className="flex min-h-11 items-center gap-2 text-sm text-muted-foreground cursor-pointer">
             <input type="checkbox" checked={dontShow} onChange={(e) => setDontShow(e.target.checked)} className="h-4 w-4 rounded" />
             {t("guide.dontShow")}
           </label>

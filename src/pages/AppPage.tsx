@@ -444,8 +444,11 @@ const AppPage = () => {
   // ---- PDF ----
   const generatePdf = async () => {
     if (!result || !confirmed || !consultationId || !user) return;
+    const w = window.open("", "_blank");
+    if (!w) { toast.error("PDF oynasini ochish uchun brauzerda yangi oynalarga ruxsat bering."); return; }
+    try {
     const {data: approved}=await supabase.from("consultations").select("document_status").eq("id",consultationId).eq("user_id",user.id).maybeSingle();
-    if(approved?.document_status!=="approved"){toast.error("Shifokor tasdig‘i talab qilinadi");return;}
+    if(approved?.document_status!=="approved"){w.close();toast.error("Shifokor tasdig‘i talab qilinadi");return;}
     // Refresh profile so latest doctor/hospital info appears on the PDF
     try { await refreshProfile(); } catch {}
     const chosen = result.differentials[chosenIdx];
@@ -641,15 +644,15 @@ const AppPage = () => {
     setTimeout(function(){ if(left > 0){ left = 0; cb(); } }, 2500);
   }
   window.addEventListener('load', function(){
-    whenImagesReady(function(){ setTimeout(doPrint, 350); });
+    whenImagesReady(function(){ fitToOnePage(); if(!/iPhone|iPad|iPod/.test(navigator.userAgent)) setTimeout(doPrint, 350); });
   });
 })();
 </script>
 </body></html>`;
 
-    const w = window.open("", "_blank", "width=900,height=1000");
-    if (!w) { toast.error("Browser blocked the new window. Please allow popups."); return; }
+    if (w.closed) return;
     w.document.open(); w.document.write(html); w.document.close();
+    } catch { w.close(); toast.error("PDF ochilmadi. Qayta urinib ko‘ring."); }
   };
 
   // ---- UI ----
@@ -712,7 +715,7 @@ const AppPage = () => {
         <meta property="og:description" content="Bemor suhbatidan simptomlar va tashxisni AI yordamida oling." />
         <meta property="og:url" content="https://clinora-ai-doc-assist.lovable.app/app" />
       </Helmet>
-      <div className="relative min-h-screen bg-mesh overflow-hidden">
+      <div className="clinical-page relative min-h-screen bg-mesh">
       <div className="bg-mesh-animated pointer-events-none absolute inset-0 -z-10" aria-hidden />
       <div className="absolute inset-0 -z-10"><MedicalBackdrop /></div>
       {showGuide && (
@@ -722,35 +725,35 @@ const AppPage = () => {
         }} />
       )}
 
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
+      <header className="clinical-header sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
         <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="clinical-brand flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg shadow-md" style={{ background: "var(--gradient-primary)" }}>
               <span className="font-display text-sm font-extrabold leading-none text-primary-foreground">C</span>
             </div>
-            <div className="leading-tight">
+            <div className="clinical-brand-details leading-tight">
               <div className="text-sm font-semibold text-foreground">Clinora AI</div>
               {profile?.full_name && (
                 <div className="text-[11px] text-muted-foreground">Dr. {profile.full_name}{profile.hospital ? ` · ${profile.hospital}` : ""}</div>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="rounded-full" onClick={() => setShowGuide(true)}>
+          <div className="clinical-nav flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="rounded-full" aria-label={t("nav.guide")} onClick={() => setShowGuide(true)}>
               <HelpCircle className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">{t("nav.guide")}</span>
             </Button>
-            <Button variant="ghost" size="sm" className="rounded-full" onClick={() => window.dispatchEvent(new Event(OPEN_LEGAL_EVENT))} title="Legal & Privacy">
+            <Button variant="ghost" size="sm" className="rounded-full" aria-label="Legal & Privacy" onClick={() => window.dispatchEvent(new Event(OPEN_LEGAL_EVENT))} title="Legal & Privacy">
               <ShieldCheck className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden md:inline">Legal</span>
             </Button>
             <LanguageSwitcher />
-            <Link to="/history"><Button variant="ghost" size="sm" className="rounded-full"><HistoryIcon className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">{t("nav.history")}</span></Button></Link>
-            <Link to="/queue"><Button variant="ghost" size="sm" className="rounded-full"><Inbox className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">Navbat</span></Button></Link>
-            <Link to="/profile"><Button variant="ghost" size="sm" className="rounded-full"><User className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.profile")}</span></Button></Link>
-            <Link to="/analytics"><Button variant="ghost" size="sm" className="rounded-full"><BarChart3 className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.analytics")}</span></Button></Link>
+            <Link to="/history"><Button variant="ghost" size="sm" aria-label={t("nav.history")} className="rounded-full"><HistoryIcon className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">{t("nav.history")}</span></Button></Link>
+            <Link to="/queue"><Button variant="ghost" size="sm" aria-label="Navbat" className="rounded-full"><Inbox className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">Navbat</span></Button></Link>
+            <Link to="/profile"><Button variant="ghost" size="sm" aria-label={t("nav.profile")} className="rounded-full"><User className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.profile")}</span></Button></Link>
+            <Link to="/analytics"><Button variant="ghost" size="sm" aria-label={t("nav.analytics")} className="rounded-full"><BarChart3 className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.analytics")}</span></Button></Link>
             <Link to="/pricing"><Button variant="ghost" size="sm" className="rounded-full text-primary" style={isPro ? { background: "hsl(var(--primary) / 0.12)" } : undefined}><Crown className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{isPro ? "PRO" : t("nav.pro")}</span></Button></Link>
-            <Button variant="ghost" size="sm" onClick={signOut} className="rounded-full"><LogOut className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.signout")}</span></Button>
+            <Button variant="ghost" size="sm" aria-label={t("nav.signout")} onClick={signOut} className="rounded-full"><LogOut className="h-4 w-4 sm:mr-1.5" /><span className="hidden md:inline">{t("nav.signout")}</span></Button>
           </div>
         </div>
       </header>
@@ -787,7 +790,7 @@ const AppPage = () => {
             <h2 className="text-lg font-semibold">{t("step.1.title")}</h2>
             <p className="mb-5 text-sm text-muted-foreground">{t("step.1.desc")}</p>
 
-            {!supported && (
+            {!supported && !navigator.mediaDevices?.getUserMedia && (
               <div className="mb-4 rounded-2xl border border-warning/30 bg-warning/10 p-3 text-sm">{t("rec.unsupported")}</div>
             )}
 
