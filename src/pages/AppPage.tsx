@@ -99,6 +99,8 @@ const AppPage = () => {
   const [step, setStep] = useState<Step>(1);
   const [transcript, setTranscript] = useState("");
   const [patientName, setPatientName] = useState("");
+  const [extraDoc, setExtraDoc] = useState("");
+  const [voiceFailed, setVoiceFailed] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -279,6 +281,8 @@ const AppPage = () => {
           if (!aishaActiveRef.current) return;
           aishaActiveRef.current = false;
           aisha.stop();
+          setVoiceFailed(true);
+          toast.warning("Aisha ovoz xizmati uzildi. Brauzer ovozi yoki qo‘shimcha hujjat maydonidan foydalaning.");
           startBrowserRecognition();
         },
         onClose: () => {
@@ -294,6 +298,8 @@ const AppPage = () => {
     } catch {
       // Aisha unavailable — fall back to the browser recognizer.
       aishaActiveRef.current = false;
+      setVoiceFailed(true);
+      toast.warning("Aisha ovoz xizmatiga ulanib bo‘lmadi. Brauzer ovozi yoki qo‘shimcha hujjat maydonidan foydalaning.");
       startBrowserRecognition();
     }
   };
@@ -302,7 +308,8 @@ const AppPage = () => {
   // ---- run AI analysis ----
   const runAnalysis = async () => {
     if(!aiConsent){toast.error("Bemorning AI orqali qayta ishlash roziligi talab qilinadi.");return;}
-    if (!transcript.trim() || transcript.trim().length < 5) { toast.error(t("err.short")); return; }
+    const fullText = [transcript.trim(), extraDoc.trim() ? `Qo‘shimcha hujjat:\n${extraDoc.trim()}` : ""].filter(Boolean).join("\n\n");
+    if (fullText.length < 5) { toast.error(t("err.short")); return; }
     if (!isPro && user) {
       const { data: cnt } = await supabase.rpc("daily_usage_count", { _user_id: user.id });
       if ((cnt ?? 0) >= 5) { toast.error(t("err.dailyLimit")); return; }
@@ -341,7 +348,7 @@ const AppPage = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke("analyze", {
-        body: { transcript, patientName, previousHistory, language: lang, labResults, instrumentalResults, consentConfirmed: aiConsent },
+        body: { transcript: fullText, patientName, previousHistory, language: lang, labResults, instrumentalResults, consentConfirmed: aiConsent },
       });
       if (error) {
         let msg=error.message;
@@ -399,7 +406,7 @@ const AppPage = () => {
   };
 
   const handleClear = () => {
-    setStep(1); setTranscript(""); setPatientName("");
+    setStep(1); setTranscript(""); setPatientName(""); setExtraDoc(""); setVoiceFailed(false);
     setResult(null); setChosenIdx(0); setConfirmed(false);
     setSelectedComorb([]);
     setReviewAccepted(false);
@@ -817,9 +824,18 @@ const AppPage = () => {
                 placeholder={t("rec.placeholder")} className="min-h-[140px] rounded-2xl bg-background text-base" />
             </div>
 
+            <div className="mt-5">
+              {voiceFailed && (
+                <div className="mb-2 rounded-2xl border border-warning/30 bg-warning/10 p-3 text-sm">Ovoz yozish ishlamadi. Bemor hujjati, epikriz yoki yozma shikoyatlarni quyiga kiriting — tahlil shu matn asosida tuziladi.</div>
+              )}
+              <label className="mb-2 block text-xs font-medium text-muted-foreground">Qo‘shimcha hujjat (epikriz, oldingi xulosa, tahlillar) — ixtiyoriy</label>
+              <Textarea value={extraDoc} onChange={(e) => setExtraDoc(e.target.value.slice(0, 8000))}
+                placeholder="Hujjat matnini shu yerga joylang yoki yozing…" className="min-h-[120px] rounded-2xl bg-background text-base" />
+            </div>
+
             <label className="mt-4 flex items-start gap-3 text-sm"><Checkbox checked={aiConsent} onCheckedChange={v=>setAiConsent(v===true)} aria-label="Bemor AI roziligi"/><span>Bemor AI orqali qayta ishlashga rozilik berdi; suhbatdagi ism, manzil va boshqa shaxsiy ma’lumotlarni olib tashladim.</span></label>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <Button onClick={runAnalysis} disabled={isAnalyzing || !transcript.trim() || !aiConsent} size="lg" className="flex-1 rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
+              <Button onClick={runAnalysis} disabled={isAnalyzing || (!transcript.trim() && !extraDoc.trim()) || !aiConsent} size="lg" className="flex-1 rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
                 {isAnalyzing ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t("act.analyzing")}</> : <><Sparkles className="mr-2 h-5 w-5" /> {t("act.suggestLabs")}</>}
               </Button>
               <Button onClick={handleClear} variant="outline" size="lg" aria-label={t("common.clear") || "Clear"} className="rounded-2xl" disabled={isAnalyzing || (!transcript && !result)}>
