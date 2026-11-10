@@ -186,8 +186,18 @@ const AppPage = () => {
         if(p.result?.draft_id&&currentUser){
           supabase.from("clinical_drafts").select("status,consultation_id").eq("id",p.result.draft_id).eq("user_id",currentUser).maybeSingle().then(async({data:draft})=>{
             if(draft?.status!=="approved"||!draft.consultation_id)return;
-            const {data:record}=await supabase.from("consultations").select("document_status,patient_code").eq("id",draft.consultation_id).eq("user_id",currentUser).maybeSingle();
-            if(record?.document_status!=="approved")return;
+            const {data:record}=await supabase.from("consultations").select("document_status,patient_code,patient_name,patient_reference,transcript,chosen_diagnosis,clinical_document").eq("id",draft.consultation_id).eq("user_id",currentUser).maybeSingle();
+            if(record?.document_status!=="approved"||!record.clinical_document)return;
+            // Restore the server-approved revision, never locally modified clinical content.
+            const serverResult=record.clinical_document as AnalysisResult;
+            const nextChosen=Math.max(0,serverResult.differentials.findIndex(d=>d.name===record.chosen_diagnosis));
+            const nextComorb=serverResult.selected_comorbidities??[];
+            const nextTranscript=record.transcript??"";
+            const nextReference=record.patient_reference??"";
+            const revision=serverResult.approval_fingerprint??approvalFingerprint({result:serverResult,patientName:record.patient_name,patientReference:nextReference,transcript:nextTranscript,extraDoc:"",chosenIdx:nextChosen,selectedComorb:nextComorb});
+            setResult(serverResult);setPatientName(record.patient_name);setPatientReference(nextReference);
+            setTranscript(nextTranscript);setExtraDoc("");baseTranscriptRef.current=nextTranscript;
+            setChosenIdx(nextChosen);setSelectedComorb(nextComorb);setApprovedRevision(revision);
             setConsultationId(draft.consultation_id);setPatientCode(record.patient_code);setConfirmed(true);
           });
         }
@@ -321,10 +331,12 @@ const AppPage = () => {
   // ---- run AI analysis ----
   const runAnalysis = async () => {
     if(!aiConsent){toast.error("Bemorning AI orqali qayta ishlash roziligi talab qilinadi.");return;}
-    const fullText = [transcript.trim(), extraDoc.trim() ? `Qo‘shimcha hujjat:\n${extraDoc.trim()}` : ""].filter(Boolean).join("\n\n");
+    const fullText = combineClinicalSource(transcript, extraDoc);
     if (fullText.length < 5) { toast.error(t("err.short")); return; }
+    if (fullText.length > MAX_CLINICAL_SOURCE_LENGTH) { toast.error("Matn 15 000 belgidan oshdi. Uzun hujjatni qisqartiring yoki qismlarga ajrating."); return; }
     if (!isPro && user) {
-      const { data: cnt } = await supabase.rpc("daily_usage_count", { _user_id: user.id });
+      const { data: cnt, error: usageError } = await supabase.rpc("daily_usage_count", { _user_id: user.id });
+      if (usageError) { toast.error("Foydalanish limitini tekshirib bo‘lmadi. Qayta urinib ko‘ring."); return; }
       if ((cnt ?? 0) >= 5) { toast.error(t("err.dailyLimit")); return; }
     }
     if (isRecording) stopRecording();
@@ -332,15 +344,16 @@ const AppPage = () => {
 
     // Build previous history
     let previousHistory = "";
-    const pn = patientName.trim();
-    if (pn.length >= 2) {
-      const { data: prev } = await supabase
+    const reference = patientReference.trim();
+    if (reference) {
+      const { data: prev, error: historyError } = await supabase
         .from("consultations")
         .select("created_at,chosen_diagnosis,diagnosis,symptoms,recommendation,prescriptions,lab_tests,instrumental_tests")
         .eq("user_id", user?.id ?? "")
-        .ilike("patient_name", pn)
+        .eq("patient_reference", reference)
         .order("created_at", { ascending: false })
         .limit(5);
+      if (historyError) { setIsAnalyzing(false); toast.error("Bemor tarixini olib bo‘lmadi."); return; }
       if (prev && prev.length > 0) {
         previousHistory = prev.map((c: any, i: number) => {
           const d = new Date(c.created_at).toLocaleDateString(DATE_LOCALE[lang]);
@@ -395,10 +408,11 @@ const AppPage = () => {
       setChosenIdx(0);
       setSelectedComorb([]);
       setConfirmed(false);
+      setApprovedRevision(null);
       // Move to step 2 (lab)
       const nextStep: Step = 2;
       setStep(nextStep);
-      persist({ result: res, chosenIdx: 0, step: nextStep, confirmed: false, selectedComorb: [] });
+      persist({ result: res, chosenIdx: 0, step: nextStep, confirmed: false, selectedComorb: [], approvalFingerprint: null });
       toast.success("AI: " + (res.differentials?.length || 0) + " diagnoses + " + (res.lab_tests?.length || 0) + " labs");
     } catch (e) {
       console.error(e); toast.error(t("err.failed"));
@@ -409,18 +423,19 @@ const AppPage = () => {
   const update = (fn: (r: AnalysisResult) => AnalysisResult) => {
     setResult((p) => {
       if (!p) return p;
+      if (confirmed) { toast.info("Tasdiqlangan hujjatni o‘zgartirish uchun yangi konsultatsiya boshlang."); return p; }
       const n = fn(p);
       setConfirmed(false);
       setReviewAccepted(false);
-      const data = { transcript, patientName, result: n, chosenIdx, step, confirmed };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      setApprovedRevision(null);
+      persist({ result: n, confirmed: false, approvalFingerprint: null });
       return n;
     });
   };
 
   const handleClear = () => {
-    setStep(1); setTranscript(""); setPatientName(""); setExtraDoc(""); setVoiceFailed(false);
-    setResult(null); setChosenIdx(0); setConfirmed(false);
+    setStep(1); setTranscript(""); setPatientName(""); setPatientReference(""); setExtraDoc(""); setVoiceFailed(false);
+    setResult(null); setChosenIdx(0); setConfirmed(false); setApprovedRevision(null);
     setSelectedComorb([]);
     setReviewAccepted(false);
     setAiConsent(false);
