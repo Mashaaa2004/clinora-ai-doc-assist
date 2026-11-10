@@ -520,23 +520,23 @@ const AppPage = () => {
     const esc = (s: string) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const L = (key: string) => t(key);
 
-    const symptomsHtml = result.symptoms.length
-      ? `<ul class="bul">${result.symptoms.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`
+    const symptomsHtml = docResult.symptoms.length
+      ? `<ul class="bul">${docResult.symptoms.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`
       : `<p class="muted">—</p>`;
 
-    const labsHtml = result.lab_tests.length
-      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${result.lab_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
+    const labsHtml = docResult.lab_tests.length
+      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${docResult.lab_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
 
-    const instrHtml = result.instrumental_tests.length
-      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${result.instrumental_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
+    const instrHtml = docResult.instrumental_tests.length
+      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${docResult.instrumental_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
 
     const approvedComorb = docResult.selected_comorbidities ?? selectedComorb;
     const referrals = (docResult.comorbidities || []).filter((_, i) => approvedComorb.includes(i));
     const comorbHtml = referrals.length
       ? `<table class="rx"><thead><tr><th style="width:28%">${lang === "ru" ? "Специалист" : lang === "en" ? "Specialist" : "Мутахассис"}</th><th style="width:28%">${lang === "ru" ? "По поводу" : lang === "en" ? "Reason" : "Сабаб (касаллик)"}</th><th>${lang === "ru" ? "Направление" : lang === "en" ? "Referral note" : "Йўналтириш изоҳи"}</th></tr></thead><tbody>${referrals.map((c) => `<tr><td><strong>${esc(c.specialist || "—")}</strong></td><td>${esc(c.name)} <span style="color:#92400e;font-size:8px;text-transform:uppercase">[${esc(c.risk_level)}]</span></td><td>${esc(c.referral_note || c.reasoning || "—")}</td></tr>`).join("")}</tbody></table>` : "";
 
-    const rxHtml = result.prescriptions.length
-      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("rx.name")}</th><th>${L("rx.dosage")}</th><th>${L("rx.frequency")}</th><th>${L("rx.duration")}</th><th>${L("rx.notes")}</th></tr></thead><tbody>${result.prescriptions.map((p, i) => `<tr><td>${i + 1}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.dosage)}</td><td>${esc(p.frequency)}</td><td>${esc(p.duration)}</td><td>${esc(p.notes || "—")}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">—</p>`;
+    const rxHtml = docResult.prescriptions.length
+      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("rx.name")}</th><th>${L("rx.dosage")}</th><th>${L("rx.frequency")}</th><th>${L("rx.duration")}</th><th>${L("rx.notes")}</th></tr></thead><tbody>${docResult.prescriptions.map((p, i) => `<tr><td>${i + 1}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.dosage)}</td><td>${esc(p.frequency)}</td><td>${esc(p.duration)}</td><td>${esc(p.notes || "—")}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">—</p>`;
 
     const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="UTF-8"/><title>Clinora AI — ${esc(pn)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -601,8 +601,8 @@ const AppPage = () => {
     <div class="row"><div class="label">${lang === "ru" ? "Дата" : lang === "en" ? "Date" : "Сана"}</div><div class="val">${esc(dateStr)}</div></div>
   </div>
 
-  ${result.soap ? `<h2 class="section">SOAP</h2><p class="body"><b>S:</b> ${esc(result.soap.subjective)}<br/><b>O:</b> ${esc(result.soap.objective)}<br/><b>A:</b> ${esc(result.soap.assessment)}<br/><b>P:</b> ${esc(result.soap.plan)}</p>` : ""}
-  ${result.protocol_refs?.length ? `<h2 class="section">Rasmiy protokol manbalari</h2><p class="body">${result.protocol_refs.map(p=>esc(`${p.title} · ${p.section} · ${p.page}-sahifa · ${p.version} · ${p.revision_date??""} · ${p.source_url}`)).join("<br/>")}</p>` : `<p class="muted">Tasdiqlangan mos protokol topilmadi.</p>`}
+  ${docResult.soap ? `<h2 class="section">SOAP</h2><p class="body"><b>S:</b> ${esc(docResult.soap.subjective)}<br/><b>O:</b> ${esc(docResult.soap.objective)}<br/><b>A:</b> ${esc(docResult.soap.assessment)}<br/><b>P:</b> ${esc(docResult.soap.plan)}</p>` : ""}
+  ${docResult.protocol_refs?.length ? `<h2 class="section">Rasmiy protokol manbalari</h2><p class="body">${docResult.protocol_refs.map(p=>esc(`${p.title} · ${p.section} · ${p.page}-sahifa · ${p.version} · ${p.revision_date??""} · ${p.source_url}`)).join("<br/>")}</p>` : `<p class="muted">Tasdiqlangan mos protokol topilmadi.</p>`}
   <h2 class="section">${L("sec.symptoms")}</h2>
   ${symptomsHtml}
 
@@ -615,12 +615,12 @@ const AppPage = () => {
   ${comorbHtml ? `<h2 class="section">${L("sec.referrals")}</h2>${comorbHtml}` : ""}
 
   <h2 class="section">${L("sec.recommendation")}</h2>
-  <p class="body">${esc(result.recommendation || "—")}</p>
+  <p class="body">${esc(docResult.recommendation || "—")}</p>
 
   <h2 class="section">${L("sec.rx")}</h2>
   ${rxHtml}
 
-  ${result.family_advice ? `<h2 class="section">${L("sec.family")}</h2><div class="family-box"><p>${esc(result.family_advice)}</p></div>` : ""}
+  ${docResult.family_advice ? `<h2 class="section">${L("sec.family")}</h2><div class="family-box"><p>${esc(docResult.family_advice)}</p></div>` : ""}
 
   <div class="signature">
     <div class="doctor-card">
