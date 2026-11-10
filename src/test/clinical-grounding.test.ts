@@ -9,5 +9,7 @@ describe('Clinical grounding rules',()=>{
   it('does not finalize generated output',()=>{expect(attachGrounding({document_status:'approved'},[]).document_status).toBe('draft');});
   it('removes explicitly known patient names',()=>{expect(minimizeIdentifiers('Synthetic Person reports pain',['Synthetic Person'])).toBe('[identity removed] reports pain');});
   it('removes contact details from nested CRM records',()=>{expect(minimizeIdentifiers({patient_name:'Synthetic Person',notes:'Call test@example.org',phone:'+998901234567'})).toEqual({notes:'Call [email removed]'});});
+  it('preserves clinical measurements that are not phone numbers',()=>{expect(minimizeIdentifiers('Oʻlchovlar: 120 80 90 98')).toBe('Oʻlchovlar: 120 80 90 98');});
+  it('removes nested patient identity and birth date fields',()=>{expect(minimizeIdentifiers({patient:{name:'Synthetic Person',date_of_birth:'1980-01-01'},notes:'pain'})).toEqual({patient:{},notes:'pain'});});
   it('creates OR retrieval so verbose notes do not require every token',()=>{expect(retrievalQuery('diabetes hypertension diabetes')).toBe('"diabetes" OR "hypertension"');});
 });

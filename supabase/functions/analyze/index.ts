@@ -75,15 +75,19 @@ Deno.serve(async (req) => {
     }
     const userId = userData.user.id;
 
-    // ---- Server-side quota enforcement (free tier: 5/day) ----
-    const [{ data: isProData }, { data: cntData }] = await Promise.all([
-      supabase.rpc("is_pro", { _user_id: userId }),
-      supabase.rpc("daily_usage_count", { _user_id: userId }),
+    // Only clinicians may consume the clinical AI service.
+    const [{ data: isDoctor, error: doctorRoleError }, { data: isAdmin, error: adminRoleError }] = await Promise.all([
+      supabase.rpc("has_role", { _user_id: userId, _role: "doctor" }),
+      supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
     ]);
-    if (!isProData && (cntData ?? 0) >= 5) {
-      return new Response(JSON.stringify({ error: "Daily limit reached", code: "QUOTA_EXCEEDED" }), {
-        status: 429,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (doctorRoleError || adminRoleError) {
+      return new Response(JSON.stringify({ error: "Role verification unavailable" }), {
+        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!isDoctor && !isAdmin) {
+      return new Response(JSON.stringify({ error: "Clinician access required" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -113,6 +117,21 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Input too long", code: "INPUT_TOO_LONG" }), {
         status: 413,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Atomically reserve real AI usage; unapproved and rejected drafts still count.
+    const { data: usageAllowed, error: usageError } = await supabase.rpc("consume_ai_usage", {
+      _user_id: userId, _function_name: "analyze",
+    });
+    if (usageError) {
+      return new Response(JSON.stringify({ error: "Usage metering unavailable" }), {
+        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!usageAllowed) {
+      return new Response(JSON.stringify({ error: "Daily limit reached", code: "QUOTA_EXCEEDED" }), {
+        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 

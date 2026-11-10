@@ -3,13 +3,13 @@ export type Passage = { passage_id: string; protocol_id: string; title: string; 
 export function minimizeIdentifiers(value: unknown, identifiers: string[] = []): unknown {
   if (typeof value === 'string') {
     let text = value.replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, '[email removed]')
-      .replace(/(?:\+?\d[\d ()-]{7,}\d)/g, '[contact removed]')
+      .replace(/(?:\+\d[\d ()-]{7,}\d|\b\d{3}[- ]\d{3}[- ]\d{4}\b|\b\d{2,3}[- ]\d{3}[- ]\d{2}[- ]\d{2}\b)/g, '[contact removed]')
       .replace(/(?:patient name|full name|ism familiya|f\.?i\.?sh\.?|фио|бемор исми)\s*[:=]\s*[^\n,;]+/gi, '[identity removed]');
     for (const identifier of identifiers.filter(s => s.trim().length > 1)) text = text.split(identifier).join('[identity removed]');
     return text;
   }
   if (Array.isArray(value)) return value.map(v => minimizeIdentifiers(v, identifiers));
-  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).filter(([k]) => !/^(patient_name|full_name|first_name|last_name|phone|email|address|passport|patient_id|doctor_name)$/i.test(k)).map(([k,v]) => [k,minimizeIdentifiers(v, identifiers)]));
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).filter(([k]) => !/^(patient_name|patientName|name|full_name|first_name|last_name|phone|email|address|passport|patient_id|doctor_name|date_of_birth|dob)$/i.test(k)).map(([k,v]) => [k,minimizeIdentifiers(v, identifiers)]));
   return value;
 }
 

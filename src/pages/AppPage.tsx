@@ -46,6 +46,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAishaStt } from "@/hooks/useAishaStt";
 import ClinicalReview, { type ClinicalFields } from "@/components/ClinicalReview";
 import { FunctionsHttpError } from "@supabase/supabase-js";
+import { approvalFingerprint, combineClinicalSource, MAX_CLINICAL_SOURCE_LENGTH } from "@/lib/clinical-source";
 
 
 type Prescription = {
@@ -80,6 +81,8 @@ type AnalysisResult = ClinicalFields & {
   differentials: Differential[];
   comorbidities: Comorbidity[];
   family_advice: string;
+  selected_comorbidities?: number[];
+  approval_fingerprint?: string;
 };
 
 const STORAGE_KEY = "clinora:last-result-v2";
@@ -99,6 +102,7 @@ const AppPage = () => {
   const [step, setStep] = useState<Step>(1);
   const [transcript, setTranscript] = useState("");
   const [patientName, setPatientName] = useState("");
+  const [patientReference, setPatientReference] = useState("");
   const [extraDoc, setExtraDoc] = useState("");
   const [voiceFailed, setVoiceFailed] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -114,6 +118,7 @@ const AppPage = () => {
   const [showGuide, setShowGuide] = useState(false);
   const [consultationId, setConsultationId] = useState<string | null>(null);
   const [patientCode, setPatientCode] = useState<string>("");
+  const [approvedRevision, setApprovedRevision] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
   const baseTranscriptRef = useRef("");
@@ -134,6 +139,9 @@ const AppPage = () => {
       setStep(1);
       setTranscript("");
       setPatientName("");
+      setPatientReference("");
+      setExtraDoc("");
+      setApprovedRevision(null);
       setResult(null);
       setChosenIdx(0);
       setConfirmed(false);
@@ -168,6 +176,8 @@ const AppPage = () => {
           baseTranscriptRef.current = p.transcript;
         }
         if (p.patientName) setPatientName(p.patientName);
+        if (p.patientReference) setPatientReference(p.patientReference);
+        if (p.extraDoc) setExtraDoc(p.extraDoc);
         if (p.result) setResult(p.result);
         if (typeof p.chosenIdx === "number") setChosenIdx(p.chosenIdx);
         if (typeof p.step === "number") setStep(p.step);
@@ -176,8 +186,18 @@ const AppPage = () => {
         if(p.result?.draft_id&&currentUser){
           supabase.from("clinical_drafts").select("status,consultation_id").eq("id",p.result.draft_id).eq("user_id",currentUser).maybeSingle().then(async({data:draft})=>{
             if(draft?.status!=="approved"||!draft.consultation_id)return;
-            const {data:record}=await supabase.from("consultations").select("document_status,patient_code").eq("id",draft.consultation_id).eq("user_id",currentUser).maybeSingle();
-            if(record?.document_status!=="approved")return;
+            const {data:record}=await supabase.from("consultations").select("document_status,patient_code,patient_name,patient_reference,transcript,chosen_diagnosis,clinical_document").eq("id",draft.consultation_id).eq("user_id",currentUser).maybeSingle();
+            if(record?.document_status!=="approved"||!record.clinical_document)return;
+            // Restore the server-approved revision, never locally modified clinical content.
+            const serverResult=record.clinical_document as AnalysisResult;
+            const nextChosen=Math.max(0,serverResult.differentials.findIndex(d=>d.name===record.chosen_diagnosis));
+            const nextComorb=serverResult.selected_comorbidities??[];
+            const nextTranscript=record.transcript??"";
+            const nextReference=record.patient_reference??"";
+            const revision=serverResult.approval_fingerprint??approvalFingerprint({result:serverResult,patientName:record.patient_name,patientReference:nextReference,transcript:nextTranscript,extraDoc:"",chosenIdx:nextChosen,selectedComorb:nextComorb});
+            setResult(serverResult);setPatientName(record.patient_name);setPatientReference(nextReference);
+            setTranscript(nextTranscript);setExtraDoc("");baseTranscriptRef.current=nextTranscript;
+            setChosenIdx(nextChosen);setSelectedComorb(nextComorb);setApprovedRevision(revision);
             setConsultationId(draft.consultation_id);setPatientCode(record.patient_code);setConfirmed(true);
           });
         }
@@ -225,15 +245,18 @@ const AppPage = () => {
     return () => { try { recognition.stop(); } catch {} };
   }, [lang]);
 
-  const persist = (extra?: Partial<{ result: AnalysisResult | null; chosenIdx: number; step: Step; confirmed: boolean; patientName: string; transcript: string; selectedComorb: number[] }>) => {
+  const persist = (extra?: Partial<{ result: AnalysisResult | null; chosenIdx: number; step: Step; confirmed: boolean; patientName: string; patientReference: string; transcript: string; extraDoc: string; selectedComorb: number[]; approvalFingerprint: string | null }>) => {
     const data = {
       transcript,
       patientName,
+      patientReference,
+      extraDoc,
       result,
       chosenIdx,
       step,
       confirmed,
       selectedComorb,
+      approvalFingerprint: approvedRevision,
       ...extra,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -308,10 +331,12 @@ const AppPage = () => {
   // ---- run AI analysis ----
   const runAnalysis = async () => {
     if(!aiConsent){toast.error("Bemorning AI orqali qayta ishlash roziligi talab qilinadi.");return;}
-    const fullText = [transcript.trim(), extraDoc.trim() ? `Qo‘shimcha hujjat:\n${extraDoc.trim()}` : ""].filter(Boolean).join("\n\n");
+    const fullText = combineClinicalSource(transcript, extraDoc);
     if (fullText.length < 5) { toast.error(t("err.short")); return; }
+    if (fullText.length > MAX_CLINICAL_SOURCE_LENGTH) { toast.error("Matn 15 000 belgidan oshdi. Uzun hujjatni qisqartiring yoki qismlarga ajrating."); return; }
     if (!isPro && user) {
-      const { data: cnt } = await supabase.rpc("daily_usage_count", { _user_id: user.id });
+      const { data: cnt, error: usageError } = await supabase.rpc("daily_usage_count", { _user_id: user.id });
+      if (usageError) { toast.error("Foydalanish limitini tekshirib bo‘lmadi. Qayta urinib ko‘ring."); return; }
       if ((cnt ?? 0) >= 5) { toast.error(t("err.dailyLimit")); return; }
     }
     if (isRecording) stopRecording();
@@ -319,15 +344,16 @@ const AppPage = () => {
 
     // Build previous history
     let previousHistory = "";
-    const pn = patientName.trim();
-    if (pn.length >= 2) {
-      const { data: prev } = await supabase
+    const reference = patientReference.trim();
+    if (reference) {
+      const { data: prev, error: historyError } = await supabase
         .from("consultations")
         .select("created_at,chosen_diagnosis,diagnosis,symptoms,recommendation,prescriptions,lab_tests,instrumental_tests")
         .eq("user_id", user?.id ?? "")
-        .ilike("patient_name", pn)
+        .eq("patient_reference", reference)
         .order("created_at", { ascending: false })
         .limit(5);
+      if (historyError) { setIsAnalyzing(false); toast.error("Bemor tarixini olib bo‘lmadi."); return; }
       if (prev && prev.length > 0) {
         previousHistory = prev.map((c: any, i: number) => {
           const d = new Date(c.created_at).toLocaleDateString(DATE_LOCALE[lang]);
@@ -382,10 +408,11 @@ const AppPage = () => {
       setChosenIdx(0);
       setSelectedComorb([]);
       setConfirmed(false);
+      setApprovedRevision(null);
       // Move to step 2 (lab)
       const nextStep: Step = 2;
       setStep(nextStep);
-      persist({ result: res, chosenIdx: 0, step: nextStep, confirmed: false, selectedComorb: [] });
+      persist({ result: res, chosenIdx: 0, step: nextStep, confirmed: false, selectedComorb: [], approvalFingerprint: null });
       toast.success("AI: " + (res.differentials?.length || 0) + " diagnoses + " + (res.lab_tests?.length || 0) + " labs");
     } catch (e) {
       console.error(e); toast.error(t("err.failed"));
@@ -396,18 +423,19 @@ const AppPage = () => {
   const update = (fn: (r: AnalysisResult) => AnalysisResult) => {
     setResult((p) => {
       if (!p) return p;
+      if (confirmed) { toast.info("Tasdiqlangan hujjatni o‘zgartirish uchun yangi konsultatsiya boshlang."); return p; }
       const n = fn(p);
       setConfirmed(false);
       setReviewAccepted(false);
-      const data = { transcript, patientName, result: n, chosenIdx, step, confirmed };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      setApprovedRevision(null);
+      persist({ result: n, confirmed: false, approvalFingerprint: null });
       return n;
     });
   };
 
   const handleClear = () => {
-    setStep(1); setTranscript(""); setPatientName(""); setExtraDoc(""); setVoiceFailed(false);
-    setResult(null); setChosenIdx(0); setConfirmed(false);
+    setStep(1); setTranscript(""); setPatientName(""); setPatientReference(""); setExtraDoc(""); setVoiceFailed(false);
+    setResult(null); setChosenIdx(0); setConfirmed(false); setApprovedRevision(null);
     setSelectedComorb([]);
     setReviewAccepted(false);
     setAiConsent(false);
@@ -428,14 +456,17 @@ const AppPage = () => {
     const endedAt=new Date();
     const startIso=localStorage.getItem("clinora_consult_start");
     const startedAt=startIso?new Date(startIso):null;
-    const cleaned={...result,symptoms:result.symptoms.map(s=>s.trim()).filter(Boolean),recommendation:result.recommendation.trim(),family_advice:result.family_advice.trim()};
+    const baseCleaned:AnalysisResult={...result,symptoms:result.symptoms.map(s=>s.trim()).filter(Boolean),recommendation:result.recommendation.trim(),family_advice:result.family_advice.trim()};
+    const sourceTranscript=combineClinicalSource(transcript,extraDoc);
+    const revision=approvalFingerprint({result:baseCleaned,patientName:patientName.trim(),patientReference:patientReference.trim(),transcript,extraDoc,chosenIdx,selectedComorb});
+    const cleaned:AnalysisResult={...baseCleaned,selected_comorbidities:selectedComorb,approval_fingerprint:revision};
     const docPrefix=user.id.replace(/-/g,"").slice(0,4).toUpperCase();
     const newCode=`${docPrefix}-${endedAt.getFullYear()}${String(endedAt.getMonth()+1).padStart(2,"0")}${String(endedAt.getDate()).padStart(2,"0")}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
     try {
-      const {data:id,error}=await supabase.rpc("review_clinical_draft",{draft_id:result.draft_id,decision:"approved",edited:cleaned as any,final_record:{patient_name:patientName.trim(),patient_code:newCode,transcript,diagnosis:chosen.name,language:lang,started_at:startedAt?.toISOString()??null,duration_seconds:startedAt?Math.max(0,Math.round((endedAt.getTime()-startedAt.getTime())/1000)):null}});
+      const {data:id,error}=await supabase.rpc("review_clinical_draft",{draft_id:result.draft_id,decision:"approved",edited:cleaned as any,final_record:{patient_name:patientName.trim(),patient_reference:patientReference.trim(),patient_code:newCode,transcript:sourceTranscript,diagnosis:chosen.name,language:lang,started_at:startedAt?.toISOString()??null,duration_seconds:startedAt?Math.max(0,Math.round((endedAt.getTime()-startedAt.getTime())/1000)):null}});
       if(error)throw error;
-      setResult(cleaned);setConfirmed(true);setStep(5);setPatientCode(newCode);setConsultationId(id);
-      persist({result:cleaned,confirmed:false,step:5});
+      setResult(cleaned);setConfirmed(true);setStep(5);setPatientCode(newCode);setConsultationId(id);setApprovedRevision(revision);
+      persist({result:cleaned,confirmed:false,step:5,approvalFingerprint:revision});
       localStorage.removeItem("clinora_consult_start");
       await supabase.from("doctor_activity").upsert({user_id:user.id,status:"idle",consultation_started_at:null,last_seen_at:endedAt.toISOString()});
       await supabase.from("prescriptions_log").insert({user_id:user.id,doctor_name:profile?.full_name??"",hospital:profile?.hospital??"",patient_name:patientName.trim(),symptoms_count:cleaned.symptoms.length,prescriptions_count:cleaned.prescriptions.length});
@@ -454,12 +485,15 @@ const AppPage = () => {
     const w = window.open("", "_blank");
     if (!w) { toast.error("PDF oynasini ochish uchun brauzerda yangi oynalarga ruxsat bering."); return; }
     try {
-    const {data: approved}=await supabase.from("consultations").select("document_status").eq("id",consultationId).eq("user_id",user.id).maybeSingle();
+    const {data: approved}=await supabase.from("consultations").select("document_status,clinical_document,patient_name,patient_code,chosen_diagnosis").eq("id",consultationId).eq("user_id",user.id).maybeSingle();
     if(approved?.document_status!=="approved"){w.close();toast.error("Shifokor tasdig‘i talab qilinadi");return;}
+    // Export only the clinician-approved server revision, not mutable browser state.
+    const docResult = (approved.clinical_document ?? result) as AnalysisResult;
+    const docPatientCode = approved.patient_code ?? patientCode;
+    const chosen = docResult.differentials.find(d=>d.name===approved.chosen_diagnosis) ?? docResult.differentials[chosenIdx];
     // Refresh profile so latest doctor/hospital info appears on the PDF
     try { await refreshProfile(); } catch {}
-    const chosen = result.differentials[chosenIdx];
-    const pn = patientName.trim() || (lang === "ru" ? "Пациент" : lang === "en" ? "Patient" : "Бемор");
+    const pn = approved.patient_name?.trim() || (lang === "ru" ? "Пациент" : lang === "en" ? "Patient" : "Бемор");
     const dateStr = new Date().toLocaleString(DATE_LOCALE[lang]);
     const docName = profile?.full_name?.trim() || "—";
     const specialty = profile?.specialty?.trim() || "";
@@ -486,22 +520,23 @@ const AppPage = () => {
     const esc = (s: string) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const L = (key: string) => t(key);
 
-    const symptomsHtml = result.symptoms.length
-      ? `<ul class="bul">${result.symptoms.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`
+    const symptomsHtml = docResult.symptoms.length
+      ? `<ul class="bul">${docResult.symptoms.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`
       : `<p class="muted">—</p>`;
 
-    const labsHtml = result.lab_tests.length
-      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${result.lab_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
+    const labsHtml = docResult.lab_tests.length
+      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${docResult.lab_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
 
-    const instrHtml = result.instrumental_tests.length
-      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${result.instrumental_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
+    const instrHtml = docResult.instrumental_tests.length
+      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${docResult.instrumental_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
 
-    const referrals = (result.comorbidities || []).filter((_, i) => selectedComorb.includes(i));
+    const approvedComorb = docResult.selected_comorbidities ?? selectedComorb;
+    const referrals = (docResult.comorbidities || []).filter((_, i) => approvedComorb.includes(i));
     const comorbHtml = referrals.length
       ? `<table class="rx"><thead><tr><th style="width:28%">${lang === "ru" ? "Специалист" : lang === "en" ? "Specialist" : "Мутахассис"}</th><th style="width:28%">${lang === "ru" ? "По поводу" : lang === "en" ? "Reason" : "Сабаб (касаллик)"}</th><th>${lang === "ru" ? "Направление" : lang === "en" ? "Referral note" : "Йўналтириш изоҳи"}</th></tr></thead><tbody>${referrals.map((c) => `<tr><td><strong>${esc(c.specialist || "—")}</strong></td><td>${esc(c.name)} <span style="color:#92400e;font-size:8px;text-transform:uppercase">[${esc(c.risk_level)}]</span></td><td>${esc(c.referral_note || c.reasoning || "—")}</td></tr>`).join("")}</tbody></table>` : "";
 
-    const rxHtml = result.prescriptions.length
-      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("rx.name")}</th><th>${L("rx.dosage")}</th><th>${L("rx.frequency")}</th><th>${L("rx.duration")}</th><th>${L("rx.notes")}</th></tr></thead><tbody>${result.prescriptions.map((p, i) => `<tr><td>${i + 1}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.dosage)}</td><td>${esc(p.frequency)}</td><td>${esc(p.duration)}</td><td>${esc(p.notes || "—")}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">—</p>`;
+    const rxHtml = docResult.prescriptions.length
+      ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("rx.name")}</th><th>${L("rx.dosage")}</th><th>${L("rx.frequency")}</th><th>${L("rx.duration")}</th><th>${L("rx.notes")}</th></tr></thead><tbody>${docResult.prescriptions.map((p, i) => `<tr><td>${i + 1}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.dosage)}</td><td>${esc(p.frequency)}</td><td>${esc(p.duration)}</td><td>${esc(p.notes || "—")}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">—</p>`;
 
     const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="UTF-8"/><title>Clinora AI — ${esc(pn)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -562,12 +597,12 @@ const AppPage = () => {
   </div>
   <div class="meta">
     <div class="row"><div class="label">${L("sec.patient")}</div><div class="val">${esc(pn)}</div></div>
-    ${patientCode ? `<div class="row"><div class="label">${lang === "ru" ? "Код пациента" : lang === "en" ? "Patient ID" : "Бемор ID"}</div><div class="val" style="font-family:'JetBrains Mono',ui-monospace,monospace;letter-spacing:.5px;color:#2176eb">${esc(patientCode)}</div></div>` : ""}
+    ${docPatientCode ? `<div class="row"><div class="label">${lang === "ru" ? "Код пациента" : lang === "en" ? "Patient ID" : "Бемор ID"}</div><div class="val" style="font-family:'JetBrains Mono',ui-monospace,monospace;letter-spacing:.5px;color:#2176eb">${esc(docPatientCode)}</div></div>` : ""}
     <div class="row"><div class="label">${lang === "ru" ? "Дата" : lang === "en" ? "Date" : "Сана"}</div><div class="val">${esc(dateStr)}</div></div>
   </div>
 
-  ${result.soap ? `<h2 class="section">SOAP</h2><p class="body"><b>S:</b> ${esc(result.soap.subjective)}<br/><b>O:</b> ${esc(result.soap.objective)}<br/><b>A:</b> ${esc(result.soap.assessment)}<br/><b>P:</b> ${esc(result.soap.plan)}</p>` : ""}
-  ${result.protocol_refs?.length ? `<h2 class="section">Rasmiy protokol manbalari</h2><p class="body">${result.protocol_refs.map(p=>esc(`${p.title} · ${p.section} · ${p.page}-sahifa · ${p.version} · ${p.revision_date??""} · ${p.source_url}`)).join("<br/>")}</p>` : `<p class="muted">Tasdiqlangan mos protokol topilmadi.</p>`}
+  ${docResult.soap ? `<h2 class="section">SOAP</h2><p class="body"><b>S:</b> ${esc(docResult.soap.subjective)}<br/><b>O:</b> ${esc(docResult.soap.objective)}<br/><b>A:</b> ${esc(docResult.soap.assessment)}<br/><b>P:</b> ${esc(docResult.soap.plan)}</p>` : ""}
+  ${docResult.protocol_refs?.length ? `<h2 class="section">Rasmiy protokol manbalari</h2><p class="body">${docResult.protocol_refs.map(p=>esc(`${p.title} · ${p.section} · ${p.page}-sahifa · ${p.version} · ${p.revision_date??""} · ${p.source_url}`)).join("<br/>")}</p>` : `<p class="muted">Tasdiqlangan mos protokol topilmadi.</p>`}
   <h2 class="section">${L("sec.symptoms")}</h2>
   ${symptomsHtml}
 
@@ -580,12 +615,12 @@ const AppPage = () => {
   ${comorbHtml ? `<h2 class="section">${L("sec.referrals")}</h2>${comorbHtml}` : ""}
 
   <h2 class="section">${L("sec.recommendation")}</h2>
-  <p class="body">${esc(result.recommendation || "—")}</p>
+  <p class="body">${esc(docResult.recommendation || "—")}</p>
 
   <h2 class="section">${L("sec.rx")}</h2>
   ${rxHtml}
 
-  ${result.family_advice ? `<h2 class="section">${L("sec.family")}</h2><div class="family-box"><p>${esc(result.family_advice)}</p></div>` : ""}
+  ${docResult.family_advice ? `<h2 class="section">${L("sec.family")}</h2><div class="family-box"><p>${esc(docResult.family_advice)}</p></div>` : ""}
 
   <div class="signature">
     <div class="doctor-card">

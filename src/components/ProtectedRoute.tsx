@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import LegalConsentModal from "@/components/LegalConsentModal";
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isDoctor, isAdmin } = useAuth();
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -13,6 +13,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
+  if (!isDoctor && !isAdmin) return <Navigate to="/" replace />;
   return (
     <>
       <LegalConsentModal />

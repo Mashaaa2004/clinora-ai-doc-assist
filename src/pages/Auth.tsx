@@ -29,7 +29,8 @@ const AuthPage = () => {
   useEffect(() => {
     if (loading || !user) return;
     if (role === "admin") navigate("/admin", { replace: true });
-    else navigate("/app", { replace: true });
+    else if (role === "doctor") navigate("/app", { replace: true });
+    else if (role === "patient") navigate("/", { replace: true });
   }, [user, role, loading, navigate]);
 
   const submit = async (e: React.FormEvent) => {
@@ -72,10 +73,10 @@ const AuthPage = () => {
     <>
       <Helmet>
         <title>Kirish — Clinora AI</title>
-        <meta name="description" content="Clinora AI platformasiga kirish: bemor, shifokor yoki admin sifatida." />
+        <meta name="description" content="Clinora AI platformasiga shifokor yoki admin sifatida kirish." />
         <link rel="canonical" href="https://clinora-ai-doc-assist.lovable.app/auth" />
         <meta property="og:title" content="Clinora Platform Login" />
-        <meta property="og:description" content="Clinora AI platformasiga kirish: bemor, shifokor yoki admin." />
+        <meta property="og:description" content="Clinora AI platformasiga shifokor yoki admin kirishi." />
         <meta property="og:url" content="https://clinora-ai-doc-assist.lovable.app/auth" />
       </Helmet>
       <div className="min-h-screen" style={{ background: "var(--gradient-soft)" }}>
