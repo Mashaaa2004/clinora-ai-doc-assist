@@ -19,8 +19,11 @@ export type ClinicalApprovalSnapshot = {
 
 /** Detects ordinary local edits before restoring approval; the server remains authoritative for export. */
 export function approvalFingerprint(snapshot: ClinicalApprovalSnapshot) {
+  const result = snapshot.result && typeof snapshot.result === "object"
+    ? Object.fromEntries(Object.entries(snapshot.result).filter(([key]) => key !== "approval_fingerprint" && key !== "selected_comorbidities"))
+    : snapshot.result;
   return JSON.stringify({
-    result: snapshot.result,
+    result,
     patientName: snapshot.patientName,
     patientReference: snapshot.patientReference,
     transcript: snapshot.transcript,

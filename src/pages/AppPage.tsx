@@ -46,6 +46,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAishaStt } from "@/hooks/useAishaStt";
 import ClinicalReview, { type ClinicalFields } from "@/components/ClinicalReview";
 import { FunctionsHttpError } from "@supabase/supabase-js";
+import { approvalFingerprint, combineClinicalSource, MAX_CLINICAL_SOURCE_LENGTH } from "@/lib/clinical-source";
 
 
 type Prescription = {
@@ -80,6 +81,8 @@ type AnalysisResult = ClinicalFields & {
   differentials: Differential[];
   comorbidities: Comorbidity[];
   family_advice: string;
+  selected_comorbidities?: number[];
+  approval_fingerprint?: string;
 };
 
 const STORAGE_KEY = "clinora:last-result-v2";
@@ -99,6 +102,7 @@ const AppPage = () => {
   const [step, setStep] = useState<Step>(1);
   const [transcript, setTranscript] = useState("");
   const [patientName, setPatientName] = useState("");
+  const [patientReference, setPatientReference] = useState("");
   const [extraDoc, setExtraDoc] = useState("");
   const [voiceFailed, setVoiceFailed] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -114,6 +118,7 @@ const AppPage = () => {
   const [showGuide, setShowGuide] = useState(false);
   const [consultationId, setConsultationId] = useState<string | null>(null);
   const [patientCode, setPatientCode] = useState<string>("");
+  const [approvedRevision, setApprovedRevision] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
   const baseTranscriptRef = useRef("");
@@ -134,6 +139,9 @@ const AppPage = () => {
       setStep(1);
       setTranscript("");
       setPatientName("");
+      setPatientReference("");
+      setExtraDoc("");
+      setApprovedRevision(null);
       setResult(null);
       setChosenIdx(0);
       setConfirmed(false);
@@ -168,6 +176,8 @@ const AppPage = () => {
           baseTranscriptRef.current = p.transcript;
         }
         if (p.patientName) setPatientName(p.patientName);
+        if (p.patientReference) setPatientReference(p.patientReference);
+        if (p.extraDoc) setExtraDoc(p.extraDoc);
         if (p.result) setResult(p.result);
         if (typeof p.chosenIdx === "number") setChosenIdx(p.chosenIdx);
         if (typeof p.step === "number") setStep(p.step);
@@ -225,15 +235,18 @@ const AppPage = () => {
     return () => { try { recognition.stop(); } catch {} };
   }, [lang]);
 
-  const persist = (extra?: Partial<{ result: AnalysisResult | null; chosenIdx: number; step: Step; confirmed: boolean; patientName: string; transcript: string; selectedComorb: number[] }>) => {
+  const persist = (extra?: Partial<{ result: AnalysisResult | null; chosenIdx: number; step: Step; confirmed: boolean; patientName: string; patientReference: string; transcript: string; extraDoc: string; selectedComorb: number[]; approvalFingerprint: string | null }>) => {
     const data = {
       transcript,
       patientName,
+      patientReference,
+      extraDoc,
       result,
       chosenIdx,
       step,
       confirmed,
       selectedComorb,
+      approvalFingerprint: approvedRevision,
       ...extra,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
