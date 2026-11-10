@@ -80,7 +80,7 @@ const Queue = () => {
             <Link to="/app" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" /> Konsultatsiya
             </Link>
-            <Button variant="ghost" size="sm" onClick={() => load(clinicId)}>
+            <Button variant="ghost" size="sm" onClick={() => load(clinicId)} aria-label="Navbatni yangilash">
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
@@ -93,7 +93,7 @@ const Queue = () => {
 
           <div className="mt-4 flex flex-wrap gap-1.5 rounded-2xl border border-border bg-card p-1.5">
             {STATUS_OPTIONS.map((s) => (
-              <button key={s.value} onClick={() => setFilter(s.value)}
+              <button key={s.value} onClick={() => setFilter(s.value)} aria-pressed={filter === s.value}
                 className={"rounded-xl px-3 py-1.5 text-xs font-medium transition " + (filter === s.value ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted")}>
                 {s.label}
               </button>

@@ -7,3 +7,7 @@ verify_jwt = false
 verify_jwt = false
 [functions.crm-activity]
 verify_jwt = false
+
+# Browser WebSockets cannot send an Authorization header; the function validates the token and clinician role itself.
+[functions.aisha-stt]
+verify_jwt = false

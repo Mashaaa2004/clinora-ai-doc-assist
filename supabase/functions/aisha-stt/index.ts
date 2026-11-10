@@ -38,6 +38,20 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const [{ data: isDoctor, error: doctorRoleError }, { data: isAdmin, error: adminRoleError }] = await Promise.all([
+      supabase.rpc("has_role", { _user_id: data.user.id, _role: "doctor" }),
+      supabase.rpc("has_role", { _user_id: data.user.id, _role: "admin" }),
+    ]);
+    if (doctorRoleError || adminRoleError) {
+      return new Response(JSON.stringify({ error: "Role verification unavailable" }), {
+        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!isDoctor && !isAdmin) {
+      return new Response(JSON.stringify({ error: "Clinician access required" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
   } catch {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
