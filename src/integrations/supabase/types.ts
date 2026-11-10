@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_events: {
+        Row: {
+          created_at: string
+          function_name: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          function_name: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          function_name?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       clinical_drafts: {
         Row: {
           approved_at: string | null
@@ -175,6 +196,7 @@ export type Database = {
           language: string
           patient_code: string
           patient_name: string
+          patient_reference: string | null
           prescriptions: Json
           protocol_refs: Json
           recommendation: string
@@ -201,6 +223,7 @@ export type Database = {
           language?: string
           patient_code?: string
           patient_name?: string
+          patient_reference?: string | null
           prescriptions?: Json
           protocol_refs?: Json
           recommendation?: string
@@ -227,6 +250,7 @@ export type Database = {
           language?: string
           patient_code?: string
           patient_name?: string
+          patient_reference?: string | null
           prescriptions?: Json
           protocol_refs?: Json
           recommendation?: string
@@ -618,6 +642,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_ai_usage: {
+        Args: { _function_name: string; _user_id: string }
+        Returns: boolean
+      }
       daily_usage_count: { Args: { _user_id: string }; Returns: number }
       doctor_in_clinic: {
         Args: { _clinic_id: string; _user_id: string }
@@ -633,6 +661,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_public_verification: { Args: { _id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
