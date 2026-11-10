@@ -12,6 +12,7 @@ const URGENCY: Record<string, { label: string; cls: string }> = {
   high: { label: "Yuqori", cls: "bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/40" },
   medium: { label: "O'rta", cls: "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40" },
   low: { label: "Past", cls: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40" },
+  unassessed: { label: "SHIFOKOR BAHOLASHI KERAK", cls: "bg-muted text-muted-foreground border-border" },
 };
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
@@ -111,7 +112,7 @@ const Queue = () => {
             <div className="mt-4 space-y-3">
               {filtered.map((r) => {
                 const p = patients[r.patient_id];
-                const u = URGENCY[r.ai_urgency] || URGENCY.medium;
+                const u = URGENCY[r.ai_urgency] || URGENCY.unassessed;
                 return (
                   <div key={r.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                     <div className="flex flex-wrap items-start justify-between gap-3">

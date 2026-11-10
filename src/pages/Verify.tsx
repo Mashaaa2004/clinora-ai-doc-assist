@@ -18,7 +18,8 @@ type Consultation = {
   family_advice: string;
   created_at: string;
   language: string;
-  user_id: string;
+  patient_code?: string;
+  document_status?: string;
 };
 
 const Verify = () => {
@@ -36,19 +37,11 @@ const Verify = () => {
   useEffect(() => {
     (async () => {
       if (!id) { setLoading(false); return; }
-      const { data: c } = await supabase
-        .from("consultations")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
+      const { data: payload, error } = await supabase.rpc("get_public_verification", { _id: id });
+      const c = !error && payload ? (payload as any).consultation : null;
       if (c) {
-        setData(c as any);
-        const { data: p } = await supabase
-          .from("profiles")
-          .select("full_name,hospital,specialty,phone,work_hours,hospital_address,hospital_phone")
-          .eq("user_id", (c as any).user_id)
-          .maybeSingle();
-        if (p) setDoctor(p);
+        setData(c as Consultation);
+        setDoctor((payload as any).doctor ?? null);
         const origin = window.location.origin;
         try { setQrVerify(await QRCode.toDataURL(`${origin}/verify/${id}`, { width: 220, margin: 1 })); } catch {}
         try { setQrApp(await QRCode.toDataURL(origin, { width: 220, margin: 1 })); } catch {}
