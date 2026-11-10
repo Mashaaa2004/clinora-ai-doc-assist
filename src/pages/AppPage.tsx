@@ -456,14 +456,17 @@ const AppPage = () => {
     const endedAt=new Date();
     const startIso=localStorage.getItem("clinora_consult_start");
     const startedAt=startIso?new Date(startIso):null;
-    const cleaned={...result,symptoms:result.symptoms.map(s=>s.trim()).filter(Boolean),recommendation:result.recommendation.trim(),family_advice:result.family_advice.trim()};
+    const baseCleaned:AnalysisResult={...result,symptoms:result.symptoms.map(s=>s.trim()).filter(Boolean),recommendation:result.recommendation.trim(),family_advice:result.family_advice.trim()};
+    const sourceTranscript=combineClinicalSource(transcript,extraDoc);
+    const revision=approvalFingerprint({result:baseCleaned,patientName:patientName.trim(),patientReference:patientReference.trim(),transcript,extraDoc,chosenIdx,selectedComorb});
+    const cleaned:AnalysisResult={...baseCleaned,selected_comorbidities:selectedComorb,approval_fingerprint:revision};
     const docPrefix=user.id.replace(/-/g,"").slice(0,4).toUpperCase();
     const newCode=`${docPrefix}-${endedAt.getFullYear()}${String(endedAt.getMonth()+1).padStart(2,"0")}${String(endedAt.getDate()).padStart(2,"0")}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
     try {
-      const {data:id,error}=await supabase.rpc("review_clinical_draft",{draft_id:result.draft_id,decision:"approved",edited:cleaned as any,final_record:{patient_name:patientName.trim(),patient_code:newCode,transcript,diagnosis:chosen.name,language:lang,started_at:startedAt?.toISOString()??null,duration_seconds:startedAt?Math.max(0,Math.round((endedAt.getTime()-startedAt.getTime())/1000)):null}});
+      const {data:id,error}=await supabase.rpc("review_clinical_draft",{draft_id:result.draft_id,decision:"approved",edited:cleaned as any,final_record:{patient_name:patientName.trim(),patient_reference:patientReference.trim(),patient_code:newCode,transcript:sourceTranscript,diagnosis:chosen.name,language:lang,started_at:startedAt?.toISOString()??null,duration_seconds:startedAt?Math.max(0,Math.round((endedAt.getTime()-startedAt.getTime())/1000)):null}});
       if(error)throw error;
-      setResult(cleaned);setConfirmed(true);setStep(5);setPatientCode(newCode);setConsultationId(id);
-      persist({result:cleaned,confirmed:false,step:5});
+      setResult(cleaned);setConfirmed(true);setStep(5);setPatientCode(newCode);setConsultationId(id);setApprovedRevision(revision);
+      persist({result:cleaned,confirmed:false,step:5,approvalFingerprint:revision});
       localStorage.removeItem("clinora_consult_start");
       await supabase.from("doctor_activity").upsert({user_id:user.id,status:"idle",consultation_started_at:null,last_seen_at:endedAt.toISOString()});
       await supabase.from("prescriptions_log").insert({user_id:user.id,doctor_name:profile?.full_name??"",hospital:profile?.hospital??"",patient_name:patientName.trim(),symptoms_count:cleaned.symptoms.length,prescriptions_count:cleaned.prescriptions.length});
@@ -482,12 +485,15 @@ const AppPage = () => {
     const w = window.open("", "_blank");
     if (!w) { toast.error("PDF oynasini ochish uchun brauzerda yangi oynalarga ruxsat bering."); return; }
     try {
-    const {data: approved}=await supabase.from("consultations").select("document_status").eq("id",consultationId).eq("user_id",user.id).maybeSingle();
+    const {data: approved}=await supabase.from("consultations").select("document_status,clinical_document,patient_name,patient_code,chosen_diagnosis").eq("id",consultationId).eq("user_id",user.id).maybeSingle();
     if(approved?.document_status!=="approved"){w.close();toast.error("Shifokor tasdig‘i talab qilinadi");return;}
+    // Export only the clinician-approved server revision, not mutable browser state.
+    const docResult = (approved.clinical_document ?? result) as AnalysisResult;
+    const docPatientCode = approved.patient_code ?? patientCode;
+    const chosen = docResult.differentials.find(d=>d.name===approved.chosen_diagnosis) ?? docResult.differentials[chosenIdx];
     // Refresh profile so latest doctor/hospital info appears on the PDF
     try { await refreshProfile(); } catch {}
-    const chosen = result.differentials[chosenIdx];
-    const pn = patientName.trim() || (lang === "ru" ? "Пациент" : lang === "en" ? "Patient" : "Бемор");
+    const pn = approved.patient_name?.trim() || (lang === "ru" ? "Пациент" : lang === "en" ? "Patient" : "Бемор");
     const dateStr = new Date().toLocaleString(DATE_LOCALE[lang]);
     const docName = profile?.full_name?.trim() || "—";
     const specialty = profile?.specialty?.trim() || "";
@@ -524,7 +530,8 @@ const AppPage = () => {
     const instrHtml = result.instrumental_tests.length
       ? `<table class="rx"><thead><tr><th style="width:24px">№</th><th>${L("lab.name")}</th><th>${L("lab.reason")}</th><th style="width:32%">${L("lab.result")}</th></tr></thead><tbody>${result.instrumental_tests.map((l, i) => `<tr><td>${i + 1}</td><td><strong>${esc(l.name)}</strong></td><td>${esc(l.reason || "—")}</td><td>${l.result ? esc(l.result) : '<span style="color:#9ca3af">________________</span>'}</td></tr>`).join("")}</tbody></table>` : "";
 
-    const referrals = (result.comorbidities || []).filter((_, i) => selectedComorb.includes(i));
+    const approvedComorb = docResult.selected_comorbidities ?? selectedComorb;
+    const referrals = (docResult.comorbidities || []).filter((_, i) => approvedComorb.includes(i));
     const comorbHtml = referrals.length
       ? `<table class="rx"><thead><tr><th style="width:28%">${lang === "ru" ? "Специалист" : lang === "en" ? "Specialist" : "Мутахассис"}</th><th style="width:28%">${lang === "ru" ? "По поводу" : lang === "en" ? "Reason" : "Сабаб (касаллик)"}</th><th>${lang === "ru" ? "Направление" : lang === "en" ? "Referral note" : "Йўналтириш изоҳи"}</th></tr></thead><tbody>${referrals.map((c) => `<tr><td><strong>${esc(c.specialist || "—")}</strong></td><td>${esc(c.name)} <span style="color:#92400e;font-size:8px;text-transform:uppercase">[${esc(c.risk_level)}]</span></td><td>${esc(c.referral_note || c.reasoning || "—")}</td></tr>`).join("")}</tbody></table>` : "";
 
@@ -590,7 +597,7 @@ const AppPage = () => {
   </div>
   <div class="meta">
     <div class="row"><div class="label">${L("sec.patient")}</div><div class="val">${esc(pn)}</div></div>
-    ${patientCode ? `<div class="row"><div class="label">${lang === "ru" ? "Код пациента" : lang === "en" ? "Patient ID" : "Бемор ID"}</div><div class="val" style="font-family:'JetBrains Mono',ui-monospace,monospace;letter-spacing:.5px;color:#2176eb">${esc(patientCode)}</div></div>` : ""}
+    ${docPatientCode ? `<div class="row"><div class="label">${lang === "ru" ? "Код пациента" : lang === "en" ? "Patient ID" : "Бемор ID"}</div><div class="val" style="font-family:'JetBrains Mono',ui-monospace,monospace;letter-spacing:.5px;color:#2176eb">${esc(docPatientCode)}</div></div>` : ""}
     <div class="row"><div class="label">${lang === "ru" ? "Дата" : lang === "en" ? "Date" : "Сана"}</div><div class="val">${esc(dateStr)}</div></div>
   </div>
 
