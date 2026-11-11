@@ -81,7 +81,8 @@ ${groundingContext(passages)}`;
 
     if (!aiResp.ok) {
       const failure=await aiResp.json().catch(()=>({}));
-      return json({error:failure.message??failure.error?.message??"Document generation failed"},aiResp.status);
+      console.error("AI gateway error:", failure);
+      return json({error:"AI hujjat yaratish xizmati vaqtincha mavjud emas"},"aiResp" in failure?502:aiResp.status);
     }
     const aiJson = await aiResp.json();
     const txt = aiJson?.choices?.[0]?.message?.content ?? "{}";
