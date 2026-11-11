@@ -82,7 +82,7 @@ ${groundingContext(passages)}`;
     if (!aiResp.ok) {
       const failure=await aiResp.json().catch(()=>({}));
       console.error("AI gateway error:", failure);
-      return json({error:"AI hujjat yaratish xizmati vaqtincha mavjud emas"},"aiResp" in failure?502:aiResp.status);
+      return json({error:"AI hujjat yaratish xizmati vaqtincha mavjud emas"},aiResp.status===401||aiResp.status===402||aiResp.status===403?aiResp.status:502);
     }
     const aiJson = await aiResp.json();
     const txt = aiJson?.choices?.[0]?.message?.content ?? "{}";
