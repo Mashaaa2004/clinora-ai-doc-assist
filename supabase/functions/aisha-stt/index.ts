@@ -93,8 +93,8 @@ Deno.serve(async (req) => {
     ws.onmessage = (e) => {
       try { client.send(typeof e.data === "string" ? e.data : JSON.stringify({ type: "binary" })); } catch { /* ignore */ }
     };
-    ws.onerror = () => {
-      console.error("aisha upstream error");
+    ws.onerror = (event) => {
+      console.error("aisha upstream error", (event as any)?.message ?? "unknown upstream failure");
       try { client.send(JSON.stringify({ type: "error", message: "upstream_error" })); } catch { /* ignore */ }
     };
     ws.onclose = () => {
