@@ -855,7 +855,7 @@ const AppPage = () => {
             </div>
 
             <div className="flex flex-col items-center text-center">
-              <button onClick={toggleRecording}
+              <button onClick={toggleRecording} disabled={!initialized || confirmed}
                 aria-label={isRecording ? t("rec.recording") : t("rec.start")}
                 className="relative flex h-20 w-20 items-center justify-center rounded-full shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50"
                 style={{ background: isRecording ? "hsl(var(--destructive))" : "var(--gradient-primary)" }}>
