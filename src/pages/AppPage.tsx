@@ -205,7 +205,7 @@ const AppPage = () => {
             setTranscript(nextTranscript);setExtraDoc("");baseTranscriptRef.current=nextTranscript;
             setChosenIdx(nextChosen);setSelectedComorb(nextComorb);setApprovedRevision(revision);
             setConsultationId(draft.consultation_id);setPatientCode(record.patient_code);setConfirmed(true);
-          }).finally(()=>{ if(active) setInitialized(true); });
+          }).then(()=>{ if(active) setInitialized(true); },()=>{ if(active) setInitialized(true); });
         }
         if (Array.isArray(p.selectedComorb)) setSelectedComorb(p.selectedComorb);
       } catch {}
