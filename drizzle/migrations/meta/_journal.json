@@ -36,6 +36,13 @@
       "when": 1794280700336,
       "tag": "0004_secure_clinical_workflow",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794374806089,
+      "tag": "0005_restrict_profile_mapping_trigger_execution",
+      "breakpoints": true
     }
   ]
 }
