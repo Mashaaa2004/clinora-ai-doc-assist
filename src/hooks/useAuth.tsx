@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -106,17 +106,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    let active = true;
+    let requestGeneration = 0;
+    let loadedUserId: string | null = null;
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      const generation = ++requestGeneration;
+      const nextUser = s?.user ?? null;
+      const nextUserId = nextUser?.id ?? null;
       setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) {
-        setLoading(true);
+      setUser(nextUser);
+      if (nextUser && nextUserId) {
+        // Do not unmount the clinical workspace for a duplicate session event.
+        if (loadedUserId !== nextUserId) setLoading(true);
+        loadedUserId = nextUserId;
         setTimeout(() => {
-          Promise.all([loadProfile(s.user.id), loadStatus(s.user.id, s.user.user_metadata)]).finally(() =>
-            setLoading(false),
-          );
+          Promise.all([loadProfile(nextUser.id), loadStatus(nextUser.id, nextUser.user_metadata)]).finally(() => {
+            if (active && generation === requestGeneration) setLoading(false);
+          });
         }, 0);
       } else {
+        loadedUserId = null;
         setProfile(null);
         setIsAdmin(false);
         setIsPatient(false);
@@ -124,20 +133,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setRole(null);
         setIsPro(false);
         setProExpiresAt(null);
+        if (active) setLoading(false);
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user)
-        Promise.all([loadProfile(s.user.id), loadStatus(s.user.id, s.user.user_metadata)]).finally(() =>
-          setLoading(false),
-        );
-      else setLoading(false);
-    });
-
-    return () => sub.subscription.unsubscribe();
+    return () => { active = false; sub.subscription.unsubscribe(); };
   }, []);
 
   const refreshProfile = async () => {

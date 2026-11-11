@@ -119,6 +119,7 @@ const AppPage = () => {
   const [consultationId, setConsultationId] = useState<string | null>(null);
   const [patientCode, setPatientCode] = useState<string>("");
   const [approvedRevision, setApprovedRevision] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
 
   const recognitionRef = useRef<any>(null);
   const baseTranscriptRef = useRef("");
@@ -127,6 +128,7 @@ const AppPage = () => {
 
   // ---- init ----
   useEffect(() => {
+    setInitialized(false);
     if (!localStorage.getItem(GUIDE_KEY)) setShowGuide(true);
 
     // When a different doctor signs in (or a fresh login), reset platform to
@@ -149,6 +151,7 @@ const AppPage = () => {
       setPatientCode("");
       setConsultationId(null);
       baseTranscriptRef.current = "";
+      setInitialized(true);
       return;
     }
 
@@ -204,6 +207,7 @@ const AppPage = () => {
         if (Array.isArray(p.selectedComorb)) setSelectedComorb(p.selectedComorb);
       } catch {}
     }
+    setInitialized(true);
   }, [user?.id]);
 
   // ---- speech recognition (re-init on language change) ----
@@ -838,11 +842,11 @@ const AppPage = () => {
 
             <div className="mb-4">
               <label className="mb-1 block text-xs font-medium text-muted-foreground">{t("sec.patient")}</label>
-              <Input value={patientName} disabled={confirmed} onChange={(e) => { setPatientName(e.target.value); setApprovedRevision(null); persist({ patientName: e.target.value, approvalFingerprint: null }); }} placeholder="—" className="rounded-xl" />
+              <Input value={patientName} disabled={!initialized || confirmed} onChange={(e) => { setPatientName(e.target.value); setApprovedRevision(null); persist({ patientName: e.target.value, approvalFingerprint: null }); }} placeholder="—" className="rounded-xl" />
             </div>
             <div className="mb-4">
               <label className="mb-1 block text-xs font-medium text-muted-foreground">Bemor kodi / tibbiy karta raqami — ixtiyoriy</label>
-              <Input value={patientReference} disabled={confirmed} onChange={(e) => { setPatientReference(e.target.value.slice(0, 100)); setApprovedRevision(null); persist({ patientReference: e.target.value.slice(0, 100), approvalFingerprint: null }); }} placeholder="Masalan: MRN-001" className="rounded-xl" />
+              <Input value={patientReference} disabled={!initialized || confirmed} onChange={(e) => { setPatientReference(e.target.value.slice(0, 100)); setApprovedRevision(null); persist({ patientReference: e.target.value.slice(0, 100), approvalFingerprint: null }); }} placeholder="Masalan: MRN-001" className="rounded-xl" />
               <p className="mt-1 text-xs text-muted-foreground">Oldingi tashriflar faqat shu aniq kod bo‘yicha yuklanadi; kod kiritilmasa, boshqa bemorni tarixi qo‘shilmaydi.</p>
             </div>
 
@@ -860,7 +864,7 @@ const AppPage = () => {
 
             <div className="mt-5">
               <label className="mb-2 block text-xs font-medium text-muted-foreground">{t("sec.complaints")}</label>
-              <Textarea value={transcript} disabled={confirmed} onChange={(e) => { setTranscript(e.target.value); baseTranscriptRef.current = e.target.value; setApprovedRevision(null); persist({ transcript: e.target.value, approvalFingerprint: null }); }}
+              <Textarea value={transcript} disabled={!initialized || confirmed} onChange={(e) => { setTranscript(e.target.value); baseTranscriptRef.current = e.target.value; setApprovedRevision(null); persist({ transcript: e.target.value, approvalFingerprint: null }); }}
                 placeholder={t("rec.placeholder")} className="min-h-[140px] rounded-2xl bg-background text-base" />
             </div>
 
@@ -869,7 +873,7 @@ const AppPage = () => {
                 <div className="mb-2 rounded-2xl border border-warning/30 bg-warning/10 p-3 text-sm">Ovoz yozish ishlamadi. Bemor hujjati, epikriz yoki yozma shikoyatlarni quyiga kiriting — tahlil shu matn asosida tuziladi.</div>
               )}
               <label className="mb-2 block text-xs font-medium text-muted-foreground">Qo‘shimcha hujjat (epikriz, oldingi xulosa, tahlillar) — ixtiyoriy</label>
-              <Textarea value={extraDoc} disabled={confirmed} onChange={(e) => { setExtraDoc(e.target.value); setApprovedRevision(null); persist({ extraDoc: e.target.value, approvalFingerprint: null }); }}
+              <Textarea value={extraDoc} disabled={!initialized || confirmed} onChange={(e) => { setExtraDoc(e.target.value); setApprovedRevision(null); persist({ extraDoc: e.target.value, approvalFingerprint: null }); }}
                 placeholder="Hujjat matnini shu yerga joylang yoki yozing…" className="min-h-[120px] rounded-2xl bg-background text-base" />
               <p className={`mt-1 text-xs ${combineClinicalSource(transcript, extraDoc).length > MAX_CLINICAL_SOURCE_LENGTH ? "text-destructive" : "text-muted-foreground"}`}>
                 Umumiy matn: {combineClinicalSource(transcript, extraDoc).length.toLocaleString()} / {MAX_CLINICAL_SOURCE_LENGTH.toLocaleString()} belgi
@@ -973,7 +977,7 @@ const AppPage = () => {
                   const probColor = d.probability === "high" ? "bg-destructive/15 text-destructive" : d.probability === "medium" ? "bg-warning/15 text-warning" : "bg-primary/15 text-primary";
                   return (
                     <button key={i}
-                      disabled={confirmed}
+                      disabled={!initialized || confirmed}
                       onClick={() => { setChosenIdx(i); setApprovedRevision(null); setReviewAccepted(false); persist({ chosenIdx: i, approvalFingerprint: null }); }}
                       className={`block w-full rounded-2xl border p-4 text-left transition-all ${chosen ? "border-success bg-success/5 shadow-md" : "border-border bg-background/60 hover:border-primary/40"}`}>
                       <div className="flex items-start justify-between gap-3">
@@ -1007,7 +1011,7 @@ const AppPage = () => {
                       >
                         <Checkbox
                           checked={checked}
-                          disabled={confirmed}
+                          disabled={!initialized || confirmed}
                           onCheckedChange={(v) => {
                             const next = v
                               ? [...selectedComorb, i].sort((a, b) => a - b)
