@@ -128,6 +128,8 @@ const AppPage = () => {
 
   // ---- init ----
   useEffect(() => {
+    let active = true;
+    let approvalPending = false;
     setInitialized(false);
     if (!localStorage.getItem(GUIDE_KEY)) setShowGuide(true);
 
@@ -187,10 +189,11 @@ const AppPage = () => {
         // Approval is never restored from mutable browser storage.
         setConfirmed(false);
         if(p.result?.draft_id&&currentUser){
+          approvalPending = true;
           supabase.from("clinical_drafts").select("status,consultation_id").eq("id",p.result.draft_id).eq("user_id",currentUser).maybeSingle().then(async({data:draft})=>{
             if(draft?.status!=="approved"||!draft.consultation_id)return;
             const {data:record}=await supabase.from("consultations").select("document_status,patient_code,patient_name,patient_reference,transcript,chosen_diagnosis,clinical_document").eq("id",draft.consultation_id).eq("user_id",currentUser).maybeSingle();
-            if(record?.document_status!=="approved"||!record.clinical_document)return;
+            if(!active || record?.document_status!=="approved"||!record.clinical_document)return;
             // Restore the server-approved revision, never locally modified clinical content.
             const serverResult=record.clinical_document as AnalysisResult;
             const nextChosen=Math.max(0,serverResult.differentials.findIndex(d=>d.name===record.chosen_diagnosis));
@@ -202,12 +205,13 @@ const AppPage = () => {
             setTranscript(nextTranscript);setExtraDoc("");baseTranscriptRef.current=nextTranscript;
             setChosenIdx(nextChosen);setSelectedComorb(nextComorb);setApprovedRevision(revision);
             setConsultationId(draft.consultation_id);setPatientCode(record.patient_code);setConfirmed(true);
-          });
+          }).finally(()=>{ if(active) setInitialized(true); });
         }
         if (Array.isArray(p.selectedComorb)) setSelectedComorb(p.selectedComorb);
       } catch {}
     }
-    setInitialized(true);
+    if (!approvalPending) setInitialized(true);
+    return () => { active = false; };
   }, [user?.id]);
 
   // ---- speech recognition (re-init on language change) ----
