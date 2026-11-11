@@ -657,12 +657,12 @@ const AppPage = () => {
     var avail = page.clientHeight - padV;
     var need = inner.scrollHeight;
     if(need > avail){
-      var s = Math.max(0.5, avail / need);
+      var s = avail / need;
       inner.style.transform = 'scale(' + s + ')';
       inner.style.width = (100 / s) + '%';
       need = inner.scrollHeight;
       if(need * s > avail){
-        s = Math.max(0.4, avail / need);
+        s = avail / need;
         inner.style.transform = 'scale(' + s + ')';
         inner.style.width = (100 / s) + '%';
       }
@@ -838,7 +838,12 @@ const AppPage = () => {
 
             <div className="mb-4">
               <label className="mb-1 block text-xs font-medium text-muted-foreground">{t("sec.patient")}</label>
-              <Input value={patientName} onChange={(e) => { setPatientName(e.target.value); persist({ patientName: e.target.value }); }} placeholder="—" className="rounded-xl" />
+              <Input value={patientName} disabled={confirmed} onChange={(e) => { setPatientName(e.target.value); setApprovedRevision(null); persist({ patientName: e.target.value, approvalFingerprint: null }); }} placeholder="—" className="rounded-xl" />
+            </div>
+            <div className="mb-4">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Bemor kodi / tibbiy karta raqami — ixtiyoriy</label>
+              <Input value={patientReference} disabled={confirmed} onChange={(e) => { setPatientReference(e.target.value.slice(0, 100)); setApprovedRevision(null); persist({ patientReference: e.target.value.slice(0, 100), approvalFingerprint: null }); }} placeholder="Masalan: MRN-001" className="rounded-xl" />
+              <p className="mt-1 text-xs text-muted-foreground">Oldingi tashriflar faqat shu aniq kod bo‘yicha yuklanadi; kod kiritilmasa, boshqa bemorni tarixi qo‘shilmaydi.</p>
             </div>
 
             <div className="flex flex-col items-center text-center">
@@ -855,7 +860,7 @@ const AppPage = () => {
 
             <div className="mt-5">
               <label className="mb-2 block text-xs font-medium text-muted-foreground">{t("sec.complaints")}</label>
-              <Textarea value={transcript} onChange={(e) => { setTranscript(e.target.value); baseTranscriptRef.current = e.target.value; persist({ transcript: e.target.value }); }}
+              <Textarea value={transcript} disabled={confirmed} onChange={(e) => { setTranscript(e.target.value); baseTranscriptRef.current = e.target.value; setApprovedRevision(null); persist({ transcript: e.target.value, approvalFingerprint: null }); }}
                 placeholder={t("rec.placeholder")} className="min-h-[140px] rounded-2xl bg-background text-base" />
             </div>
 
@@ -864,16 +869,20 @@ const AppPage = () => {
                 <div className="mb-2 rounded-2xl border border-warning/30 bg-warning/10 p-3 text-sm">Ovoz yozish ishlamadi. Bemor hujjati, epikriz yoki yozma shikoyatlarni quyiga kiriting — tahlil shu matn asosida tuziladi.</div>
               )}
               <label className="mb-2 block text-xs font-medium text-muted-foreground">Qo‘shimcha hujjat (epikriz, oldingi xulosa, tahlillar) — ixtiyoriy</label>
-              <Textarea value={extraDoc} onChange={(e) => setExtraDoc(e.target.value.slice(0, 8000))}
+              <Textarea value={extraDoc} disabled={confirmed} onChange={(e) => { setExtraDoc(e.target.value); setApprovedRevision(null); persist({ extraDoc: e.target.value, approvalFingerprint: null }); }}
                 placeholder="Hujjat matnini shu yerga joylang yoki yozing…" className="min-h-[120px] rounded-2xl bg-background text-base" />
+              <p className={`mt-1 text-xs ${combineClinicalSource(transcript, extraDoc).length > MAX_CLINICAL_SOURCE_LENGTH ? "text-destructive" : "text-muted-foreground"}`}>
+                Umumiy matn: {combineClinicalSource(transcript, extraDoc).length.toLocaleString()} / {MAX_CLINICAL_SOURCE_LENGTH.toLocaleString()} belgi
+              </p>
+              {combineClinicalSource(transcript, extraDoc).length > MAX_CLINICAL_SOURCE_LENGTH && <p className="mt-1 text-xs text-destructive">Matn juda uzun. Hech qanday qism avtomatik kesilmaydi; tahlil uchun qisqartiring.</p>}
             </div>
 
             <label className="mt-4 flex items-start gap-3 text-sm"><Checkbox checked={aiConsent} onCheckedChange={v=>setAiConsent(v===true)} aria-label="Bemor AI roziligi"/><span>Bemor AI orqali qayta ishlashga rozilik berdi; suhbatdagi ism, manzil va boshqa shaxsiy ma’lumotlarni olib tashladim.</span></label>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <Button onClick={runAnalysis} disabled={isAnalyzing || (!transcript.trim() && !extraDoc.trim()) || !aiConsent} size="lg" className="flex-1 rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
+              <Button onClick={runAnalysis} disabled={isAnalyzing || (!transcript.trim() && !extraDoc.trim()) || !aiConsent || combineClinicalSource(transcript, extraDoc).length > MAX_CLINICAL_SOURCE_LENGTH} size="lg" className="flex-1 rounded-2xl shadow-md" style={{ background: "var(--gradient-primary)" }}>
                 {isAnalyzing ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t("act.analyzing")}</> : <><Sparkles className="mr-2 h-5 w-5" /> {t("act.suggestLabs")}</>}
               </Button>
-              <Button onClick={handleClear} variant="outline" size="lg" aria-label={t("common.clear") || "Clear"} className="rounded-2xl" disabled={isAnalyzing || (!transcript && !result)}>
+              <Button onClick={handleClear} variant="outline" size="lg" aria-label={t("common.clear") || "Clear"} className="rounded-2xl" disabled={isAnalyzing || (!transcript && !extraDoc && !patientReference && !result)}>
                 <Trash2 className="h-5 w-5" />
               </Button>
             </div>
@@ -964,7 +973,8 @@ const AppPage = () => {
                   const probColor = d.probability === "high" ? "bg-destructive/15 text-destructive" : d.probability === "medium" ? "bg-warning/15 text-warning" : "bg-primary/15 text-primary";
                   return (
                     <button key={i}
-                      onClick={() => { setChosenIdx(i); persist({ chosenIdx: i }); }}
+                      disabled={confirmed}
+                      onClick={() => { setChosenIdx(i); setApprovedRevision(null); setReviewAccepted(false); persist({ chosenIdx: i, approvalFingerprint: null }); }}
                       className={`block w-full rounded-2xl border p-4 text-left transition-all ${chosen ? "border-success bg-success/5 shadow-md" : "border-border bg-background/60 hover:border-primary/40"}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
@@ -997,12 +1007,15 @@ const AppPage = () => {
                       >
                         <Checkbox
                           checked={checked}
+                          disabled={confirmed}
                           onCheckedChange={(v) => {
                             const next = v
                               ? [...selectedComorb, i].sort((a, b) => a - b)
                               : selectedComorb.filter((x) => x !== i);
                             setSelectedComorb(next);
-                            persist({ selectedComorb: next });
+                            setApprovedRevision(null);
+                            setReviewAccepted(false);
+                            persist({ selectedComorb: next, approvalFingerprint: null });
                           }}
                           className="mt-0.5"
                         />
