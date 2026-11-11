@@ -39,9 +39,14 @@ Deno.serve(async (req) => {
 
     const adminArr = [...adminIds];
 
-    // Wipe all data tables completely (admins don't generate patient data)
+    // Delete child records before consultations so no clinical draft or usage
+    // record is orphaned when the explicitly confirmed platform reset runs.
+    const { error: draftErr } = await admin.from("clinical_drafts").delete().not("id", "is", null);
+    if (draftErr) throw draftErr;
     const wipes = await Promise.all([
       admin.from("consultations").delete().not("id", "is", null),
+      admin.from("ai_usage_events").delete().not("id", "is", null),
+      admin.from("patient_clinic_access").delete().not("id", "is", null),
       admin.from("prescriptions_log").delete().not("id", "is", null),
       admin.from("payment_requests").delete().not("id", "is", null),
       admin.from("subscriptions").delete().not("id", "is", null),
@@ -76,7 +81,8 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e?.message ?? "Server error" }), {
+    console.error("Admin reset failed", e);
+    return new Response(JSON.stringify({ error: "Platformani tozalash bajarilmadi" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
