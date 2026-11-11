@@ -7,11 +7,12 @@
 - [x] Minimize external patient identifiers and keep owner-scoped access.
 - [x] Synthetic rule tests, authenticated end-to-end flow, deployment and diagnostics.
 - [x] Audit current platform errors and shortcomings; reproduce, prioritize and report actionable findings.
-- [ ] Secure clinic membership and enforce doctor/admin roles in clinician UI, analysis and speech services.
-- [ ] Bind PDF export and restored approval to the exact clinician-approved revision.
-- [ ] Add narrow public verification for approved QR documents without opening private tables.
-- [ ] Preserve extra-document input, prevent silent truncation, and use explicit patient references for history.
-- [ ] Meter actual AI usage and harden identifier minimization.
-- [ ] Fix Aisha gateway configuration, long-document PDF fitting, patient routing failures and queue accessibility.
-- [ ] Run focused regression tests and authenticated browser/database checks for all repaired flows.
+- [x] Secure clinic membership and enforce doctor/admin roles in clinician UI, analysis and speech services.
+- [x] Bind PDF export and restored approval to the exact clinician-approved revision.
+- [x] Add narrow public verification for approved QR documents without opening private tables.
+- [x] Preserve extra-document input, prevent silent truncation, and use explicit patient references for history.
+- [x] Meter actual AI usage and harden identifier minimization.
+- [x] Send Aisha's required API-key header, fit long PDFs, remove the retired patient router and fix queue accessibility.
+- [x] Run focused regression tests and authenticated browser/database checks for repaired flows.
+- [ ] Live Aisha transcription — blocked by the external Aisha server returning HTTP 502; authenticated proxy, microphone permission and text fallback are verified.
 - [ ] Base44 response per CRM row and automatic failure notices — blocked pending Base44 receiver/API contract and access to the CRM project.
