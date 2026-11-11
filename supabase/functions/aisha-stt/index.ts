@@ -1,6 +1,7 @@
 // Aisha AI realtime speech-to-text WebSocket proxy.
 // The browser connects here; the Aisha X-Api-Key never leaves the server.
 import { createClient } from "npm:@supabase/supabase-js@2";
+import WebSocket from "npm:ws@8";
 
 const AISHA_WS = "wss://back.aisha.group/api/v1/stt/realtime";
 
@@ -73,10 +74,10 @@ Deno.serve(async (req) => {
   const pending: (string | ArrayBuffer)[] = [];
 
   const openUpstream = () => {
-    // Aisha accepts the key either as a header (not settable from the WS API)
-    // or as a query parameter, so it is passed in the URL here.
-    const target = `${AISHA_WS}?api_key=${encodeURIComponent(apiKey)}&language=${encodeURIComponent(language)}`;
-    const ws = new WebSocket(target);
+    // The Aisha contract requires X-Api-Key. The ws client supports upstream
+    // headers, unlike the browser WebSocket API used by the clinician client.
+    const target = `${AISHA_WS}?language=${encodeURIComponent(language)}`;
+    const ws = new WebSocket(target, { headers: { "X-Api-Key": apiKey } });
     ws.binaryType = "arraybuffer";
 
     ws.onopen = () => {
